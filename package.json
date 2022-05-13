@@ -1,0 +1,32 @@
+{
+  "name": "eventsourcingdb",
+  "version": "0.0.0",
+  "description": "assertthat provides fluent TDD.",
+  "contributors": [
+    {
+      "name": "Golo Roden",
+      "email": "golo.roden@thenativeweb.io"
+    }
+  ],
+  "private": false,
+  "main": "build/lib/index.js",
+  "types": "build/lib/index.d.ts",
+  "dependencies": {
+    "@types/node": "17.0.33",
+    "undici": "5.2.0"
+  },
+  "devDependencies": {
+    "roboter": "13.1.0"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/thenativeweb/eventsourcingdb-client-javascript.git"
+  },
+  "keywords": [
+    "eventsourcingdb",
+    "eventsourcing",
+    "client"
+  ],
+  "license": "MIT"
+}
