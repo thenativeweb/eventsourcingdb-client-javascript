@@ -1,7 +1,7 @@
+import { EventCandidate } from './EventCandidate';
 import { EventSourcingDbClient } from './EventSourcingDbClient';
-import { UnstoredEvent } from './UnstoredEvent';
 
 export {
-  EventSourcingDbClient,
-  UnstoredEvent
+  EventCandidate,
+  EventSourcingDbClient
 };

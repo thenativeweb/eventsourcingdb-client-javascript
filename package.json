@@ -12,8 +12,8 @@
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",
   "dependencies": {
-    "@types/node": "17.0.33",
-    "undici": "5.2.0"
+    "@types/node": "18.0.6",
+    "undici": "5.8.0"
   },
   "devDependencies": {
     "roboter": "13.1.0"

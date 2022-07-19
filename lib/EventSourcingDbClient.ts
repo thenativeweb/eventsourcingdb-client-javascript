@@ -1,8 +1,8 @@
+import { EventCandidate } from './EventCandidate';
 import { fetch } from 'undici';
 import { parseLine } from './parseLine';
 import { splitLines } from './splitLines';
 import { StoredEvent } from './StoredEvent';
-import { UnstoredEvent } from './UnstoredEvent';
 
 class EventSourcingDbClient {
   private readonly urls: Record<string, string>;
@@ -35,7 +35,7 @@ class EventSourcingDbClient {
   }
 
   public async storeEvents ({ events }: {
-    events: UnstoredEvent[];
+    events: EventCandidate[];
   }): Promise<void> {
     try {
       const res = await fetch(this.urls.storeEventsUrl, {
