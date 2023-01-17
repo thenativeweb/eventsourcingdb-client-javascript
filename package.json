@@ -1,6 +1,7 @@
 {
   "name": "eventsourcingdb",
   "version": "0.0.0",
+  "module": "true",
   "description": "assertthat provides fluent TDD.",
   "contributors": [
     {
@@ -11,12 +12,10 @@
   "private": false,
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",
-  "dependencies": {
-    "@types/node": "18.0.6",
-    "undici": "5.8.0"
-  },
   "devDependencies": {
-    "roboter": "13.1.0"
+    "@types/shelljs": "0.8.11",
+    "roboter": "13.1.0",
+    "shelljs": "0.8.5"
   },
   "scripts": {},
   "repository": {
