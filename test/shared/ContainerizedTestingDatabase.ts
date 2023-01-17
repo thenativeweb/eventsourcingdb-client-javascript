@@ -12,7 +12,7 @@ class ContainerizedTestingDatabase {
 
   private readonly isFirstRun = true;
 
-  constructor (image: Image, command: string, options: any) {
+  public constructor (image: Image, command: string, options: any) {
     this.command = command;
     this.image = image;
     this.options = options;

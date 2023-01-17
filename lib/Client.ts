@@ -1,5 +1,7 @@
 import { ClientConfiguration } from './ClientConfiguration';
 import { getDefaultConfiguration } from './getDefaultConfiguration';
+import { observeEventsHandle } from './handles/observeEventsHandle';
+import { ObserveEventsOptions } from './handles/ObserveEventsOptions';
 
 class Client {
   private readonly clientConfiguration: ClientConfiguration;
@@ -9,6 +11,10 @@ class Client {
       ...getDefaultConfiguration(baseUrl),
       ...config
     };
+  }
+
+  public observeEvents (subject: string, options: ObserveEventsOptions): void {
+    observeEventsHandle(this, subject, options);
   }
 }
 
