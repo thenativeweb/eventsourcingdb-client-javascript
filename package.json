@@ -27,5 +27,11 @@
     "eventsourcing",
     "client"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/http-status-codes": "1.2.0",
+    "axios": "1.2.3",
+    "http-status-codes": "2.2.0",
+    "stream-to-async-iterator": "1.0.0"
+  }
 }

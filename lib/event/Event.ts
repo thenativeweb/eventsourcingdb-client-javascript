@@ -1,6 +1,7 @@
 import { isObject } from '../util/isObject';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
+import { UnknownObject } from '../util/UnknownObject';
 
 class Event {
   /* eslint-disable @typescript-eslint/explicit-member-accessibility */
@@ -81,46 +82,53 @@ class Event {
     return this.#predecessorHash;
   }
 
-  public static parseFromJson (rawEventJson: string): Event {
-    const parsedJson = JSON.parse(rawEventJson);
+  public static parse (unknownObject: UnknownObject): Event {
+    if (!isObject(unknownObject.data)) {
+      throw new Error(`Cannot parse data: ${unknownObject.data} to object.`);
+    }
+    if (typeof unknownObject.source !== 'string') {
+      throw new Error(`Cannot parse source: ${unknownObject.source} to string.`);
+    }
+    if (typeof unknownObject.subject !== 'string') {
+      throw new Error(`Cannot parse subject: ${unknownObject.subject} to string.`);
+    }
+    validateSubject(unknownObject.subject);
+    if (typeof unknownObject.type !== 'string') {
+      throw new Error(`Cannot parse type: ${unknownObject.type} to string.`);
+    }
+    validateType(unknownObject.type);
+    if (typeof unknownObject.specversion !== 'string') {
+      throw new Error(`Cannot parse specVersion: ${unknownObject.specversion} to string.`);
+    }
+    if (typeof unknownObject.id !== 'string') {
+      throw new Error(`Cannot parse id: ${unknownObject.id} to string.`);
+    }
+    if (typeof unknownObject.time !== 'string') {
+      throw new Error(`Cannot parse time: ${unknownObject.time} to Date.`);
+    }
+    const time = new Date(unknownObject.time);
 
-    if (!isObject(parsedJson.data)) {
-      throw new Error(`Cannot parse data: ${parsedJson.data} to object.`);
+    if (time.toString() === 'Invalid Date') {
+      throw new Error(`Cannot parse time: ${unknownObject.time} to Date.`);
     }
-    if (typeof parsedJson.source !== 'string') {
-      throw new Error(`Cannot parse source: ${parsedJson.source} to string.`);
+
+    if (typeof unknownObject.datacontenttype !== 'string') {
+      throw new Error(`Cannot parse dataContentType: ${unknownObject.datacontenttype} to string.`);
     }
-    if (typeof parsedJson.subject !== 'string') {
-      throw new Error(`Cannot parse subject: ${parsedJson.subject} to string.`);
-    }
-    validateSubject(parsedJson.subject);
-    if (typeof parsedJson.type !== 'string') {
-      throw new Error(`Cannot parse type: ${parsedJson.type} to string.`);
-    }
-    validateType(parsedJson.type);
-    if (typeof parsedJson.specversion !== 'string') {
-      throw new Error(`Cannot parse specVersion: ${parsedJson.specversion} to string.`);
-    }
-    if (typeof parsedJson.id !== 'string') {
-      throw new Error(`Cannot parse id: ${parsedJson.id} to string.`);
-    }
-    if (typeof parsedJson.datacontenttype !== 'string') {
-      throw new Error(`Cannot parse dataContentType: ${parsedJson.datacontenttype} to string.`);
-    }
-    if (typeof parsedJson.predecessorhash !== 'string') {
-      throw new Error(`Cannot parse predecessorHash: ${parsedJson.predecessorhash} to string.`);
+    if (typeof unknownObject.predecessorhash !== 'string') {
+      throw new Error(`Cannot parse predecessorHash: ${unknownObject.predecessorhash} to string.`);
     }
 
     return new Event(
-      parsedJson.data,
-      parsedJson.source,
-      parsedJson.subject,
-      parsedJson.type,
-      parsedJson.specversion,
-      parsedJson.id,
-      new Date(),
-      parsedJson.datacontenttype,
-      parsedJson.predecessorhash
+      unknownObject.data,
+      unknownObject.source,
+      unknownObject.subject,
+      unknownObject.type,
+      unknownObject.specversion,
+      unknownObject.id,
+      time,
+      unknownObject.datacontenttype,
+      unknownObject.predecessorhash
     );
   }
 }
