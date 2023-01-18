@@ -3,6 +3,7 @@ import { getDefaultConfiguration } from './getDefaultConfiguration';
 import { observeEventsHandle } from './handles/observeEvents/observeEventsHandle';
 import { ObserveEventsOptions } from './handles/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
+import { StoreItem } from './handles/observeEvents/StoreItem';
 
 class Client {
   // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
@@ -33,8 +34,8 @@ class Client {
     throw new Error(`protocol version mismatch, server '${serverProtocolVersion}', client '${this.clientConfiguration.protocolVersion}'`);
   }
 
-  public observeEvents (subject: string, options: ObserveEventsOptions): void {
-    observeEventsHandle(this, subject, options);
+  public observeEvents (subject: string, options: ObserveEventsOptions): AsyncGenerator<StoreItem, void, void> {
+    return observeEventsHandle(this, subject, options);
   }
 }
 

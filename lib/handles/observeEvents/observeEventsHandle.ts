@@ -23,13 +23,14 @@ const observeEventsHandle = async function * (client: Client, subject: string, o
     headers: {
       Authorization: `Bearer ${client.clientConfiguration.accessToken}`,
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      'X-EventSourcingDB-Protocol-Version': client.clientConfiguration.protocolVersion
+      'X-EventSourcingDB-Protocol-Version': client.clientConfiguration.protocolVersion,
+      'Content-Type': 'application/json'
     },
     responseType: 'stream'
   });
 
   // TODO: Add retries here
-  const response = await httpClient.post<Readable>('/api/observe-events', { data: requestBody });
+  const response = await httpClient.post<Readable>('/api/observe-events', requestBody);
 
   client.validateProtocolVersion(response.status, response.headers);
 
@@ -39,34 +40,41 @@ const observeEventsHandle = async function * (client: Client, subject: string, o
 
   const stream = response.data;
 
-  for await (const rawMessage of new StreamToAsyncIterator(stream)) {
-    if (typeof rawMessage !== 'string') {
-      throw new Error(`unexpected stream item: ${rawMessage}`);
+  for await (const buffer of new StreamToAsyncIterator(stream)) {
+    const data = (buffer as any).toString();
+
+    if (typeof data !== 'string') {
+      throw new Error(`unexpected stream item: ${data}`);
     }
 
-    const message = JSON.parse(rawMessage);
+    const lines = data.trim().split('\n');
 
-    if (isHeartbeat(message)) {
-      continue;
+    for (const line of lines) {
+      const message = JSON.parse(line);
+
+      if (isHeartbeat(message)) {
+        continue;
+      }
+
+      if (isObserveEventsError(message)) {
+        throw new Error(`an error occurred during observe events: ${message.payload.error}`);
+      }
+
+      if (isItem(message)) {
+        const event = Event.parse(message.payload.event);
+
+        yield {
+          type: 'item',
+          payload: {
+            event,
+            hash: message.payload.hash
+          }
+        };
+        continue;
+      }
+
+      throw new Error(`unexpected stream item: ${message}`);
     }
-
-    if (isObserveEventsError(message)) {
-      throw new Error(`an error occurred during observe events: ${message.payload.error}`);
-    }
-
-    if (isItem(message)) {
-      const event = Event.parse(message.payload.event);
-
-      yield {
-        type: 'item',
-        payload: {
-          event,
-          hash: message.payload.hash
-        }
-      };
-    }
-
-    throw new Error(`unexpected stream item: ${message}`);
   }
 };
 

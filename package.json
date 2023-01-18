@@ -14,6 +14,7 @@
   "types": "build/lib/index.d.ts",
   "devDependencies": {
     "@types/shelljs": "0.8.11",
+    "assertthat": "6.5.2",
     "roboter": "13.1.0",
     "shelljs": "0.8.5"
   },
