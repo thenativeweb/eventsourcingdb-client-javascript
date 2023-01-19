@@ -2,6 +2,8 @@ import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import axios from 'axios';
 import { EventContext } from '../../event/EventContext';
+import { retryWithBackoff } from '../../util/retry/retryWithBackoff';
+import { wrapError } from '../../util/error/wrapError';
 
 const writeEvents = async function (
 	client: Client,
@@ -24,8 +26,13 @@ const writeEvents = async function (
 		responseType: 'json',
 	});
 
-	// TODO: Add retries here
-	const response = await httpClient.post('/api/write-events', requestBody);
+	const response = await wrapError(
+		async () =>
+			retryWithBackoff(new AbortController(), client.clientConfiguration.maxTries, async () =>
+				httpClient.post('/api/write-events', requestBody),
+			),
+		async (error) => new Error('Failed to write events.', { cause: error }),
+	);
 
 	if (!Array.isArray(response.data)) {
 		throw new Error(`Failed to parse response '${response.data}' to array.`);
