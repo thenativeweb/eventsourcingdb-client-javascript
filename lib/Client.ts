@@ -4,6 +4,9 @@ import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
 import { StoreItem } from './handlers/observeEvents/StoreItem';
+import { EventCandidate } from './event/EventCandidate';
+import { writeEvents } from './handlers/writeEvents/writeEvents';
+import { EventContext } from './event/EventContext';
 
 class Client {
 	readonly #clientConfiguration: ClientConfiguration;
@@ -34,7 +37,7 @@ class Client {
 		}
 
 		throw new Error(
-			`protocol version mismatch, server '${serverProtocolVersion}', client '${this.clientConfiguration.protocolVersion}'`,
+			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.clientConfiguration.protocolVersion}.'`,
 		);
 	}
 
@@ -43,6 +46,13 @@ class Client {
 		options: ObserveEventsOptions,
 	): AsyncGenerator<StoreItem, void, void> {
 		return observeEvents(this, subject, options);
+	}
+
+	public writeEvents(
+		eventCandidates: EventCandidate[],
+		preconditions: string[],
+	): Promise<EventContext[]> {
+		return writeEvents(this, eventCandidates, preconditions);
 	}
 }
 
