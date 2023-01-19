@@ -1,7 +1,7 @@
 class RetryError extends Error {
 	private errors: Error[];
 
-	constructor() {
+	public constructor() {
 		super();
 
 		this.errors = [];
