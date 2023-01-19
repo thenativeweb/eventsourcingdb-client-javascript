@@ -1,5 +1,5 @@
 import { clearTimeout } from 'timers';
-import { CancellationError } from '../CancelationError';
+import { CancellationError } from '../error/CancelationError';
 import { RetryError } from './RetryError';
 
 const getRandomizedDuration = function (
@@ -14,11 +14,11 @@ const getRandomizedDuration = function (
 	return millseconds;
 };
 
-const retryWithBackoff = async function (
+const retryWithBackoff = async function <TReturn = void>(
 	abortController: AbortController,
 	tries: number,
-	fn: () => void,
-): Promise<void> {
+	fn: () => Promise<TReturn>,
+): Promise<TReturn> {
 	if (tries < 1) {
 		throw new RangeError('Tries must be greater than 0.');
 	}
@@ -41,7 +41,7 @@ const retryWithBackoff = async function (
 		});
 
 		try {
-			fn();
+			return fn();
 		} catch (ex: unknown) {
 			let error: Error;
 			if (ex instanceof Error) {
@@ -51,10 +51,7 @@ const retryWithBackoff = async function (
 			}
 
 			retryError.appendError(error);
-			continue;
 		}
-
-		return;
 	}
 
 	throw retryError;

@@ -39,10 +39,11 @@ class Client {
 	}
 
 	public observeEvents(
+		abortController: AbortController,
 		subject: string,
 		options: ObserveEventsOptions,
 	): AsyncGenerator<StoreItem, void, void> {
-		return observeEvents(this, subject, options);
+		return observeEvents(this, abortController, subject, options);
 	}
 }
 
