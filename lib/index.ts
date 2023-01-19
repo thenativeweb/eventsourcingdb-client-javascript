@@ -5,5 +5,5 @@ export { EventCandidate } from './event/EventCandidate';
 export {
 	ObserveEventsOptions,
 	ObserveFromLatestEvent,
-} from './handles/observeEvents/ObserveEventsOptions';
-export { StoreItem } from './handles/observeEvents/StoreItem';
+} from './handlers/observeEvents/ObserveEventsOptions';
+export { StoreItem } from './handlers/observeEvents/StoreItem';

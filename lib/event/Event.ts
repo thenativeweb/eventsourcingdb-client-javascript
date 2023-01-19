@@ -82,39 +82,43 @@ class Event {
 
 	public static parse(unknownObject: UnknownObject): Event {
 		if (!isObject(unknownObject.data)) {
-			throw new Error(`Cannot parse data: ${unknownObject.data} to object.`);
+			throw new Error(`Failed to parse data '${unknownObject.data}' to object.`);
 		}
 		if (typeof unknownObject.source !== 'string') {
-			throw new Error(`Cannot parse source: ${unknownObject.source} to string.`);
+			throw new Error(`Failed to parse source '${unknownObject.source}' to string.`);
 		}
 		if (typeof unknownObject.subject !== 'string') {
-			throw new Error(`Cannot parse subject: ${unknownObject.subject} to string.`);
+			throw new Error(`Failed to parse subject '${unknownObject.subject}' to string.`);
 		}
 		validateSubject(unknownObject.subject);
 		if (typeof unknownObject.type !== 'string') {
-			throw new Error(`Cannot parse type: ${unknownObject.type} to string.`);
+			throw new Error(`Failed to parse type '${unknownObject.type}' to string.`);
 		}
 		validateType(unknownObject.type);
 		if (typeof unknownObject.specversion !== 'string') {
-			throw new Error(`Cannot parse specVersion: ${unknownObject.specversion} to string.`);
+			throw new Error(`Failed to parse specVersion '${unknownObject.specversion}' to string.`);
 		}
 		if (typeof unknownObject.id !== 'string') {
-			throw new Error(`Cannot parse id: ${unknownObject.id} to string.`);
+			throw new Error(`Failed to parse id '${unknownObject.id}' to string.`);
 		}
 		if (typeof unknownObject.time !== 'string') {
-			throw new Error(`Cannot parse time: ${unknownObject.time} to Date.`);
+			throw new Error(`Failed to parse time '${unknownObject.time}' to Date.`);
 		}
 		const time = new Date(unknownObject.time);
 
 		if (time.toString() === 'Invalid Date') {
-			throw new Error(`Cannot parse time: ${unknownObject.time} to Date.`);
+			throw new Error(`Failed to parse time '${unknownObject.time}' to Date.`);
 		}
 
 		if (typeof unknownObject.datacontenttype !== 'string') {
-			throw new Error(`Cannot parse dataContentType: ${unknownObject.datacontenttype} to string.`);
+			throw new Error(
+				`Failed to parse dataContentType '${unknownObject.datacontenttype}' to string.`,
+			);
 		}
 		if (typeof unknownObject.predecessorhash !== 'string') {
-			throw new Error(`Cannot parse predecessorHash: ${unknownObject.predecessorhash} to string.`);
+			throw new Error(
+				`Failed to parse predecessorHash '${unknownObject.predecessorhash}' to string.`,
+			);
 		}
 
 		return new Event(

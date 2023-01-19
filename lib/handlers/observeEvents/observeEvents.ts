@@ -10,7 +10,7 @@ import { isObserveEventsError } from './isObserveEventsError';
 import { ObserveEventsOptions } from './ObserveEventsOptions';
 import { StoreItem } from './StoreItem';
 
-const observeEventsHandle = async function* (
+const observeEvents = async function* (
 	client: Client,
 	subject: string,
 	options: ObserveEventsOptions,
@@ -37,7 +37,7 @@ const observeEventsHandle = async function* (
 	client.validateProtocolVersion(response.status, response.headers);
 
 	if (response.status !== StatusCodes.OK) {
-		throw new Error(`failed to observe events: ${response.status}`);
+		throw new Error(`Failed to observe events, received status '${response.status}'.`);
 	}
 
 	const stream = response.data;
@@ -47,7 +47,7 @@ const observeEventsHandle = async function* (
 			continue;
 		}
 		if (isObserveEventsError(message)) {
-			throw new Error(`an error occurred during observe events: ${message.payload.error}`);
+			throw new Error(`Failed to observe events because of an error '${message.payload.error}'.`);
 		}
 		if (isItem(message)) {
 			const event = Event.parse(message.payload.event);
@@ -63,8 +63,10 @@ const observeEventsHandle = async function* (
 			continue;
 		}
 
-		throw new Error(`unexpected stream item: ${message}`);
+		throw new Error(
+			`Failed to observe events, an unexpected stream item was received: '${message}'.`,
+		);
 	}
 };
 
-export { observeEventsHandle };
+export { observeEvents };

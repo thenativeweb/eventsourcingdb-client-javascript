@@ -1,7 +1,7 @@
 {
   "name": "eventsourcingdb",
   "version": "0.0.0",
-  "description": "",
+  "description": "eventsourcingdb is the JavaScript client for EventSourcingDB.",
   "contributors": [
     {
       "name": "Golo Roden",

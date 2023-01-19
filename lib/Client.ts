@@ -1,17 +1,20 @@
 import { ClientConfiguration } from './ClientConfiguration';
 import { getDefaultConfiguration } from './getDefaultConfiguration';
-import { observeEventsHandle } from './handles/observeEvents/observeEventsHandle';
-import { ObserveEventsOptions } from './handles/observeEvents/ObserveEventsOptions';
+import { observeEvents } from './handlers/observeEvents/observeEvents';
+import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
-import { StoreItem } from './handles/observeEvents/StoreItem';
+import { StoreItem } from './handlers/observeEvents/StoreItem';
 
 class Client {
 	readonly #clientConfiguration: ClientConfiguration;
 
-	public constructor(baseUrl: string, config?: Partial<Omit<ClientConfiguration, 'baseUrl'>>) {
+	public constructor(
+		baseUrl: string,
+		configuration?: Partial<Omit<ClientConfiguration, 'baseUrl'>>,
+	) {
 		this.#clientConfiguration = {
 			...getDefaultConfiguration(baseUrl),
-			...config,
+			...configuration,
 		};
 	}
 
@@ -39,7 +42,7 @@ class Client {
 		subject: string,
 		options: ObserveEventsOptions,
 	): AsyncGenerator<StoreItem, void, void> {
-		return observeEventsHandle(this, subject, options);
+		return observeEvents(this, subject, options);
 	}
 }
 
