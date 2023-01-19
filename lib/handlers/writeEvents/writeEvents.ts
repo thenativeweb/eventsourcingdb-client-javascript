@@ -4,11 +4,12 @@ import axios from 'axios';
 import { EventContext } from '../../event/EventContext';
 import { retryWithBackoff } from '../../util/retry/retryWithBackoff';
 import { wrapError } from '../../util/error/wrapError';
+import { Precondition } from './Precondition';
 
 const writeEvents = async function (
 	client: Client,
 	eventCandidates: EventCandidate[],
-	preconditions: string[],
+	preconditions: Precondition[],
 ): Promise<EventContext[]> {
 	const requestBody = JSON.stringify({
 		events: eventCandidates,

@@ -7,6 +7,7 @@ import { StoreItem } from './handlers/observeEvents/StoreItem';
 import { EventCandidate } from './event/EventCandidate';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { EventContext } from './event/EventContext';
+import { Precondition } from './handlers/writeEvents/Precondition';
 
 class Client {
 	readonly #clientConfiguration: ClientConfiguration;
@@ -51,7 +52,7 @@ class Client {
 
 	public writeEvents(
 		eventCandidates: EventCandidate[],
-		preconditions: string[],
+		preconditions: Precondition[],
 	): Promise<EventContext[]> {
 		return writeEvents(this, eventCandidates, preconditions);
 	}
