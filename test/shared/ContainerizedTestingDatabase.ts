@@ -31,10 +31,10 @@ class ContainerizedTestingDatabase {
 		this.#container = container;
 	}
 
-	public static async NewContainerizedTestingDatabase(
+	public static async create(
 		image: Image,
 		command: string,
-		options: ClientOptions,
+		options: ClientOptions = {},
 	): Promise<ContainerizedTestingDatabase> {
 		const { client, container } = await ContainerizedTestingDatabase.#start(
 			image,
