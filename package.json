@@ -1,32 +1,48 @@
 {
   "name": "eventsourcingdb",
   "version": "0.0.0",
-  "description": "assertthat provides fluent TDD.",
+  "description": "eventsourcingdb is the JavaScript client for EventSourcingDB.",
   "contributors": [
     {
       "name": "Golo Roden",
       "email": "golo.roden@thenativeweb.io"
+    },
+    {
+      "name": "Noah Hummel",
+      "email": "noah.hummel@thenativeweb.io"
+    },
+    {
+      "name": "Alexander Kampf",
+      "email": "alexander.kampf@thenativeweb.io"
     }
   ],
-  "private": false,
+  "private": true,
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",
   "dependencies": {
-    "@types/node": "18.0.6",
-    "undici": "5.8.0"
+    "axios": "1.2.3",
+    "http-status-codes": "2.2.0",
+    "stream-to-async-iterator": "1.0.0"
   },
   "devDependencies": {
-    "roboter": "13.1.0"
+    "@types/mocha": "10.0.1",
+    "@types/shelljs": "0.8.11",
+    "assertthat": "6.5.2",
+    "mocha": "10.2.0",
+    "rome": "11.0.0",
+    "shelljs": "0.8.5",
+    "ts-node": "10.9.1",
+    "typescript": "4.9.4"
   },
-  "scripts": {},
+  "scripts": {
+    "analyze": "npx rome ci ./**/*",
+    "build": "npx tsc",
+    "format": "npx rome format --write ./**/*",
+    "qa": "npm run analyze && npm run test",
+    "test": "npx mocha --bail --require ts-node/register --recursive --ui tdd ./test/**/*.ts"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/thenativeweb/eventsourcingdb-client-javascript.git"
-  },
-  "keywords": [
-    "eventsourcingdb",
-    "eventsourcing",
-    "client"
-  ],
-  "license": "MIT"
+  }
 }

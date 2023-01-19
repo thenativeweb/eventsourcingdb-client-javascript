@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "declaration": true,
     "esModuleInterop": true,
-    "lib": [ "ES2022" ],
+    "lib": [ "ES2021" ],
     "module": "CommonJS",
     "outDir": "build",
     "resolveJsonModule": true,
