@@ -4,12 +4,12 @@ class LinesDecoder {
 	#textBuffer: string;
 	#decoder: StringDecoder;
 
-	constructor(encoding?: BufferEncoding) {
+	public constructor(encoding?: BufferEncoding) {
 		this.#textBuffer = '';
 		this.#decoder = new StringDecoder(encoding);
 	}
 
-	write(chunk: Buffer): string[] {
+	public write(chunk: Buffer): string[] {
 		this.#textBuffer += this.#decoder.write(chunk);
 
 		const lines: string[] = [];

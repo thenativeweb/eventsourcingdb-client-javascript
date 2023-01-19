@@ -1,4 +1,4 @@
-class CancellationError extends Error {
+class CancelationError extends Error {
 	public constructor(message?: string) {
 		if (message === undefined) {
 			super('Operation was canceled.');
@@ -8,8 +8,8 @@ class CancellationError extends Error {
 	}
 
 	public toString(): string {
-		return `CancellationError: ${this.message}`;
+		return `CancelationError: ${this.message}`;
 	}
 }
 
-export { CancellationError };
+export { CancelationError };
