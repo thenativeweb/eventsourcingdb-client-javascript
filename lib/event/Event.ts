@@ -129,6 +129,24 @@ class Event {
 			unknownObject.predecessorhash,
 		);
 	}
+
+	public toJSON(): Record<string, unknown> {
+		return {
+			specversion: this.specVersion,
+			id: this.id,
+			time: this.time.toISOString(),
+			source: this.source,
+			subject: this.subject,
+			type: this.type,
+			datacontenttype: this.dataContentType,
+			predecessorhash: this.predecessorHash,
+			data: this.data,
+		};
+	}
+
+	public toString(): string {
+		return JSON.stringify(this);
+	}
 }
 
 export { Event };

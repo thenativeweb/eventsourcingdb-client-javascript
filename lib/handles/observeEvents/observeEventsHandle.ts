@@ -44,59 +44,52 @@ const observeEventsHandle = async function* (
 	const stream = response.data;
 	const decoder = new StringDecoder('utf-8');
 	let textBuffer = '';
-	const linesBuffer: string[] = [];
 
 	for await (const chunk of new StreamToAsyncIterator<Buffer>(stream)) {
 		textBuffer += decoder.write(chunk);
-		
-		readLinesFromBuffer:
-			while (true) {
-				for (let charIndex = 0; charIndex < textBuffer.length; charIndex++) {
-					const char = textBuffer[charIndex];
 
-					if (char !== '\n') {
-						continue;
-					}
+		const lines: string[] = [];
 
-					const line = textBuffer.slice(0, charIndex);
-					const rest = textBuffer.slice(charIndex + 1);
+		let lineStart = 0;
+		for (let charIndex = 0; charIndex < textBuffer.length; charIndex++) {
+			const char = textBuffer[charIndex];
 
-					textBuffer = rest;
-					linesBuffer.push(line);
-
-					continue readLinesFromBuffer;
-				}
-
-				break
+			if (char !== '\n') {
+				continue;
 			}
 
-			while (linesBuffer.length > 0) {
-				const line = linesBuffer.shift()!;
-				const message = JSON.parse(line);
+			const line = textBuffer.slice(lineStart, charIndex);
+			lineStart = charIndex + 1;
 
-				if (isHeartbeat(message)) {
-					continue;
-				}
-				if (isObserveEventsError(message)) {
-					throw new Error(
-						`an error occurred during observe events: ${ message.payload.error }`
-					);
-				}
-				if (isItem(message)) {
-					const event = Event.parse(message.payload.event);
+			lines.push(line);
+		}
+		textBuffer = textBuffer.slice(lineStart);
 
-					yield {
-						type: 'item',
-						payload: {
-							event,
-							hash: message.payload.hash,
-						},
-					};
-					continue;
-				}
-				
-				throw new Error(`unexpected stream item: ${ message }`);
+		for (const line of lines) {
+			const message = JSON.parse(line);
+
+			if (isHeartbeat(message)) {
+				continue;
 			}
+			if (isObserveEventsError(message)) {
+				throw new Error(`an error occurred during observe events: ${message.payload.error}`);
+			}
+			if (isItem(message)) {
+				const event = Event.parse(message.payload.event);
+
+				yield {
+					type: 'item',
+					payload: {
+						event,
+						hash: message.payload.hash,
+					},
+				};
+
+				continue;
+			}
+
+			throw new Error(`unexpected stream item: ${message}`);
+		}
 	}
 };
 

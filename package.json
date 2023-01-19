@@ -37,6 +37,7 @@
   "scripts": {
     "analyze": "npx rome ci ./**/*",
     "build": "npx tsc",
+    "format": "npx rome format --write ./**/*",
     "qa": "npm run analyze && npm run test",
     "test": "npx mocha --bail --require ts-node/register --recursive --ui tdd ./test/**/*.ts"
   },
