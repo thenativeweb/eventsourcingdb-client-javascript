@@ -1,15 +1,14 @@
 import axios from 'axios';
-import { StringDecoder } from 'string_decoder';
+import { StatusCodes } from 'http-status-codes';
+import { Readable } from 'stream';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
+import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isHeartbeat } from './isHeartbeat';
 import { isItem } from './isItem';
 import { isObserveEventsError } from './isObserveEventsError';
 import { ObserveEventsOptions } from './ObserveEventsOptions';
-import { Readable } from 'stream';
-import { StatusCodes } from 'http-status-codes';
 import { StoreItem } from './StoreItem';
-import StreamToAsyncIterator from 'stream-to-async-iterator';
 
 const observeEventsHandle = async function* (
 	client: Client,
@@ -42,54 +41,29 @@ const observeEventsHandle = async function* (
 	}
 
 	const stream = response.data;
-	const decoder = new StringDecoder('utf-8');
-	let textBuffer = '';
 
-	for await (const chunk of new StreamToAsyncIterator<Buffer>(stream)) {
-		textBuffer += decoder.write(chunk);
-
-		const lines: string[] = [];
-
-		let lineStart = 0;
-		for (let charIndex = 0; charIndex < textBuffer.length; charIndex++) {
-			const char = textBuffer[charIndex];
-
-			if (char !== '\n') {
-				continue;
-			}
-
-			const line = textBuffer.slice(lineStart, charIndex);
-			lineStart = charIndex + 1;
-
-			lines.push(line);
+	for await (const message of readNdJsonStream(stream)) {
+		if (isHeartbeat(message)) {
+			continue;
 		}
-		textBuffer = textBuffer.slice(lineStart);
-
-		for (const line of lines) {
-			const message = JSON.parse(line);
-
-			if (isHeartbeat(message)) {
-				continue;
-			}
-			if (isObserveEventsError(message)) {
-				throw new Error(`an error occurred during observe events: ${message.payload.error}`);
-			}
-			if (isItem(message)) {
-				const event = Event.parse(message.payload.event);
-
-				yield {
-					type: 'item',
-					payload: {
-						event,
-						hash: message.payload.hash,
-					},
-				};
-
-				continue;
-			}
-
-			throw new Error(`unexpected stream item: ${message}`);
+		if (isObserveEventsError(message)) {
+			throw new Error(`an error occurred during observe events: ${message.payload.error}`);
 		}
+		if (isItem(message)) {
+			const event = Event.parse(message.payload.event);
+
+			yield {
+				type: 'item',
+				payload: {
+					event,
+					hash: message.payload.hash,
+				},
+			};
+
+			continue;
+		}
+
+		throw new Error(`unexpected stream item: ${message}`);
 	}
 };
 
