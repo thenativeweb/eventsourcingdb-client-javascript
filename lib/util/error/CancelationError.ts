@@ -1,5 +1,5 @@
 class CancellationError extends Error {
-	constructor(message?: string) {
+	public constructor(message?: string) {
 		if (message === undefined) {
 			super('Operation was canceled.');
 		}
