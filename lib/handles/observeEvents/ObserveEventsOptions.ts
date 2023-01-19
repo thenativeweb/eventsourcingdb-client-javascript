@@ -10,4 +10,4 @@ interface ObserveFromLatestEvent {
 	ifEventIsMissing: 'read-nothing' | 'wait-for-event';
 }
 
-export { ObserveEventsOptions };
+export { ObserveEventsOptions, ObserveFromLatestEvent };
