@@ -1,5 +1,5 @@
 interface Heartbeat {
-  type: 'heartbeat';
+	type: 'heartbeat';
 }
 
 export { Heartbeat };

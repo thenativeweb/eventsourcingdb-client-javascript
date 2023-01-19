@@ -1,8 +1,8 @@
 interface ObserveEventsError {
-  type: 'error';
-  payload: {
-    error: string;
-  };
+	type: 'error';
+	payload: {
+		error: string;
+	};
 }
 
 export { ObserveEventsError };

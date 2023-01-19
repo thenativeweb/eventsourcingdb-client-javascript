@@ -2,13 +2,13 @@ import { isObject } from '../../util/isObject';
 import { Item } from './Item';
 
 const isItem = function (message: unknown): message is Item {
-  if (!isObject(message) || message.type !== 'item') {
-    return false;
-  }
+	if (!isObject(message) || message.type !== 'item') {
+		return false;
+	}
 
-  const { payload } = message;
+	const { payload } = message;
 
-  return isObject(payload) && isObject(payload.event) && typeof payload.hash === 'string';
+	return isObject(payload) && isObject(payload.event) && typeof payload.hash === 'string';
 };
 
 export { isItem };

@@ -1,0 +1,29 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  assignees:
+  - thenativeweb/internal_eventsourcingdb_dep
+  labels:
+  - Dependencies
+  versioning-strategy: increase
+  allow:
+  - dependency-type: direct
+  commit-message:
+    prefix: chore
+    prefix-development: chore
+
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+  open-pull-requests-limit: 10
+  assignees:
+  - thenativeweb/internal_eventsourcingdb_dep
+  labels:
+  - Dependencies
+  commit-message:
+    prefix: chore

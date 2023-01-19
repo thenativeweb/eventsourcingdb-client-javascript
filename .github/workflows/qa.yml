@@ -1,0 +1,30 @@
+name: QA
+
+on: pull_request
+
+jobs:
+  qa:
+    name: QA
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node-version: [ '19.x' ]
+        os: [ ubuntu-latest, macos-latest ]
+
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: |
+        npm install
+    - name: Run QA
+      run: |
+        npm run qa
+    - name: Run build
+      run: |
+        npm run build
