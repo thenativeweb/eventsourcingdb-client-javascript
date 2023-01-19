@@ -8,17 +8,15 @@ import { EventCandidate } from './event/EventCandidate';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { EventContext } from './event/EventContext';
 import { Precondition } from './handlers/writeEvents/Precondition';
+import { ClientOptions } from './ClientOptions';
 
 class Client {
 	readonly #clientConfiguration: ClientConfiguration;
 
-	public constructor(
-		baseUrl: string,
-		configuration?: Partial<Omit<ClientConfiguration, 'baseUrl'>>,
-	) {
+	public constructor(baseUrl: string, options?: ClientOptions) {
 		this.#clientConfiguration = {
 			...getDefaultConfiguration(baseUrl),
-			...configuration,
+			...options,
 		};
 	}
 
@@ -55,6 +53,15 @@ class Client {
 		preconditions: Precondition[],
 	): Promise<EventContext[]> {
 		return writeEvents(this, eventCandidates, preconditions);
+	}
+
+	// TODO: Implement it for real
+	public async ping(): Promise<void> {
+		await new Promise<void>((resolve) => {
+			setTimeout(() => {
+				resolve();
+			}, 5_000);
+		});
 	}
 }
 
