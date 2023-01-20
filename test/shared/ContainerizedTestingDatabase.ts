@@ -5,17 +5,17 @@ import { ClientOptions } from '../../lib/ClientOptions';
 import { retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
 
 class ContainerizedTestingDatabase {
-	readonly #command: string;
+	private readonly command: string;
 
-	#container: Container;
+	private container: Container;
 
-	#client: Client;
+	private client: Client;
 
-	readonly #image: Image;
+	private readonly image: Image;
 
-	readonly #options: ClientOptions;
+	private readonly options: ClientOptions;
 
-	#isFirstRun = true;
+	private isFirstRun = true;
 
 	private constructor(
 		image: Image,
@@ -24,11 +24,11 @@ class ContainerizedTestingDatabase {
 		client: Client,
 		container: Container,
 	) {
-		this.#command = command;
-		this.#image = image;
-		this.#options = options;
-		this.#client = client;
-		this.#container = container;
+		this.command = command;
+		this.image = image;
+		this.options = options;
+		this.client = client;
+		this.container = container;
 	}
 
 	public static async create(
@@ -36,16 +36,12 @@ class ContainerizedTestingDatabase {
 		command: string,
 		options: ClientOptions = {},
 	): Promise<ContainerizedTestingDatabase> {
-		const { client, container } = await ContainerizedTestingDatabase.#start(
-			image,
-			command,
-			options,
-		);
+		const { client, container } = await ContainerizedTestingDatabase.start(image, command, options);
 
 		return new ContainerizedTestingDatabase(image, command, options, client, container);
 	}
 
-	static async #start(image: Image, command: string, options: ClientOptions) {
+	private static async start(image: Image, command: string, options: ClientOptions) {
 		const container = image.run(command, true, true);
 		const exposedPort = container.getExposedPort(3_000);
 		const baseUrl = `http://localhost:${exposedPort}`;
@@ -62,32 +58,32 @@ class ContainerizedTestingDatabase {
 		};
 	}
 
-	async #restart() {
-		this.#container.kill();
+	private async restart() {
+		this.container.kill();
 
-		const { container, client } = await ContainerizedTestingDatabase.#start(
-			this.#image,
-			this.#command,
-			this.#options,
+		const { container, client } = await ContainerizedTestingDatabase.start(
+			this.image,
+			this.command,
+			this.options,
 		);
 
-		this.#container = container;
-		this.#client = client;
+		this.container = container;
+		this.client = client;
 	}
 
 	public stop() {
-		this.#container.kill();
+		this.container.kill();
 	}
 
 	public async getClient(): Promise<Client> {
-		if (this.#isFirstRun) {
-			this.#isFirstRun = false;
-			return this.#client;
+		if (this.isFirstRun) {
+			this.isFirstRun = false;
+			return this.client;
 		}
 
-		await this.#restart();
+		await this.restart();
 
-		return this.#client;
+		return this.client;
 	}
 }
 

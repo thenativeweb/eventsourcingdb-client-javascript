@@ -1,14 +1,14 @@
 import { Client } from '../../lib';
 
 class TestingDatabase {
-	readonly #client: Client;
+	private readonly client: Client;
 
 	constructor(client: Client) {
-		this.#client = client;
+		this.client = client;
 	}
 
 	public async getClient(): Promise<Client> {
-		return this.#client;
+		return this.client;
 	}
 }
 

@@ -1,33 +1,33 @@
 import { StringDecoder } from 'string_decoder';
 
 class LinesDecoder {
-	#textBuffer: string;
-	#decoder: StringDecoder;
+	private textBuffer: string;
+	private readonly decoder: StringDecoder;
 
 	public constructor(encoding?: BufferEncoding) {
-		this.#textBuffer = '';
-		this.#decoder = new StringDecoder(encoding);
+		this.textBuffer = '';
+		this.decoder = new StringDecoder(encoding);
 	}
 
 	public write(chunk: Buffer): string[] {
-		this.#textBuffer += this.#decoder.write(chunk);
+		this.textBuffer += this.decoder.write(chunk);
 
 		const lines: string[] = [];
 
 		let lineStart = 0;
-		for (let charIndex = 0; charIndex < this.#textBuffer.length; charIndex++) {
-			const char = this.#textBuffer[charIndex];
+		for (let charIndex = 0; charIndex < this.textBuffer.length; charIndex++) {
+			const char = this.textBuffer[charIndex];
 
 			if (char !== '\n') {
 				continue;
 			}
 
-			const line = this.#textBuffer.slice(lineStart, charIndex);
+			const line = this.textBuffer.slice(lineStart, charIndex);
 			lineStart = charIndex + 1;
 
 			lines.push(line);
 		}
-		this.#textBuffer = this.#textBuffer.slice(lineStart);
+		this.textBuffer = this.textBuffer.slice(lineStart);
 
 		return lines;
 	}

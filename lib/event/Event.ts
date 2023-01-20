@@ -3,7 +3,7 @@ import { UnknownObject } from '../util/UnknownObject';
 import { EventContext } from './EventContext';
 
 class Event extends EventContext {
-	readonly #data: Record<string, unknown>;
+	public readonly data: Record<string, unknown>;
 
 	private constructor(
 		data: Record<string, unknown>,
@@ -17,11 +17,7 @@ class Event extends EventContext {
 		predecessorHash: string,
 	) {
 		super(source, subject, type, specVersion, id, time, dataContentType, predecessorHash);
-		this.#data = data;
-	}
-
-	public get data(): Record<string, unknown> {
-		return this.#data;
+		this.data = data;
 	}
 
 	public static parse(unknownObject: UnknownObject): Event {

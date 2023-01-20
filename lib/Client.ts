@@ -11,17 +11,13 @@ import { Precondition } from './handlers/writeEvents/Precondition';
 import { ClientOptions } from './ClientOptions';
 
 class Client {
-	readonly #clientConfiguration: ClientConfiguration;
+	public readonly clientConfiguration: ClientConfiguration;
 
 	public constructor(baseUrl: string, options?: ClientOptions) {
-		this.#clientConfiguration = {
+		this.clientConfiguration = {
 			...getDefaultConfiguration(baseUrl),
 			...options,
 		};
-	}
-
-	public get clientConfiguration(): ClientConfiguration {
-		return this.#clientConfiguration;
 	}
 
 	public validateProtocolVersion(httpStatusCode: number, headers: Record<string, unknown>): void {

@@ -3,21 +3,21 @@ import { validateType } from './validateType';
 import { UnknownObject } from '../util/UnknownObject';
 
 class EventContext {
-	readonly #source: string;
+	public readonly source: string;
 
-	readonly #subject: string;
+	public readonly subject: string;
 
-	readonly #type: string;
+	public readonly type: string;
 
-	readonly #specVersion: string;
+	public readonly specVersion: string;
 
-	readonly #id: string;
+	public readonly id: string;
 
-	readonly #time: Date;
+	public readonly time: Date;
 
-	readonly #dataContentType: string;
+	public readonly dataContentType: string;
 
-	readonly #predecessorHash: string;
+	public readonly predecessorHash: string;
 
 	protected constructor(
 		source: string,
@@ -29,46 +29,14 @@ class EventContext {
 		dataContentType: string,
 		predecessorHash: string,
 	) {
-		this.#source = source;
-		this.#subject = subject;
-		this.#type = type;
-		this.#specVersion = specVersion;
-		this.#id = id;
-		this.#time = time;
-		this.#dataContentType = dataContentType;
-		this.#predecessorHash = predecessorHash;
-	}
-
-	public get source(): string {
-		return this.#source;
-	}
-
-	public get subject(): string {
-		return this.#subject;
-	}
-
-	public get type(): string {
-		return this.#type;
-	}
-
-	public get specVersion(): string {
-		return this.#specVersion;
-	}
-
-	public get id(): string {
-		return this.#id;
-	}
-
-	public get time(): Date {
-		return this.#time;
-	}
-
-	public get dataContentType(): string {
-		return this.#dataContentType;
-	}
-
-	public get predecessorHash(): string {
-		return this.#predecessorHash;
+		this.source = source;
+		this.subject = subject;
+		this.type = type;
+		this.specVersion = specVersion;
+		this.id = id;
+		this.time = time;
+		this.dataContentType = dataContentType;
+		this.predecessorHash = predecessorHash;
 	}
 
 	public static parse(unknownObject: UnknownObject): EventContext {
