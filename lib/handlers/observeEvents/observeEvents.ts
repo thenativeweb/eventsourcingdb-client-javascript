@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
+import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { retryWithBackoff } from '../../util/retry/retryWithBackoff';
@@ -41,7 +42,7 @@ const observeEvents = async function* (
 					signal: abortController.signal,
 				}),
 			),
-		async (error) => new Error('Failed to observe events.', { cause: error }),
+		async (error) => new ChainedError('Failed to observe events.', error),
 	);
 
 	client.validateProtocolVersion(response.status, response.headers);
@@ -59,7 +60,7 @@ const observeEvents = async function* (
 			continue;
 		}
 		if (isObserveEventsError(message)) {
-			throw new Error(`Failed to observe events because of an error '${message.payload.error}'.`);
+			throw new ChainedError('Failed to observe events.', new Error(message.payload.error));
 		}
 		if (isItem(message)) {
 			const event = Event.parse(message.payload.event);

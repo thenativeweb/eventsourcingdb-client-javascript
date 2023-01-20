@@ -1,8 +1,8 @@
-import { receiveMessageOnPort } from 'worker_threads';
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import axios from 'axios';
 import { EventContext } from '../../event/EventContext';
+import { ChainedError } from '../../util/error/ChainedError';
 import { retryWithBackoff } from '../../util/retry/retryWithBackoff';
 import { wrapError } from '../../util/error/wrapError';
 import { Precondition } from './Precondition';
@@ -37,7 +37,7 @@ const writeEvents = async function (
 			retryWithBackoff(new AbortController(), client.clientConfiguration.maxTries, async () =>
 				httpClient.post('/api/write-events', requestBody),
 			),
-		async (error) => new Error('Failed to write events.', { cause: error }),
+		async (error) => new ChainedError('Failed to write events.', error),
 	);
 
 	if (!Array.isArray(response.data)) {
