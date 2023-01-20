@@ -5,9 +5,8 @@ import { randomUUID } from 'crypto';
 import { TestingDatabase } from './TestingDatabase';
 import { Client } from '../../lib';
 
-const setup = async function (dockerfileDirectory: string): Promise<Database> {
+const startDatabase = async function (): Promise<Database> {
 	const image = new Image('eventsourcingdb', 'latest');
-	image.build(dockerfileDirectory);
 
 	const accessToken = randomUUID();
 	const withAuthorization = await ContainerizedTestingDatabase.create(
@@ -28,4 +27,4 @@ const setup = async function (dockerfileDirectory: string): Promise<Database> {
 	};
 };
 
-export { setup };
+export { startDatabase };

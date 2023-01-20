@@ -9,13 +9,11 @@ class ContainerizedTestingDatabase {
 
 	private container: Container;
 
-	private client: Client;
+	public readonly client: Client;
 
 	private readonly image: Image;
 
 	private readonly options: ClientOptions;
-
-	private isFirstRun = true;
 
 	private constructor(
 		image: Image,
@@ -58,32 +56,8 @@ class ContainerizedTestingDatabase {
 		};
 	}
 
-	private async restart() {
+	public stop(): void {
 		this.container.kill();
-
-		const { container, client } = await ContainerizedTestingDatabase.start(
-			this.image,
-			this.command,
-			this.options,
-		);
-
-		this.container = container;
-		this.client = client;
-	}
-
-	public stop() {
-		this.container.kill();
-	}
-
-	public async getClient(): Promise<Client> {
-		if (this.isFirstRun) {
-			this.isFirstRun = false;
-			return this.client;
-		}
-
-		await this.restart();
-
-		return this.client;
 	}
 }
 

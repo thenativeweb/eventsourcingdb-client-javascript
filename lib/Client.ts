@@ -46,7 +46,7 @@ class Client {
 
 	public writeEvents(
 		eventCandidates: EventCandidate[],
-		preconditions: Precondition[],
+		preconditions: Precondition[] = [],
 	): Promise<EventContext[]> {
 		return writeEvents(this, eventCandidates, preconditions);
 	}
