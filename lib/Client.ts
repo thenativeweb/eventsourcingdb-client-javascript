@@ -5,6 +5,7 @@ import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOpti
 import { StatusCodes } from 'http-status-codes';
 import { StoreItem } from './handlers/observeEvents/StoreItem';
 import { EventCandidate } from './event/EventCandidate';
+import { ping } from './handlers/ping/ping';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { EventContext } from './event/EventContext';
 import { Precondition } from './handlers/writeEvents/Precondition';
@@ -51,13 +52,8 @@ class Client {
 		return writeEvents(this, eventCandidates, preconditions);
 	}
 
-	// TODO: Implement it for real
 	public async ping(): Promise<void> {
-		await new Promise<void>((resolve) => {
-			setTimeout(() => {
-				resolve();
-			}, 5_000);
-		});
+		await ping(this);
 	}
 }
 

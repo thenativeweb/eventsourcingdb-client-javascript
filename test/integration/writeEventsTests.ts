@@ -37,4 +37,32 @@ suite('Client.writeEvents', function () {
 			})
 			.is.throwingAsync();
 	});
+
+	test('returns an error if a candidate subject is malformed.', async (): Promise<void> => {
+		const client = database.withoutAuthorization.client;
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					testSource.newEvent(
+						'foobar',
+						events.registered.janeDoe.type,
+						events.registered.janeDoe.data,
+					),
+				]);
+			})
+			.is.throwingAsync(/Malformed event subject/gu);
+	});
+
+	test('returns an error if a candidate type is malformed.', async (): Promise<void> => {
+		const client = database.withoutAuthorization.client;
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					testSource.newEvent('/foobar', 'haram', events.registered.janeDoe.data),
+				]);
+			})
+			.is.throwingAsync(/Malformed event type/gu);
+	});
 });

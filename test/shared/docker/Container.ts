@@ -8,7 +8,7 @@ class Container {
 	}
 
 	public kill(): void {
-		const { code, stderr } = exec(`docker kill ${this.id}`);
+		const { code, stderr } = exec(`docker kill ${this.id}`, { silent: true });
 
 		if (code !== 0) {
 			throw new Error(`Kill failed with output: ${stderr}`);
@@ -18,6 +18,7 @@ class Container {
 	public getExposedPort(internalPort: number): number {
 		const { code, stderr, stdout } = exec(
 			`docker inspect --format='{{(index (index .NetworkSettings.Ports "${internalPort}/tcp") 0).HostPort}}' ${this.id}`,
+			{ silent: true },
 		);
 
 		if (code !== 0) {

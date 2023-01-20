@@ -1,3 +1,4 @@
+import { receiveMessageOnPort } from 'worker_threads';
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import axios from 'axios';
@@ -11,6 +12,10 @@ const writeEvents = async function (
 	eventCandidates: EventCandidate[],
 	preconditions: Precondition[],
 ): Promise<EventContext[]> {
+	for (const eventCandidate of eventCandidates) {
+		eventCandidate.validate();
+	}
+
 	const requestBody = JSON.stringify({
 		events: eventCandidates,
 		preconditions,
