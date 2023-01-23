@@ -2,7 +2,6 @@ import { ClientConfiguration } from './ClientConfiguration';
 import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
 import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
-import { StatusCodes } from 'http-status-codes';
 import { readEvents } from './handlers/readEvents/readEvents';
 import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
 import { StoreItem } from './handlers/StoreItem';
