@@ -1,12 +1,8 @@
-import axios from 'axios';
-import { StatusCodes } from 'http-status-codes';
-import { Readable } from 'stream';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
-import { retryWithBackoff } from '../../util/retry/retryWithBackoff';
 import { isHeartbeat } from './isHeartbeat';
 import { isItem } from './isItem';
 import { isObserveEventsError } from './isObserveEventsError';
@@ -24,32 +20,16 @@ const observeEvents = async function* (
 		options,
 	});
 
-	const httpClient = axios.create({
-		baseURL: client.configuration.baseUrl,
-		timeout: client.configuration.timeoutMilliseconds,
-		headers: {
-			Authorization: `Bearer ${client.configuration.accessToken}`,
-			'X-EventSourcingDB-Protocol-Version': client.configuration.protocolVersion,
-			'Content-Type': 'application/json',
-		},
-		responseType: 'stream',
-	});
-
 	const response = await wrapError(
 		async () =>
-			retryWithBackoff(abortController, client.configuration.maxTries, async () =>
-				httpClient.post<Readable>('/api/observe-events', requestBody, {
-					signal: abortController.signal,
-				}),
-			),
+			client.httpClient.post({
+				path: '/api/observe-events',
+				requestBody,
+				responseType: 'stream',
+				abortController,
+			}),
 		async (error) => new ChainedError('Failed to observe events.', error),
 	);
-
-	client.validateProtocolVersion(response.status, response.headers);
-
-	if (response.status !== StatusCodes.OK) {
-		throw new Error(`Failed to observe events, received status '${response.status}'.`);
-	}
 
 	const stream = response.data;
 

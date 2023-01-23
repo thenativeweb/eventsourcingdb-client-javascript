@@ -10,31 +10,18 @@ import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { EventContext } from './event/EventContext';
 import { Precondition } from './handlers/writeEvents/Precondition';
 import { ClientOptions } from './ClientOptions';
+import { HttpClient } from './http/HttpClient';
 
 class Client {
 	public readonly configuration: ClientConfiguration;
+	public readonly httpClient: HttpClient;
 
 	public constructor(baseUrl: string, options?: ClientOptions) {
 		this.configuration = {
 			...getDefaultClientConfiguration(baseUrl),
 			...options,
 		};
-	}
-
-	public validateProtocolVersion(httpStatusCode: number, headers: Record<string, unknown>): void {
-		if (httpStatusCode !== StatusCodes.UNPROCESSABLE_ENTITY) {
-			return;
-		}
-
-		let serverProtocolVersion = headers['X-EventSourcingDB-Protocol-Version'];
-
-		if (serverProtocolVersion === '') {
-			serverProtocolVersion = 'unknown version';
-		}
-
-		throw new Error(
-			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.configuration.protocolVersion}.'`,
-		);
+		this.httpClient = new HttpClient(this);
 	}
 
 	public observeEvents(
