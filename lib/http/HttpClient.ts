@@ -29,7 +29,7 @@ class HttpClient {
 		this.dbClient = dbClient;
 	}
 
-	private getDefaultRequestConfig(skipAuthorization: boolean = false): CreateAxiosDefaults {
+	private getDefaultRequestConfig(withAuthorization: boolean = true): CreateAxiosDefaults {
 		let configuration: CreateAxiosDefaults = {
 			baseURL: this.dbClient.configuration.baseUrl,
 			timeout: this.dbClient.configuration.timeoutMilliseconds,
@@ -38,7 +38,7 @@ class HttpClient {
 			},
 		};
 
-		if (!skipAuthorization && this.dbClient.configuration.accessToken !== undefined) {
+		if (withAuthorization && this.dbClient.configuration.accessToken !== undefined) {
 			configuration = HttpClient.setAuthorization(
 				configuration,
 				this.dbClient.configuration.accessToken,
@@ -130,7 +130,7 @@ class HttpClient {
 		abortController?: AbortController;
 		skipAuthorization?: boolean;
 	}): Response<TResponseType> {
-		let configuration = this.getDefaultRequestConfig(options.skipAuthorization);
+		let configuration = this.getDefaultRequestConfig(!options.skipAuthorization);
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
 		const axiosInstance = axios.create(configuration);
 
