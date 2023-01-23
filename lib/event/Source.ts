@@ -8,7 +8,7 @@ class Source {
 		this.source = source;
 	}
 
-	public newEventCandidate(subject: string, type: string, data: UnknownObject): EventCandidate {
+	public newEvent(subject: string, type: string, data: UnknownObject): EventCandidate {
 		return new EventCandidate(this.source, subject, type, data);
 	}
 }
