@@ -274,18 +274,14 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if incorrect options are used.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				fromLatestEvent: {
-					subject: '',
-					type: 'com.foobar.barbaz',
-					ifEventIsMissing: 'read-everything',
-				},
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: '',
+				type: 'com.foobar.barbaz',
+				ifEventIsMissing: 'read-everything',
 			},
-		);
+		});
 
 		await assert
 			.that(async () => {
@@ -294,5 +290,22 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync("Malformed event subject, '' must be an absolute, slash-separated path.");
+
+		result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: '/',
+				type: 'com.',
+				ifEventIsMissing: 'read-everything',
+			},
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync("Malformed event type, 'com.' must be reverse domain name.");
 	});
 });
