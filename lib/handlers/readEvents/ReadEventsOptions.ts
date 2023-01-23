@@ -4,9 +4,9 @@ import { validateType } from '../../event/validateType';
 interface ReadEventsOptions {
 	recursive: boolean;
 	chronological?: boolean;
-	lowerBoundId?: number;
-	upperBoundId?: number;
-	fromLatestEvent: ReadFromLatestEvent;
+	lowerBoundId?: string;
+	upperBoundId?: string;
+	fromLatestEvent?: ReadFromLatestEvent;
 }
 
 interface ReadFromLatestEvent {

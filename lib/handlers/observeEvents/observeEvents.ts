@@ -37,8 +37,6 @@ const observeEvents = async function* (
 
 	const stream = response.data;
 
-	// TODO: we might need to close the stream, if axios doesn't already do that
-	// when the AbortController is cancelled.
 	for await (const message of readNdJsonStream(stream)) {
 		if (isHeartbeat(message)) {
 			continue;

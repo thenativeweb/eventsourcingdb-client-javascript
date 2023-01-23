@@ -1,3 +1,4 @@
+import { CanceledError } from 'axios';
 import { Client } from '../../Client';
 import { validateSubject } from '../../event/validateSubject';
 import { ChainedError } from '../../util/error/ChainedError';
@@ -32,7 +33,13 @@ const readEvents = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async (error) => new ChainedError('Failed to read events.', error),
+		async (error) => {
+			if (error instanceof CanceledError) {
+				return error;
+			}
+
+			return new ChainedError('Failed to read events.', error);
+		},
 	);
 
 	const stream = response.data;

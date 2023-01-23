@@ -3,7 +3,7 @@ import { validateType } from '../../event/validateType';
 
 interface ObserveEventsOptions {
 	recursive: boolean;
-	lowerBoundId?: number;
+	lowerBoundId?: string;
 	fromLatestEvent?: ObserveFromLatestEvent;
 }
 

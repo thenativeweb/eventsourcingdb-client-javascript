@@ -6,7 +6,7 @@ const validateSubject = function (subject: string): void {
 
 	if (!didMatch) {
 		throw new Error(
-			`Malformed event subject '${subject}', must be an absolute, slash-separated path.`,
+			`Malformed event subject, '${subject}' must be an absolute, slash-separated path.`,
 		);
 	}
 };
