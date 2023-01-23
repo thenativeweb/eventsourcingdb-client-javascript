@@ -6,4 +6,4 @@ export {
 	ObserveEventsOptions,
 	ObserveFromLatestEvent,
 } from './handlers/observeEvents/ObserveEventsOptions';
-export { StoreItem } from './handlers/observeEvents/StoreItem';
+export { StoreItem } from './handlers/StoreItem';

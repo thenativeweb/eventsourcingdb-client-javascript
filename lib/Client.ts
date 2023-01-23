@@ -3,7 +3,9 @@ import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
 import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
-import { StoreItem } from './handlers/observeEvents/StoreItem';
+import { readEvents } from './handlers/readEvents/readEvents';
+import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
+import { StoreItem } from './handlers/StoreItem';
 import { EventCandidate } from './event/EventCandidate';
 import { ping } from './handlers/ping/ping';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
@@ -32,7 +34,15 @@ class Client {
 		return observeEvents(this, abortController, subject, options);
 	}
 
-	public writeEvents(
+	public readEvents(
+		abortController: AbortController,
+		subject: string,
+		options: ReadEventsOptions,
+	): AsyncGenerator<StoreItem, void, void> {
+		return readEvents(this, abortController, subject, options);
+	}
+
+	public async writeEvents(
 		eventCandidates: EventCandidate[],
 		preconditions: Precondition[] = [],
 	): Promise<EventContext[]> {

@@ -1,4 +1,4 @@
-import { UnknownObject } from '../../util/UnknownObject';
+import { UnknownObject } from '../util/UnknownObject';
 
 interface Item {
 	type: 'item';

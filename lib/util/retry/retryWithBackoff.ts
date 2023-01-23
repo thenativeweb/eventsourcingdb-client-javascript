@@ -1,5 +1,5 @@
+import { CanceledError } from 'axios';
 import { clearTimeout } from 'timers';
-import { CancelationError } from '../error/CancelationError';
 import { RetryError } from './RetryError';
 
 const getRandomizedDuration = function (
@@ -36,7 +36,7 @@ const retryWithBackoff = async function <TReturn = void>(
 
 			abortController.signal.addEventListener('abort', () => {
 				clearTimeout(timer);
-				reject(new CancelationError());
+				reject(new CanceledError());
 			});
 		});
 

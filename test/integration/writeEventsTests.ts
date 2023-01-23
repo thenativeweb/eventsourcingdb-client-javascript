@@ -9,7 +9,7 @@ import { prefixEventType } from '../shared/events/type';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
 
-suite('Client.writeEvents', function () {
+suite('Client.writeEvents()', function () {
 	this.timeout(20_000);
 	let database: Database;
 	const source = new Source(testSource);
