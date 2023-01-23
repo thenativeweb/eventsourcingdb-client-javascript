@@ -1,4 +1,4 @@
-import { isObject } from '../../util/isObject';
+import { isObject } from '../util/isObject';
 import { Item } from './Item';
 
 const isItem = function (message: unknown): message is Item {
