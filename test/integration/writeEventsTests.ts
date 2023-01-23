@@ -1,4 +1,5 @@
 import { assert } from 'assertthat';
+import { StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
 import { buildDatabase } from '../shared/buildDatabase';
@@ -248,8 +249,17 @@ suite('Client.writeEvents()', function () {
 				})
 				.is.not.throwingAsync();
 
-			//TODO: get lastEventId from client.readEvents()
-			const lastEventId = '1';
+			const readEventsResult = database.withoutAuthorization.client.readEvents(
+				new AbortController(),
+				'/users/registered',
+				{ recursive: false },
+			);
+
+			const readItems: StoreItem[] = [];
+			for await (const item of readEventsResult) {
+				readItems.push(item);
+			}
+			const lastEventId = readItems[readItems.length - 1].event.id;
 
 			await assert
 				.that(async () => {
