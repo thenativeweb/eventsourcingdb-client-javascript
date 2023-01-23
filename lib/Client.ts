@@ -1,41 +1,27 @@
 import { ClientConfiguration } from './ClientConfiguration';
-import { getDefaultConfiguration } from './getDefaultConfiguration';
+import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
 import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
 import { StoreItem } from './handlers/observeEvents/StoreItem';
+import { EventCandidate } from './event/EventCandidate';
+import { ping } from './handlers/ping/ping';
+import { writeEvents } from './handlers/writeEvents/writeEvents';
+import { EventContext } from './event/EventContext';
+import { Precondition } from './handlers/writeEvents/Precondition';
+import { ClientOptions } from './ClientOptions';
+import { HttpClient } from './http/HttpClient';
 
 class Client {
-	readonly #clientConfiguration: ClientConfiguration;
+	public readonly configuration: ClientConfiguration;
+	public readonly httpClient: HttpClient;
 
-	public constructor(
-		baseUrl: string,
-		configuration?: Partial<Omit<ClientConfiguration, 'baseUrl'>>,
-	) {
-		this.#clientConfiguration = {
-			...getDefaultConfiguration(baseUrl),
-			...configuration,
+	public constructor(baseUrl: string, options?: ClientOptions) {
+		this.configuration = {
+			...getDefaultClientConfiguration(baseUrl),
+			...options,
 		};
-	}
-
-	public get clientConfiguration(): ClientConfiguration {
-		return this.#clientConfiguration;
-	}
-
-	public validateProtocolVersion(httpStatusCode: number, headers: Record<string, unknown>): void {
-		if (httpStatusCode !== StatusCodes.UNPROCESSABLE_ENTITY) {
-			return;
-		}
-
-		let serverProtocolVersion = headers['X-EventSourcingDB-Protocol-Version'];
-
-		if (serverProtocolVersion === '') {
-			serverProtocolVersion = 'unknown version';
-		}
-
-		throw new Error(
-			`protocol version mismatch, server '${serverProtocolVersion}', client '${this.clientConfiguration.protocolVersion}'`,
-		);
+		this.httpClient = new HttpClient(this);
 	}
 
 	public observeEvents(
@@ -44,6 +30,17 @@ class Client {
 		options: ObserveEventsOptions,
 	): AsyncGenerator<StoreItem, void, void> {
 		return observeEvents(this, abortController, subject, options);
+	}
+
+	public writeEvents(
+		eventCandidates: EventCandidate[],
+		preconditions: Precondition[] = [],
+	): Promise<EventContext[]> {
+		return writeEvents(this, eventCandidates, preconditions);
+	}
+
+	public async ping(): Promise<void> {
+		await ping(this);
 	}
 }
 

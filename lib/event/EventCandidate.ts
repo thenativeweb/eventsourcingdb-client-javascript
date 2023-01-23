@@ -1,36 +1,21 @@
+import { UnknownObject } from '../util/UnknownObject';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
 
 class EventCandidate {
-	readonly #data: Record<string, unknown>;
+	public readonly data: Record<string, unknown>;
 
-	readonly #source: string;
+	public readonly source: string;
 
-	readonly #subject: string;
+	public readonly subject: string;
 
-	readonly #type: string;
+	public readonly type: string;
 
-	public constructor(data: Record<string, unknown>, source: string, subject: string, type: string) {
-		this.#data = data;
-		this.#source = source;
-		this.#subject = subject;
-		this.#type = type;
-	}
-
-	public get data(): Record<string, unknown> {
-		return this.#data;
-	}
-
-	public get source(): string {
-		return this.#source;
-	}
-
-	public get subject(): string {
-		return this.#subject;
-	}
-
-	public get type(): string {
-		return this.#type;
+	public constructor(source: string, subject: string, type: string, data: UnknownObject) {
+		this.data = data;
+		this.source = source;
+		this.subject = subject;
+		this.type = type;
 	}
 
 	public validate(): void {

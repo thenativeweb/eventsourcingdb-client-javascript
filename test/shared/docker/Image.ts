@@ -23,7 +23,7 @@ class Image {
 
 		dockerCommand += ` ${this.getFullName()} ${command}`;
 
-		const { code, stdout, stderr } = exec(dockerCommand);
+		const { code, stdout, stderr } = exec(dockerCommand, { silent: true });
 
 		if (code !== 0) {
 			throw new Error(`Run failed with output: ${stderr}`);
@@ -35,7 +35,9 @@ class Image {
 	}
 
 	public build(directory: string): void {
-		const { code, stderr } = exec(`docker build -t ${this.getFullName()} ${directory}`);
+		const { code, stderr } = exec(`docker build -t ${this.getFullName()} ${directory}`, {
+			silent: true,
+		});
 
 		if (code !== 0) {
 			throw new Error(`Build failed with output: ${stderr}`);
