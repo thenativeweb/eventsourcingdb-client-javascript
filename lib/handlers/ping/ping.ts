@@ -5,11 +5,11 @@ import { wrapError } from '../../util/error/wrapError';
 
 const ping = async function (client: Client): Promise<void> {
 	const httpClient = axios.create({
-		baseURL: client.clientConfiguration.baseUrl,
-		timeout: client.clientConfiguration.timeoutMilliseconds,
+		baseURL: client.configuration.baseUrl,
+		timeout: client.configuration.timeoutMilliseconds,
 		headers: {
-			Authorization: `Bearer ${client.clientConfiguration.accessToken}`,
-			'X-EventSourcingDB-Protocol-Version': client.clientConfiguration.protocolVersion,
+			Authorization: `Bearer ${client.configuration.accessToken}`,
+			'X-EventSourcingDB-Protocol-Version': client.configuration.protocolVersion,
 			'Content-Type': 'application/json',
 		},
 		responseType: 'json',

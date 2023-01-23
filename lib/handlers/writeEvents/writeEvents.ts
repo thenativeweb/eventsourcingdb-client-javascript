@@ -22,11 +22,11 @@ const writeEvents = async function (
 	});
 
 	const httpClient = axios.create({
-		baseURL: client.clientConfiguration.baseUrl,
-		timeout: client.clientConfiguration.timeoutMilliseconds,
+		baseURL: client.configuration.baseUrl,
+		timeout: client.configuration.timeoutMilliseconds,
 		headers: {
-			Authorization: `Bearer ${client.clientConfiguration.accessToken}`,
-			'X-EventSourcingDB-Protocol-Version': client.clientConfiguration.protocolVersion,
+			Authorization: `Bearer ${client.configuration.accessToken}`,
+			'X-EventSourcingDB-Protocol-Version': client.configuration.protocolVersion,
 			'Content-Type': 'application/json',
 		},
 		responseType: 'json',
@@ -34,7 +34,7 @@ const writeEvents = async function (
 
 	const response = await wrapError(
 		async () =>
-			retryWithBackoff(new AbortController(), client.clientConfiguration.maxTries, async () =>
+			retryWithBackoff(new AbortController(), client.configuration.maxTries, async () =>
 				httpClient.post('/api/write-events', requestBody),
 			),
 		async (error) => new ChainedError('Failed to write events.', error),

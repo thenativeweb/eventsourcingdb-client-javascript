@@ -32,7 +32,7 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent(
+					source.newEventCandidate(
 						'/foobar',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
@@ -48,7 +48,11 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent('foobar', events.registered.janeDoe.type, events.registered.janeDoe.data),
+					source.newEventCandidate(
+						'foobar',
+						events.registered.janeDoe.type,
+						events.registered.janeDoe.data,
+					),
 				]);
 			})
 			.is.throwingAsync(/Malformed event subject/gu);
@@ -60,7 +64,7 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent('/foobar', 'haram', events.registered.janeDoe.data),
+					source.newEventCandidate('/foobar', 'haram', events.registered.janeDoe.data),
 				]);
 			})
 			.is.throwingAsync(/Malformed event type/gu);
@@ -76,7 +80,7 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent(
+					source.newEventCandidate(
 						'/foobar',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
@@ -92,7 +96,7 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent(
+					source.newEventCandidate(
 						'/foobar',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
@@ -108,7 +112,7 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent(
+					source.newEventCandidate(
 						'/users/registered',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
@@ -118,12 +122,12 @@ suite('Client.writeEvents', function () {
 			.is.not.throwingAsync();
 
 		const writtenEventsMetadata = await client.writeEvents([
-			source.newEvent(
+			source.newEventCandidate(
 				'/users/registered',
 				events.registered.johnDoe.type,
 				events.registered.johnDoe.data,
 			),
-			source.newEvent(
+			source.newEventCandidate(
 				'/users/loggedIn',
 				events.loggedIn.johnDoe.type,
 				events.loggedIn.johnDoe.data,
@@ -147,12 +151,12 @@ suite('Client.writeEvents', function () {
 		await assert
 			.that(async () => {
 				await client.writeEvents([
-					source.newEvent(
+					source.newEventCandidate(
 						'/users/registered',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
 					),
-					source.newEvent(
+					source.newEventCandidate(
 						'/users/registered',
 						events.registered.johnDoe.type,
 						events.registered.johnDoe.data,
@@ -180,7 +184,7 @@ suite('Client.writeEvents', function () {
 				.that(async () => {
 					await client.writeEvents(
 						[
-							source.newEvent(
+							source.newEventCandidate(
 								'/users/registered',
 								events.registered.janeDoe.type,
 								events.registered.janeDoe.data,
@@ -199,7 +203,7 @@ suite('Client.writeEvents', function () {
 				.that(async () => {
 					await client.writeEvents(
 						[
-							source.newEvent(
+							source.newEventCandidate(
 								'/users/registered',
 								events.registered.janeDoe.type,
 								events.registered.janeDoe.data,
@@ -214,7 +218,7 @@ suite('Client.writeEvents', function () {
 				.that(async () => {
 					await client.writeEvents(
 						[
-							source.newEvent(
+							source.newEventCandidate(
 								'/users/registered',
 								events.registered.johnDoe.type,
 								events.registered.johnDoe.data,
@@ -234,12 +238,12 @@ suite('Client.writeEvents', function () {
 			await assert
 				.that(async () => {
 					await client.writeEvents([
-						source.newEvent(
+						source.newEventCandidate(
 							'/users/registered',
 							events.registered.janeDoe.type,
 							events.registered.janeDoe.data,
 						),
-						source.newEvent(
+						source.newEventCandidate(
 							'/users/registered',
 							events.registered.johnDoe.type,
 							events.registered.johnDoe.data,
@@ -255,7 +259,7 @@ suite('Client.writeEvents', function () {
 				.that(async () => {
 					await client.writeEvents(
 						[
-							source.newEvent(
+							source.newEventCandidate(
 								'/users/registered',
 								events.registered.apfelFred.type,
 								events.registered.apfelFred.data,
@@ -273,12 +277,12 @@ suite('Client.writeEvents', function () {
 			await assert
 				.that(async () => {
 					await client.writeEvents([
-						source.newEvent(
+						source.newEventCandidate(
 							'/users/registered',
 							events.registered.janeDoe.type,
 							events.registered.janeDoe.data,
 						),
-						source.newEvent(
+						source.newEventCandidate(
 							'/users/registered',
 							events.registered.johnDoe.type,
 							events.registered.johnDoe.data,
@@ -293,7 +297,7 @@ suite('Client.writeEvents', function () {
 				.that(async () => {
 					await client.writeEvents(
 						[
-							source.newEvent(
+							source.newEventCandidate(
 								'/users/registered',
 								events.registered.apfelFred.type,
 								events.registered.apfelFred.data,

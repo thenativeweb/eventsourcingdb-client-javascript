@@ -1,6 +1,6 @@
 import { ClientConfiguration } from './ClientConfiguration';
 
-const getDefaultConfiguration = function (baseUrl: string): ClientConfiguration {
+const getDefaultClientConfiguration = function (baseUrl: string): ClientConfiguration {
 	return {
 		baseUrl,
 		timeoutMilliseconds: 10_000,
@@ -10,4 +10,4 @@ const getDefaultConfiguration = function (baseUrl: string): ClientConfiguration 
 	};
 };
 
-export { getDefaultConfiguration };
+export { getDefaultClientConfiguration };

@@ -1,5 +1,3 @@
-import { ClientOptions } from './ClientOptions';
-
 interface ClientConfiguration {
 	baseUrl: string;
 	timeoutMilliseconds: number;

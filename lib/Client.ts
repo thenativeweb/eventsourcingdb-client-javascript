@@ -1,5 +1,5 @@
 import { ClientConfiguration } from './ClientConfiguration';
-import { getDefaultConfiguration } from './getDefaultConfiguration';
+import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
 import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { StatusCodes } from 'http-status-codes';
@@ -12,11 +12,11 @@ import { Precondition } from './handlers/writeEvents/Precondition';
 import { ClientOptions } from './ClientOptions';
 
 class Client {
-	public readonly clientConfiguration: ClientConfiguration;
+	public readonly configuration: ClientConfiguration;
 
 	public constructor(baseUrl: string, options?: ClientOptions) {
-		this.clientConfiguration = {
-			...getDefaultConfiguration(baseUrl),
+		this.configuration = {
+			...getDefaultClientConfiguration(baseUrl),
 			...options,
 		};
 	}
@@ -33,7 +33,7 @@ class Client {
 		}
 
 		throw new Error(
-			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.clientConfiguration.protocolVersion}.'`,
+			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.configuration.protocolVersion}.'`,
 		);
 	}
 
