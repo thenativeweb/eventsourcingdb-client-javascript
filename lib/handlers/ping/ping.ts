@@ -8,7 +8,7 @@ const ping = async function (client: Client): Promise<void> {
 			client.httpClient.get({
 				path: '/ping',
 				responseType: 'text',
-				skipAuthorization: true,
+				withAuthorization: false,
 			}),
 		async (error) => new ChainedError('Failed to ping the server.', error),
 	);

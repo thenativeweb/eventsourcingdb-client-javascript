@@ -23,25 +23,25 @@ type Response<TResponseType extends ResponseType> = Promise<
 >;
 
 class HttpClient {
-	private readonly dbClient: Client;
+	private readonly databaseClient: Client;
 
 	public constructor(dbClient: Client) {
-		this.dbClient = dbClient;
+		this.databaseClient = dbClient;
 	}
 
 	private getDefaultRequestConfig(withAuthorization: boolean = true): CreateAxiosDefaults {
 		let configuration: CreateAxiosDefaults = {
-			baseURL: this.dbClient.configuration.baseUrl,
-			timeout: this.dbClient.configuration.timeoutMilliseconds,
+			baseURL: this.databaseClient.configuration.baseUrl,
+			timeout: this.databaseClient.configuration.timeoutMilliseconds,
 			headers: {
-				'X-EventSourcingDB-Protocol-Version': this.dbClient.configuration.protocolVersion,
+				'X-EventSourcingDB-Protocol-Version': this.databaseClient.configuration.protocolVersion,
 			},
 		};
 
-		if (withAuthorization && this.dbClient.configuration.accessToken !== undefined) {
+		if (withAuthorization && this.databaseClient.configuration.accessToken !== undefined) {
 			configuration = HttpClient.setAuthorization(
 				configuration,
-				this.dbClient.configuration.accessToken,
+				this.databaseClient.configuration.accessToken,
 			);
 		}
 
@@ -96,7 +96,7 @@ class HttpClient {
 		}
 
 		throw new Error(
-			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.dbClient.configuration.protocolVersion}.'`,
+			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.databaseClient.configuration.protocolVersion}.'`,
 		);
 	}
 
@@ -116,7 +116,7 @@ class HttpClient {
 
 		const response = await retryWithBackoff(
 			abortController,
-			this.dbClient.configuration.maxTries,
+			this.databaseClient.configuration.maxTries,
 			async () => axiosInstance.post(options.path, options.requestBody, { signal }),
 		);
 		this.validateProtocolVersion(response.status, response.headers);
@@ -128,9 +128,9 @@ class HttpClient {
 		path: string;
 		responseType: TResponseType;
 		abortController?: AbortController;
-		skipAuthorization?: boolean;
+		withAuthorization?: boolean;
 	}): Response<TResponseType> {
-		let configuration = this.getDefaultRequestConfig(!options.skipAuthorization);
+		let configuration = this.getDefaultRequestConfig(options.withAuthorization);
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
 		const axiosInstance = axios.create(configuration);
 
@@ -139,7 +139,7 @@ class HttpClient {
 
 		const response = await retryWithBackoff(
 			abortController,
-			this.dbClient.configuration.maxTries,
+			this.databaseClient.configuration.maxTries,
 			async () => axiosInstance.get(options.path, { signal }),
 		);
 		this.validateProtocolVersion(response.status, response.headers);
