@@ -1,9 +1,6 @@
 import { Client } from '../../Client';
-import { ReadSyncOptions } from 'fs';
-import { validateReadEventsOptions } from '../readEvents/ReadEventsOptions';
 import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
 import { wrapError } from '../../util/error/wrapError';
-import { CanceledError } from 'axios';
 import { ChainedError } from '../../util/error/ChainedError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
@@ -28,8 +25,8 @@ const readSubjects = async function* (
 				abortController,
 			}),
 		async (error) => {
-			if (error instanceof CanceledError) {
-				return new CancelationError();
+			if (error instanceof CancelationError) {
+				return error;
 			}
 
 			return new ChainedError('Failed to read subjects.', error);

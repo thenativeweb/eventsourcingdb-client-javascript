@@ -119,9 +119,7 @@ suite('Client.readSubjects()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error): boolean =>
-					error.message ===
-					"Malformed event subject, '' must be an absolute, slash-separated path.",
+				"Failed to validate subject: '' must be an absolute, slash-separated path.",
 			);
 	});
 });

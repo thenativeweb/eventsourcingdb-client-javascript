@@ -289,7 +289,9 @@ suite('Client.readEvents()', function () {
 					// Intentionally left blank.
 				}
 			})
-			.is.throwingAsync("Malformed event subject, '' must be an absolute, slash-separated path.");
+			.is.throwingAsync(
+				"Failed to validate subject: '' must be an absolute, slash-separated path.",
+			);
 
 		result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
 			recursive: true,
@@ -306,6 +308,6 @@ suite('Client.readEvents()', function () {
 					// Intentionally left blank.
 				}
 			})
-			.is.throwingAsync("Malformed event type, 'com.' must be reverse domain name.");
+			.is.throwingAsync("Failed to validate type: 'com.' must be reverse domain name.");
 	});
 });

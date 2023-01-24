@@ -60,6 +60,7 @@ class EventContext {
 		if (typeof unknownObject.time !== 'string') {
 			throw new Error(`Failed to parse time '${unknownObject.time}' to Date.`);
 		}
+
 		const time = new Date(unknownObject.time);
 
 		if (time.toString() === 'Invalid Date') {

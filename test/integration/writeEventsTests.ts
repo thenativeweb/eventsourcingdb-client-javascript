@@ -52,7 +52,7 @@ suite('Client.writeEvents()', function () {
 					source.newEvent('foobar', events.registered.janeDoe.type, events.registered.janeDoe.data),
 				]);
 			})
-			.is.throwingAsync(/Malformed event subject/gu);
+			.is.throwingAsync(/Failed to validate subject/gu);
 	});
 
 	test('throws an error if a candidate type is malformed.', async (): Promise<void> => {
@@ -64,7 +64,7 @@ suite('Client.writeEvents()', function () {
 					source.newEvent('/foobar', 'haram', events.registered.janeDoe.data),
 				]);
 			})
-			.is.throwingAsync(/Malformed event type/gu);
+			.is.throwingAsync(/Failed to validate type/gu);
 	});
 
 	test('throws an error if a precondition uses an invalid source.', async (): Promise<void> => {

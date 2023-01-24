@@ -35,8 +35,8 @@ const observeEvents = async function* (
 				abortController,
 			}),
 		async (error) => {
-			if (error instanceof CanceledError) {
-				return new CancelationError();
+			if (error instanceof CancelationError) {
+				return error;
 			}
 
 			return new ChainedError('Failed to observe events.', error);
