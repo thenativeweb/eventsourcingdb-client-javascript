@@ -40,8 +40,8 @@
     "format": "npx rome format --write ./**/*",
     "qa": "npm run analyze && npm run test",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "npx mocha --bail --require ts-node/register --recursive --ui tdd ./test/unit/**/*.ts",
-    "test:integration": "npx mocha --bail --require ts-node/register --recursive --ui tdd ./test/integration/**/*.ts"
+    "test:unit": "npx mocha --bail --require ts-node/register --recursive --ui tdd './test/unit/**/*.ts'",
+    "test:integration": "npx mocha --bail --require ts-node/register --recursive --ui tdd './test/integration/**/*.ts'"
   },
   "repository": {
     "type": "git",

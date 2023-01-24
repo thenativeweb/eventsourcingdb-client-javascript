@@ -30,18 +30,25 @@ const retryWithBackoff = async function <TReturn = void>(
 		const timeout = getRandomizedDuration(100, 25) * triesCount;
 
 		await new Promise<void>((resolve, reject) => {
-			const timer = setTimeout(() => {
-				resolve();
-			}, timeout);
+			if (abortController.signal.aborted) {
+				return reject(new CancelationError());
+			}
 
-			abortController.signal.addEventListener('abort', () => {
+			const handleAborted = () => {
 				clearTimeout(timer);
-				reject(new CancelationError());
-			});
+				return reject(new CancelationError());
+			};
+
+			abortController.signal.addEventListener('abort', handleAborted);
+
+			const timer = setTimeout(() => {
+				abortController.signal.removeEventListener('abort', handleAborted);
+				return resolve();
+			}, timeout);
 		});
 
 		try {
-			return fn();
+			return await fn();
 		} catch (ex: unknown) {
 			let error: Error;
 			if (ex instanceof Error) {
