@@ -49,7 +49,7 @@ class Client {
 
 	public readSubjects(
 		abortController: AbortController,
-		options: ReadSubjectsOptions,
+		options: ReadSubjectsOptions = {},
 	): AsyncGenerator<string, void, void> {
 		return readSubjects(this, abortController, options);
 	}
