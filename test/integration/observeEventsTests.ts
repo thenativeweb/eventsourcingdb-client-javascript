@@ -1,5 +1,4 @@
 import { assert } from 'assertthat';
-import { CanceledError } from 'axios';
 import { StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline';
@@ -9,6 +8,7 @@ import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
+import { CancelationError } from '../../lib/util/error/CancelationError';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);
@@ -325,7 +325,7 @@ suite('Client.observeEvents()', function () {
 					abortController.abort();
 				}
 			})
-			.is.throwingAsync((error): boolean => error instanceof CanceledError);
+			.is.throwingAsync((error): boolean => error instanceof CancelationError);
 	});
 
 	test('throws an error if mutually exclusive options are used.', async (): Promise<void> => {
