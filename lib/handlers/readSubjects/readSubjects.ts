@@ -8,6 +8,7 @@ import { ChainedError } from '../../util/error/ChainedError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
 import { isSubject } from './isSubject';
+import { CancelationError } from '../../util/error/CancelationError';
 
 const readSubjects = async function* (
 	client: Client,
@@ -28,7 +29,7 @@ const readSubjects = async function* (
 			}),
 		async (error) => {
 			if (error instanceof CanceledError) {
-				return error;
+				return new CancelationError();
 			}
 
 			return new ChainedError('Failed to read subjects.', error);

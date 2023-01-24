@@ -7,7 +7,7 @@ import { stopDatabase } from '../shared/stopDatabase';
 import { assert } from 'assertthat';
 import { EventCandidate } from '../../lib';
 import { events } from '../shared/events/events';
-import { CanceledError } from 'axios';
+import { CancelationError } from '../../lib/util/error/CancelationError';
 
 suite('Client.readSubjects()', function () {
 	this.timeout(20_000);
@@ -34,11 +34,12 @@ suite('Client.readSubjects()', function () {
 				const readSubjectsResult = client.readSubjects(new AbortController());
 
 				for await (const _ of readSubjectsResult) {
-					// intentionally left blank
+					// Intentionally left blank.
 				}
 			})
 			.is.throwingAsync();
 	});
+
 	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
@@ -47,11 +48,12 @@ suite('Client.readSubjects()', function () {
 				const readSubjectsResult = client.readSubjects(new AbortController());
 
 				for await (const _ of readSubjectsResult) {
-					// intentionally left blank
+					// Intentionally left blank.
 				}
 			})
 			.is.not.throwingAsync();
 	});
+
 	test('reads all subjects starting from /.', async (): Promise<void> => {
 		const client = database.withoutAuthorization.client;
 
@@ -69,6 +71,7 @@ suite('Client.readSubjects()', function () {
 
 		assert.that(actualSubjects).is.equalTo(['/', '/foo']);
 	});
+
 	test('reads all subjects starting from the given base subject.', async (): Promise<void> => {
 		const client = database.withoutAuthorization.client;
 
@@ -86,6 +89,7 @@ suite('Client.readSubjects()', function () {
 
 		assert.that(actualSubjects).is.equalTo(['/foo', '/foo/bar']);
 	});
+
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
 		const client = database.withoutAuthorization.client;
 
@@ -97,11 +101,12 @@ suite('Client.readSubjects()', function () {
 				abortController.abort();
 
 				for await (const _ of readSubjectsResult) {
-					// intentionally left blank
+					// Intentionally left blank.
 				}
 			})
-			.is.throwingAsync((error): boolean => error instanceof CanceledError);
+			.is.throwingAsync((error): boolean => error instanceof CancelationError);
 	});
+
 	test('throws an error if the base subject is malformed.', async (): Promise<void> => {
 		const client = database.withoutAuthorization.client;
 
@@ -110,7 +115,7 @@ suite('Client.readSubjects()', function () {
 				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '' });
 
 				for await (const _ of readSubjectsResult) {
-					// intentionally left blank
+					// Intentionally left blank.
 				}
 			})
 			.is.throwingAsync(

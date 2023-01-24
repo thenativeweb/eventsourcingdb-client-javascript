@@ -9,6 +9,8 @@ import { isItem } from '../isItem';
 import { isStreamError } from '../isStreamError';
 import { ObserveEventsOptions, validateObserveEventsOptions } from './ObserveEventsOptions';
 import { StoreItem } from '../StoreItem';
+import { CancelationError } from '../../util/error/CancelationError';
+import { CanceledError } from 'axios';
 
 const observeEvents = async function* (
 	client: Client,
@@ -32,7 +34,13 @@ const observeEvents = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async (error) => new ChainedError('Failed to observe events.', error),
+		async (error) => {
+			if (error instanceof CanceledError) {
+				return new CancelationError();
+			}
+
+			return new ChainedError('Failed to observe events.', error);
+		},
 	);
 
 	const stream = response.data;

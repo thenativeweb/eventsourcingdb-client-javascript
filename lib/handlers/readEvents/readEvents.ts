@@ -10,6 +10,7 @@ import { isStreamError } from '../isStreamError';
 import { StoreItem } from '../StoreItem';
 import { ReadEventsOptions, validateReadEventsOptions } from './ReadEventsOptions';
 import { Event } from '../../event/Event';
+import { CancelationError } from '../../util/error/CancelationError';
 
 const readEvents = async function* (
 	client: Client,
@@ -35,7 +36,7 @@ const readEvents = async function* (
 			}),
 		async (error) => {
 			if (error instanceof CanceledError) {
-				return error;
+				return new CancelationError();
 			}
 
 			return new ChainedError('Failed to read events.', error);

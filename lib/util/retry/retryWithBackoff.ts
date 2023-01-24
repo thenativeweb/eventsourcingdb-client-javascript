@@ -1,17 +1,17 @@
-import { CanceledError } from 'axios';
 import { clearTimeout } from 'timers';
 import { RetryError } from './RetryError';
+import { CancelationError } from '../error/CancelationError';
 
 const getRandomizedDuration = function (
 	durationMilliseconds: number,
 	deviationMilliseconds: number,
 ): number {
-	const millseconds =
+	const milliseconds =
 		durationMilliseconds -
 		deviationMilliseconds +
 		Math.round(Math.random() * deviationMilliseconds * 2);
 
-	return millseconds;
+	return milliseconds;
 };
 
 const retryWithBackoff = async function <TReturn = void>(
@@ -36,7 +36,7 @@ const retryWithBackoff = async function <TReturn = void>(
 
 			abortController.signal.addEventListener('abort', () => {
 				clearTimeout(timer);
-				reject(new CanceledError());
+				reject(new CancelationError());
 			});
 		});
 
