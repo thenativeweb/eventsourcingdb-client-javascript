@@ -12,6 +12,8 @@ import { EventContext } from './event/EventContext';
 import { Precondition } from './handlers/writeEvents/Precondition';
 import { ClientOptions } from './ClientOptions';
 import { HttpClient } from './http/HttpClient';
+import { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
+import { readSubjects } from './handlers/readSubjects/readSubjects';
 
 class Client {
 	public readonly configuration: ClientConfiguration;
@@ -33,6 +35,10 @@ class Client {
 		return observeEvents(this, abortController, subject, options);
 	}
 
+	public async ping(): Promise<void> {
+		await ping(this);
+	}
+
 	public readEvents(
 		abortController: AbortController,
 		subject: string,
@@ -41,15 +47,18 @@ class Client {
 		return readEvents(this, abortController, subject, options);
 	}
 
+	public readSubjects(
+		abortController: AbortController,
+		options: ReadSubjectsOptions,
+	): AsyncGenerator<string, void, void> {
+		return readSubjects(this, abortController, options);
+	}
+
 	public async writeEvents(
 		eventCandidates: EventCandidate[],
 		preconditions: Precondition[] = [],
 	): Promise<EventContext[]> {
 		return writeEvents(this, eventCandidates, preconditions);
-	}
-
-	public async ping(): Promise<void> {
-		await ping(this);
 	}
 }
 
