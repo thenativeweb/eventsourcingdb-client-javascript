@@ -2,7 +2,7 @@ import { assert } from 'assertthat';
 import { CancelationError } from '../../../../lib';
 import { retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
 
-suite('retryWithBackoff()', (): void => {
+suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
 		let count = 0;
 		let maxTries = 3;
