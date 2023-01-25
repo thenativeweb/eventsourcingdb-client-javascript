@@ -9,6 +9,7 @@ suite('LinesDecoder', (): void => {
 
 		assert.that(actualLines).is.equalTo(['hello', 'world']);
 	});
+
 	test('buffers incomplete lines and returns them on write() as soon as they are completed.', async (): Promise<void> => {
 		const decoder = new LinesDecoder();
 
