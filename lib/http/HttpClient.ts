@@ -1,9 +1,10 @@
-import { AxiosResponse, CreateAxiosDefaults, ResponseType } from 'axios';
+import { AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
 import { Client } from '../Client';
 import { retryWithBackoff } from '../util/retry/retryWithBackoff';
+import { CancelationError } from '../util/error/CancelationError';
 
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
@@ -114,14 +115,22 @@ class HttpClient {
 		const abortController: AbortController = options.abortController ?? new AbortController();
 		const signal = abortController.signal;
 
-		const response = await retryWithBackoff(
-			abortController,
-			this.databaseClient.configuration.maxTries,
-			async () => axiosInstance.post(options.path, options.requestBody, { signal }),
-		);
-		this.validateProtocolVersion(response.status, response.headers);
+		try {
+			const response = await retryWithBackoff(
+				abortController,
+				this.databaseClient.configuration.maxTries,
+				async () => axiosInstance.post(options.path, options.requestBody, { signal }),
+			);
+			this.validateProtocolVersion(response.status, response.headers);
 
-		return response;
+			return response;
+		} catch (ex) {
+			if (ex instanceof CanceledError) {
+				throw new CancelationError();
+			}
+
+			throw ex;
+		}
 	}
 
 	public async get<TResponseType extends ResponseType>(options: {
@@ -137,14 +146,22 @@ class HttpClient {
 		const abortController: AbortController = options.abortController ?? new AbortController();
 		const signal = abortController.signal;
 
-		const response = await retryWithBackoff(
-			abortController,
-			this.databaseClient.configuration.maxTries,
-			async () => axiosInstance.get(options.path, { signal }),
-		);
-		this.validateProtocolVersion(response.status, response.headers);
+		try {
+			const response = await retryWithBackoff(
+				abortController,
+				this.databaseClient.configuration.maxTries,
+				async () => axiosInstance.get(options.path, { signal }),
+			);
+			this.validateProtocolVersion(response.status, response.headers);
 
-		return response;
+			return response;
+		} catch (ex) {
+			if (ex instanceof CanceledError) {
+				throw new CancelationError();
+			}
+
+			throw ex;
+		}
 	}
 }
 
