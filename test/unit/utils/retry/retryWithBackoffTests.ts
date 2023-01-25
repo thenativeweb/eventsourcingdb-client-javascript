@@ -50,7 +50,7 @@ suite('retryWithBackoff()', (): void => {
 				await retryWithBackoff(new AbortController(), maxTries, async () => {
 					count += 1;
 
-					if (count != successfulTry) {
+					if (count !== successfulTry) {
 						throw new Error(`Error no. ${count}`);
 					}
 				});
@@ -72,7 +72,7 @@ suite('retryWithBackoff()', (): void => {
 				await retryWithBackoff(abortController, maxTries, async () => {
 					count += 1;
 
-					if (count == cancelingTry) {
+					if (count === cancelingTry) {
 						abortController.abort();
 					}
 
