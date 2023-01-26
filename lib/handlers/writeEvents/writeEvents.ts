@@ -1,6 +1,7 @@
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
+import { marshalJson } from '../../event/marshalJson';
 import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { Precondition } from './Precondition';
@@ -14,10 +15,13 @@ const writeEvents = async function (
 		eventCandidate.validate();
 	}
 
-	const requestBody = JSON.stringify({
+	const requestBody = marshalJson({
 		events: eventCandidates,
 		preconditions,
 	});
+	if (requestBody === undefined) {
+		throw new Error('Internal error: Failed to marshal request body.');
+	}
 
 	const response = await wrapError(
 		async () =>
