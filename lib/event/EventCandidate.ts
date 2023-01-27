@@ -1,4 +1,5 @@
 import { UnknownObject } from '../util/UnknownObject';
+import { Data } from './Data';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
 
@@ -11,7 +12,7 @@ class EventCandidate {
 
 	public readonly type: string;
 
-	public constructor(source: string, subject: string, type: string, data: UnknownObject) {
+	public constructor(source: string, subject: string, type: string, data: Data) {
 		this.data = data;
 		this.source = source;
 		this.subject = subject;

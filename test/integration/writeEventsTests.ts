@@ -2,6 +2,7 @@ import { assert } from 'assertthat';
 import { StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
+import { UnknownObject } from '../../lib/util/UnknownObject';
 import { buildDatabase } from '../shared/buildDatabase';
 import { Database } from '../shared/Database';
 import { events } from '../shared/events/events';
@@ -314,5 +315,100 @@ suite('Client.writeEvents()', function () {
 				})
 				.is.throwingAsync();
 		});
+	});
+
+	test('throws an error if the given EventCandidates contain data that would be lost during JSON marshaling.', async (): Promise<void> => {
+		const client = database.withoutAuthorization.client;
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', { [Symbol('lost')]: 42 }),
+				]);
+			})
+			.is.throwingAsync(
+				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
+			);
+		await assert
+			.that(async () => {
+				await client.writeEvents([source.newEvent('/', 'com.foobar.baz', { lost: () => {} })]);
+			})
+			.is.throwingAsync(
+				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
+			);
+
+		const dataWithNonEnumerableProperty = {};
+		Object.defineProperty(dataWithNonEnumerableProperty, 'lost', { enumerable: false });
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', dataWithNonEnumerableProperty),
+				]);
+			})
+			.is.throwingAsync(
+				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
+			);
+
+		class ClassWithoutExplicitToJsonMethod {}
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					// rome-ignore lint/suspicious/noExplicitAny: Without the type cast, this would not compile.
+					source.newEvent('/', 'com.foobar.baz', new ClassWithoutExplicitToJsonMethod() as any),
+				]);
+			})
+			.is.throwingAsync(
+				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
+			);
+	});
+
+	test('throws no error if non-plain objects inside the EventCandidate data have a toJSON method.', async (): Promise<void> => {
+		const client = database.withoutAuthorization.client;
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', { [Symbol('lost')]: 42, toJSON: () => {} }),
+				]);
+			})
+			.is.not.throwingAsync();
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', { lost: () => {}, toJSON: () => {} }),
+				]);
+			})
+			.is.not.throwingAsync();
+
+		const dataWithNonEnumerableProperty = {
+			toJSON() {
+				return {};
+			},
+		};
+		Object.defineProperty(dataWithNonEnumerableProperty, 'lost', { enumerable: false });
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', dataWithNonEnumerableProperty),
+				]);
+			})
+			.is.not.throwingAsync();
+
+		class ClassWithExplicitToJsonMethod {
+			toJSON(): UnknownObject {
+				return {};
+			}
+		}
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/', 'com.foobar.baz', new ClassWithExplicitToJsonMethod()),
+				]);
+			})
+			.is.not.throwingAsync();
 	});
 });

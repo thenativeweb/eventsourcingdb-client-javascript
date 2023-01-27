@@ -1,3 +1,3 @@
-type UnknownObject = Partial<Record<string, unknown>>;
+type UnknownObject = Record<string, unknown>;
 
 export { UnknownObject };
