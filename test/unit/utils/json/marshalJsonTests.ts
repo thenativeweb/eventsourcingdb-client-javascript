@@ -37,16 +37,12 @@ suite('marshalJson', (): void => {
 			.that(() => {
 				marshalJson(() => {});
 			})
-			.is.throwing(
-				"Failed to marshal path '[root element]': function can't be marshalled as JSON.",
-			);
+			.is.throwing("Failed to marshal path '[root element]': function can't be marshaled as JSON.");
 		assert
 			.that(() => {
 				marshalJson(function () {});
 			})
-			.is.throwing(
-				"Failed to marshal path '[root element]': function can't be marshalled as JSON.",
-			);
+			.is.throwing("Failed to marshal path '[root element]': function can't be marshaled as JSON.");
 	});
 
 	test('throws an error when trying to marshal a BigInt.', async (): Promise<void> => {
@@ -54,7 +50,7 @@ suite('marshalJson', (): void => {
 			.that(() => {
 				marshalJson(1236969696969696969696969696969696969696969696969696969696969696969n);
 			})
-			.is.throwing("Failed to marshal path '[root element]': BigInt can't be marshalled as JSON.");
+			.is.throwing("Failed to marshal path '[root element]': BigInt can't be marshaled as JSON.");
 		assert
 			.that(() => {
 				marshalJson(
@@ -63,7 +59,7 @@ suite('marshalJson', (): void => {
 					),
 				);
 			})
-			.is.throwing("Failed to marshal path '[root element]': BigInt can't be marshalled as JSON.");
+			.is.throwing("Failed to marshal path '[root element]': BigInt can't be marshaled as JSON.");
 	});
 
 	test('throws an error when trying to marshal a Symbol.', async (): Promise<void> => {
@@ -71,7 +67,7 @@ suite('marshalJson', (): void => {
 			.that(() => {
 				marshalJson(Symbol());
 			})
-			.is.throwing("Failed to marshal path '[root element]': Symbol can't be marshalled as JSON.");
+			.is.throwing("Failed to marshal path '[root element]': Symbol can't be marshaled as JSON.");
 	});
 
 	suite('when used with arrays', (): void => {
@@ -183,7 +179,7 @@ suite('marshalJson', (): void => {
 					marshalJson({ a: { b: { c: [1, 2, { d: 123n }] } } });
 				})
 				.is.throwing(
-					"Failed to marshal path '[root element].a.b.c.2.d': BigInt can't be marshalled as JSON.",
+					"Failed to marshal path '[root element].a.b.c.2.d': BigInt can't be marshaled as JSON.",
 				);
 		});
 

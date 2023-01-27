@@ -34,11 +34,11 @@ const marshalJsonInternal = function (
 ): string | Undefined {
 	switch (typeof value) {
 		case 'function':
-			throw newMarshalError(path, "function can't be marshalled as JSON");
+			throw newMarshalError(path, "function can't be marshaled as JSON");
 		case 'bigint':
-			throw newMarshalError(path, "BigInt can't be marshalled as JSON");
+			throw newMarshalError(path, "BigInt can't be marshaled as JSON");
 		case 'symbol':
-			throw newMarshalError(path, "Symbol can't be marshalled as JSON");
+			throw newMarshalError(path, "Symbol can't be marshaled as JSON");
 		case 'undefined':
 			return JsonUndefined;
 		case 'boolean':
