@@ -1,7 +1,7 @@
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
-import { marshalJson } from '../../event/marshalJson';
+import { marshalJson } from '../../util/json/marshalJson';
 import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { Precondition } from './Precondition';

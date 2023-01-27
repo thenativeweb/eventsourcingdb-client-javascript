@@ -1,6 +1,6 @@
 import { assert } from 'assertthat';
-import { marshalJson } from '../../../lib/event/marshalJson';
-import { UnknownObject } from '../../../lib/util/UnknownObject';
+import { marshalJson } from '../../../../lib/util/json/marshalJson';
+import { UnknownObject } from '../../../../lib/util/UnknownObject';
 
 suite('marshalJson', (): void => {
 	test('marshals a number.', async (): Promise<void> => {
@@ -188,17 +188,29 @@ suite('marshalJson', (): void => {
 		});
 
 		test('finds and reports circular references in objects.', async (): Promise<void> => {
-			const a: UnknownObject = {};
-			const b: UnknownObject = {};
+			const root = {
+				x: { x: {} },
+				y: { y: {} },
+			} as any;
 
-			a.b = b;
-			b.a = a;
+			root.x.x = root.y;
+			root.y.y = root.x;
 
 			assert
 				.that(() => {
-					marshalJson(a);
+					marshalJson(root);
 				})
-				.is.throwing("Failed to marshal path '[root element].b': circular reference 'a'.");
+				.is.throwing("Failed to marshal path '[root element].x.x': circular reference 'y'.");
+		});
+
+		test('does not mistakenly identify copies of the same object as circular references.', async (): Promise<void> => {
+			const a = {};
+
+			assert
+				.that(() => {
+					marshalJson({ x: a, y: a });
+				})
+				.is.not.throwing();
 		});
 
 		test('finds and reports circular references in arrays.', async (): Promise<void> => {

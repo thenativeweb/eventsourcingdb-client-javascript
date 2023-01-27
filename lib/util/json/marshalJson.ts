@@ -1,4 +1,4 @@
-import { UnknownObject } from '../util/UnknownObject';
+import { UnknownObject } from '../UnknownObject';
 
 const JsonUndefined = Symbol('undefined');
 type Undefined = typeof JsonUndefined;
