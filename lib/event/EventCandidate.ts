@@ -1,4 +1,3 @@
-import { isObject } from '../util/isObject';
 import { UnknownObject } from '../util/UnknownObject';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
