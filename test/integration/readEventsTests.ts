@@ -63,7 +63,7 @@ suite('Client.readEvents()', function () {
 			.is.throwingAsync();
 	});
 
-	test('support authorization.', async (): Promise<void> => {
+	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
 		await assert

@@ -187,7 +187,7 @@ suite('marshalJson', (): void => {
 			const root = {
 				x: { x: {} },
 				y: { y: {} },
-			} as any;
+			};
 
 			root.x.x = root.y;
 			root.y.y = root.x;
