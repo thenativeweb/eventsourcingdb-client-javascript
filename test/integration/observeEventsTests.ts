@@ -87,7 +87,7 @@ suite('Client.observeEvents()', function () {
 			.is.throwingAsync();
 	});
 
-	test('support authorization.', async (): Promise<void> => {
+	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 		const abortController = newAbortControllerWithDeadline(testDeadline);
 

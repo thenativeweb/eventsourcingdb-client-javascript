@@ -1,4 +1,5 @@
 import { UnknownObject } from '../util/UnknownObject';
+import { Data } from './Data';
 import { EventCandidate } from './EventCandidate';
 
 class Source {
@@ -8,7 +9,7 @@ class Source {
 		this.source = source;
 	}
 
-	public newEvent(subject: string, type: string, data: UnknownObject): EventCandidate {
+	public newEvent(subject: string, type: string, data: Data): EventCandidate {
 		return new EventCandidate(this.source, subject, type, data);
 	}
 }
