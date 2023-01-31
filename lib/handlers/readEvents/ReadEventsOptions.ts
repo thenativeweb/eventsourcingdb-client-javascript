@@ -1,5 +1,6 @@
 import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
+import { ValidationError } from '../../util/error/ValidationError';
 
 interface ReadEventsOptions {
 	recursive: boolean;
@@ -18,7 +19,7 @@ interface ReadFromLatestEvent {
 const validateReadEventsOptions = function (options: ReadEventsOptions): void {
 	if (options.fromLatestEvent !== undefined) {
 		if (options.lowerBoundId !== undefined) {
-			throw new Error(
+			throw new ValidationError(
 				'ReadEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.',
 			);
 		}
