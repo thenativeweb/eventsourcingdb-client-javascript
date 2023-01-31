@@ -1,10 +1,13 @@
-import { AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
+import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
 import { Client } from '../Client';
 import { retryWithBackoff } from '../util/retry/retryWithBackoff';
 import { CancelationError } from '../util/error/CancelationError';
+import { ClientError } from '../util/error/ClientError';
+import { ServerError } from '../util/error/ServerError';
+import { InternalError } from '../util/error/InternalError';
 
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
@@ -96,7 +99,7 @@ class HttpClient {
 			serverProtocolVersion = 'unknown version';
 		}
 
-		throw new Error(
+		throw new ClientError(
 			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.databaseClient.configuration.protocolVersion}.'`,
 		);
 	}
@@ -129,6 +132,21 @@ class HttpClient {
 				throw new CancelationError();
 			}
 
+			if (ex instanceof AxiosError) {
+				if (ex.response !== undefined) {
+					if (ex.response.status >= 400 && ex.response.status < 500) {
+						throw new ClientError(`Request failed with status code '${ex.response.status}'.`);
+					}
+					if (ex.response.status >= 500 && ex.response.status < 600) {
+						throw new ServerError(`Request failed with status code '${ex.response.status}'.`);
+					}
+				} else if (ex.request !== undefined) {
+					throw new ServerError('No response received.');
+				} else {
+					throw new InternalError('Failed to setup request.');
+				}
+			}
+
 			throw ex;
 		}
 	}
@@ -158,6 +176,21 @@ class HttpClient {
 		} catch (ex) {
 			if (ex instanceof CanceledError) {
 				throw new CancelationError();
+			}
+
+			if (ex instanceof AxiosError) {
+				if (ex.response !== undefined) {
+					if (ex.response.status >= 400 && ex.response.status < 500) {
+						throw new ClientError(`Request failed with status code '${ex.response.status}'.`);
+					}
+					if (ex.response.status >= 500 && ex.response.status < 600) {
+						throw new ServerError(`Request failed with status code '${ex.response.status}'.`);
+					}
+				} else if (ex.request !== undefined) {
+					throw new ServerError('No response received.');
+				} else {
+					throw new InternalError('Failed to setup request.');
+				}
 			}
 
 			throw ex;

@@ -5,7 +5,7 @@ const validateSubject = function (subject: string): void {
 	const didMatch = subjectPattern.test(subject);
 
 	if (!didMatch) {
-		throw new Error(
+		throw new ValidationError(
 			`Failed to validate subject: '${subject}' must be an absolute, slash-separated path.`,
 		);
 	}

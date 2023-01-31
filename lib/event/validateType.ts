@@ -4,7 +4,7 @@ const validateType = function (type: string): void {
 	const didMatch = typePattern.test(type);
 
 	if (!didMatch) {
-		throw new Error(`Failed to validate type: '${type}' must be reverse domain name.`);
+		throw new ValidationError(`Failed to validate type: '${type}' must be reverse domain name.`);
 	}
 };
 

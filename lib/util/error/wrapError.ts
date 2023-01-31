@@ -1,15 +1,17 @@
+import { InternalError } from './InternalError';
+
 const wrapError = async function <TReturn = void>(
-	fn: () => Promise<TReturn>,
-	onError: (error: Error) => Promise<Error>,
+	fn: () => TReturn | Promise<TReturn>,
+	onError: (error: Error) => void | Promise<void>,
 ): Promise<TReturn> {
 	try {
 		return await fn();
 	} catch (ex: unknown) {
 		if (ex instanceof Error) {
-			throw await onError(ex);
+			await onError(ex);
 		}
 
-		throw await onError(new Error(`Unknown error: ${ex}.`));
+		throw await new InternalError(ex);
 	}
 };
 

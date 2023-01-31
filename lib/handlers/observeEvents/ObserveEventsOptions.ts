@@ -16,7 +16,7 @@ interface ObserveFromLatestEvent {
 const validateObserveEventsOptions = function (options: ObserveEventsOptions): void {
 	if (options.fromLatestEvent !== undefined) {
 		if (options.lowerBoundId !== undefined) {
-			throw new Error(
+			throw new ValidationError(
 				'ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.',
 			);
 		}
