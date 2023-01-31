@@ -1,6 +1,8 @@
 import { Client } from '../../Client';
-import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
+import { CustomError } from '../../util/error/CustomError';
+import { InternalError } from '../../util/error/InternalError';
+import { ServerError } from '../../util/error/ServerError';
 
 const ping = async function (client: Client): Promise<void> {
 	const response = await wrapError(
@@ -10,11 +12,17 @@ const ping = async function (client: Client): Promise<void> {
 				responseType: 'text',
 				withAuthorization: false,
 			}),
-		async (error) => new ChainedError('Failed to ping the server.', error),
+		async (error) => {
+			if (error instanceof CustomError) {
+				throw error;
+			}
+
+			new InternalError(error);
+		},
 	);
 
 	if (response.data !== 'OK') {
-		throw new Error('Failed to ping the server.');
+		throw new ServerError('Received unexpected response.');
 	}
 };
 
