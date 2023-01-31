@@ -1,7 +1,6 @@
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
-import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isHeartbeat } from '../isHeartbeat';
@@ -79,7 +78,7 @@ const observeEvents = async function* (
 			continue;
 		}
 		if (isStreamError(message)) {
-			throw new ChainedError('Failed to observe events.', new Error(message.payload.error));
+			throw new ServerError(message.payload.error);
 		}
 		if (isItem(message)) {
 			const event = Event.parse(message.payload.event);

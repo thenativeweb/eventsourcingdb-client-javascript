@@ -1,11 +1,9 @@
 import { Client } from '../../Client';
 import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
 import { wrapError } from '../../util/error/wrapError';
-import { ChainedError } from '../../util/error/ChainedError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
 import { isSubject } from './isSubject';
-import { CancelationError } from '../../util/error/CancelationError';
 import { ValidationError } from '../../util/error/ValidationError';
 import { InvalidParameterError } from '../../util/error/InvalidParameterError';
 import { CustomError } from '../../util/error/CustomError';
@@ -61,7 +59,7 @@ const readSubjects = async function* (
 
 	for await (const message of readNdJsonStream(stream)) {
 		if (isStreamError(message)) {
-			throw new ChainedError('Failed to read subjects.', new Error(message.payload.error));
+			throw new ServerError(message.payload.error);
 		}
 
 		if (isSubject(message)) {
