@@ -1,3 +1,5 @@
+import { ValidationError } from '../util/error/ValidationError';
+
 const typePattern = /^[0-9A-Za-z_-]{2,}\.(?:[0-9A-Za-z_-]+\.)+[0-9A-Za-z_-]+$/u;
 
 const validateType = function (type: string): void {

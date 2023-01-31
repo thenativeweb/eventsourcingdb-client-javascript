@@ -1,6 +1,6 @@
 import { assert } from 'assertthat';
 import { validateType } from '../../../lib/event/validateType';
-import { prefixEventType } from '../../shared/events/type';
+import { ValidationError } from '../../../lib/util/error/ValidationError';
 
 suite('validateType()', () => {
 	test('returns without throwing on a valid type.', async () => {
@@ -16,7 +16,9 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('invalidExampleType');
 			})
-			.is.throwing((error) => error.message.includes('invalidExampleType'));
+			.is.throwing(
+				(error) => error.message.includes('invalidExampleType') && error instanceof ValidationError,
+			);
 	});
 
 	test('is throwing an error if the type is not a reverse domain name.', () => {
@@ -24,7 +26,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('invalidExampleType');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test("is throwing an error if the separator is not not a '.'.", () => {
@@ -32,7 +34,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com:example:exampleType');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the reverse domain has less than 3 segments.', () => {
@@ -40,7 +42,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com.example');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the type has invalid characters.', () => {
@@ -48,7 +50,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com.example.apfel-günter.registered');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the tld of the reverse domain has less than 1 character.', () => {
@@ -56,6 +58,6 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('a.example.exampleType');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 });

@@ -1,5 +1,6 @@
 import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
+import { ValidationError } from '../../util/error/ValidationError';
 
 interface ObserveEventsOptions {
 	recursive: boolean;
