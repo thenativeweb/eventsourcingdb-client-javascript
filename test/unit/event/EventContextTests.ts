@@ -91,7 +91,7 @@ suite('EventContext', () => {
 				.is.throwing(
 					(error) =>
 						error.message ===
-							"Failed to validate type: 'a.this.is.invalid' must be reverse domain name." &&
+							"Failed to validate type: 'a.this.is.invalid' must be a reverse domain name." &&
 						error instanceof ValidationError,
 				);
 		});

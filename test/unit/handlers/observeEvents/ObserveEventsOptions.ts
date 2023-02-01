@@ -18,7 +18,7 @@ suite('validateObserveEventOptions', () => {
 			.that(() =>
 				validateObserveEventsOptions({
 					recursive: false,
-					lowerBoundId: 'some-id',
+					lowerBoundId: '1',
 					fromLatestEvent: {
 						subject: 'some-subject',
 						type: 'some-type',

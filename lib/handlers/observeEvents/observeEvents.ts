@@ -1,3 +1,4 @@
+import { getStatusText, StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
@@ -71,6 +72,12 @@ const observeEvents = async function* (
 		},
 	);
 
+	if (response.status !== StatusCodes.OK) {
+		throw new ServerError(
+			`Unexpected response status: ${response.status} ${getStatusText(response.status)}.`,
+		);
+	}
+
 	const stream = response.data;
 
 	for await (const message of readNdJsonStream(stream)) {
@@ -78,7 +85,7 @@ const observeEvents = async function* (
 			continue;
 		}
 		if (isStreamError(message)) {
-			throw new ServerError(message.payload.error);
+			throw new ServerError(`${message.payload.error}.`);
 		}
 		if (isItem(message)) {
 			const event = Event.parse(message.payload.event);
@@ -92,7 +99,9 @@ const observeEvents = async function* (
 		}
 
 		throw new ServerError(
-			`Failed to observe events, an unexpected stream item was received: '${message}'.`,
+			`Failed to observe events, an unexpected stream item was received: '${JSON.stringify(
+				message,
+			)}'.`,
 		);
 	}
 };

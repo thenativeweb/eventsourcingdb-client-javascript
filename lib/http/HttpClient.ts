@@ -3,6 +3,7 @@ import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
 import { Client } from '../Client';
+import { RetryError } from '../util/retry/RetryError';
 import { retryWithBackoff } from '../util/retry/retryWithBackoff';
 import { CancelationError } from '../util/error/CancelationError';
 import { ClientError } from '../util/error/ClientError';
@@ -95,9 +96,9 @@ class HttpClient {
 			return;
 		}
 
-		let serverProtocolVersion = headers['X-EventSourcingDB-Protocol-Version'];
+		let serverProtocolVersion = headers['x-eventsourcingdb-protocol-version'];
 
-		if (serverProtocolVersion === '') {
+		if (serverProtocolVersion === undefined) {
 			serverProtocolVersion = 'unknown version';
 		}
 
@@ -131,10 +132,13 @@ class HttpClient {
 							retry: new ServerError(`Request failed with status code '${response.status}'.`),
 						};
 					}
+
+					response.headers.get;
+					this.validateProtocolVersion(response.status, response.headers);
+
 					if (response.status >= 400 && response.status < 500) {
 						throw new ClientError(`Request failed with status code '${response.status}'.`);
 					}
-					this.validateProtocolVersion(response.status, response.headers);
 
 					return { return: response };
 				},
@@ -142,6 +146,9 @@ class HttpClient {
 
 			return response;
 		} catch (ex) {
+			if (ex instanceof RetryError) {
+				throw new ServerError(ex.message);
+			}
 			if (ex instanceof CustomError) {
 				throw ex;
 			}
@@ -186,10 +193,12 @@ class HttpClient {
 							retry: new ServerError(`Request failed with status code '${response.status}'.`),
 						};
 					}
+
+					this.validateProtocolVersion(response.status, response.headers);
+
 					if (response.status >= 400 && response.status < 500) {
 						throw new ClientError(`Request failed with status code '${response.status}'.`);
 					}
-					this.validateProtocolVersion(response.status, response.headers);
 
 					return { return: response };
 				},

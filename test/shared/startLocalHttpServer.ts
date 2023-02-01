@@ -1,4 +1,3 @@
-import { promisify } from 'util';
 import { Client } from '../../lib';
 import express from 'express';
 import * as http from 'http';
@@ -25,7 +24,7 @@ const startLocalHttpServer = async function (
 		throw new Error('Failed to start server');
 	}
 
-	const client = new Client(`http://localhost:${address.port}`);
+	const client = new Client(`http://localhost:${address.port}`, { maxTries: 2 });
 	const stopServer = async function () {
 		await new Promise<void>((resolve) => {
 			server.close(() => {
