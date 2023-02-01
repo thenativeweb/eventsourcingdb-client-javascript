@@ -1,6 +1,7 @@
 import { assert } from 'assertthat';
 import { CancelationError } from '../../../../lib';
-import { retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
+import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
+import { RetryError } from '../../../../lib/util/retry/RetryError';
 
 suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
@@ -11,6 +12,8 @@ suite('retryWithBackoff', (): void => {
 			.that(async () => {
 				await retryWithBackoff(new AbortController(), maxTries, async () => {
 					count += 1;
+
+					return done;
 				});
 			})
 			.is.not.throwingAsync();
@@ -27,7 +30,7 @@ suite('retryWithBackoff', (): void => {
 				await retryWithBackoff(new AbortController(), maxTries, async () => {
 					count += 1;
 
-					throw new Error(`Error no. ${count}`);
+					return { retry: new Error(`Error no. ${count}`) };
 				});
 			})
 			.is.throwingAsync(
@@ -51,8 +54,10 @@ suite('retryWithBackoff', (): void => {
 					count += 1;
 
 					if (count !== successfulTry) {
-						throw new Error(`Error no. ${count}`);
+						return { retry: new Error(`Error no. ${count}`) };
 					}
+
+					return done;
 				});
 			})
 			.is.not.throwingAsync();
@@ -76,11 +81,29 @@ suite('retryWithBackoff', (): void => {
 						abortController.abort();
 					}
 
-					throw new Error(`Error no. ${count}`);
+					return { retry: new Error(`Error no. ${count}`) };
 				});
 			})
 			.is.throwingAsync((error) => error instanceof CancelationError);
 
 		assert.that(count).is.equalTo(cancelingTry);
+	});
+
+	test('aborts the retries if an error is thrown.', async () => {
+		let count = 0;
+		const maxTries = 5;
+		const abortController = new AbortController();
+
+		await assert
+			.that(async () => {
+				await retryWithBackoff(abortController, maxTries, async () => {
+					count += 1;
+
+					throw new Error('Abort the retries.');
+
+					return { retry: new Error(`Error no. ${count}`) };
+				});
+			})
+			.is.throwingAsync((error) => !(error instanceof RetryError));
 	});
 });

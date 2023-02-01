@@ -1,4 +1,6 @@
-class RetryError extends Error {
+import { CustomError } from '../error/CustomError';
+
+class RetryError extends CustomError {
 	private readonly errors: Error[];
 
 	public constructor() {

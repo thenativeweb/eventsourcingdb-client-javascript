@@ -1,5 +1,5 @@
 import { assert } from 'assertthat';
-import { StoreItem } from '../../lib';
+import { Client, StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline';
 import { buildDatabase } from '../shared/buildDatabase';
@@ -9,6 +9,10 @@ import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
 import { CancelationError } from '../../lib/util/error/CancelationError';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer';
+import express from 'express';
+import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { ServerError } from '../../lib/util/error/ServerError';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);
@@ -350,20 +354,62 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				'ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.',
+				"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
 			);
 	});
 
-	test('throws an error if incorrect options are used.', async (): Promise<void> => {
+	test('throws an error if the given lowerBoundId does not contain an integer', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				lowerBoundId: 'some-id',
+			},
+		);
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if the given lowerBoundId does not contain a negative integer', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				lowerBoundId: '-3',
+			},
+		);
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if an incorrect subject is used in fromLatestEvent.', async () => {
 		let result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
 				recursive: true,
 				fromLatestEvent: {
-					subject: '',
-					type: 'com.foobar.barbaz',
-					ifEventIsMissing: 'read-nothing',
+					type: 'com.some.type',
+					subject: 'this is wrong',
+					ifEventIsMissing: 'wait-for-event',
 				},
 			},
 		);
@@ -375,17 +421,23 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Failed to validate subject: '' must be an absolute, slash-separated path.",
+				"Parameter 'options' is invalid: Failed to validate subject: 'this is wrong' must be an absolute, slash-separated path.",
 			);
+	});
 
-		result = database.withoutAuthorization.client.observeEvents(new AbortController(), '/users', {
-			recursive: true,
-			fromLatestEvent: {
-				subject: '/',
-				type: 'com.',
-				ifEventIsMissing: 'read-nothing',
+	test('throws an error if an incorrect type is used in fromLatestEvent.', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				fromLatestEvent: {
+					type: 'this is wrong',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
 			},
-		});
+		);
 
 		await assert
 			.that(async () => {
@@ -393,6 +445,43 @@ suite('Client.observeEvents()', function () {
 					// Intentionally left blank.
 				}
 			})
-			.is.throwingAsync("Failed to validate type: 'com.' must be reverse domain name.");
+			.is.throwingAsync(
+				"Parameter 'options' is invalid: Failed to validate type: 'this is wrong' must be a reverse domain name.",
+			);
+	});
+
+	suite('using a mock server', () => {
+		let stopServer: () => void;
+
+		teardown(async () => {
+			stopServer();
+		});
+
+		test('throws a server error if the server responses with http 5xx on every try.', async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.status(StatusCodes.BAD_GATEWAY);
+					res.send(ReasonPhrases.BAD_GATEWAY);
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync((error) => error instanceof ServerError);
+		});
 	});
 });

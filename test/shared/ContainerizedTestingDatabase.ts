@@ -2,7 +2,7 @@ import { Container } from './docker/Container';
 import { Image } from './docker/Image';
 import { Client } from '../../lib';
 import { ClientOptions } from '../../lib/ClientOptions';
-import { retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
+import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
 
 class ContainerizedTestingDatabase {
 	private readonly command: string;
@@ -46,8 +46,10 @@ class ContainerizedTestingDatabase {
 
 		const client = new Client(baseUrl, options);
 
-		await retryWithBackoff(new AbortController(), 10, async (): Promise<void> => {
+		await retryWithBackoff(new AbortController(), 10, async () => {
 			await client.ping();
+
+			return done;
 		});
 
 		return {
