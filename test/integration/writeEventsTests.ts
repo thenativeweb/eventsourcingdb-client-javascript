@@ -362,7 +362,7 @@ suite('Client.writeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
+						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
 			);
 		await assert
 			.that(async () => {
@@ -372,7 +372,7 @@ suite('Client.writeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
+						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
 			);
 
 		const dataWithNonEnumerableProperty = {};
@@ -388,7 +388,7 @@ suite('Client.writeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
+						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
 			);
 
 		class ClassWithoutExplicitToJsonMethod {}
@@ -404,7 +404,7 @@ suite('Client.writeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
+						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
 			);
 	});
 

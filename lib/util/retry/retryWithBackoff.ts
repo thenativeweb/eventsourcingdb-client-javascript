@@ -63,7 +63,6 @@ const retryWithBackoff = async function <TReturn = void>(
 
 		if ('retry' in result) {
 			retryError.appendError(result.retry);
-			continue;
 		}
 	}
 

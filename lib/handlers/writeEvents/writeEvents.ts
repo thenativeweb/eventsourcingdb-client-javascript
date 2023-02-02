@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
@@ -64,6 +65,9 @@ const writeEvents = async function (
 			throw new InternalError(error);
 		},
 	);
+	if (response.status !== StatusCodes.OK) {
+		throw new ServerError(`Unexpected response status: ${response.status} ${response.statusText}.`);
+	}
 
 	if (!Array.isArray(response.data)) {
 		throw new ServerError(`Failed to parse response '${response.data}' to array.`);

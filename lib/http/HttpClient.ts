@@ -217,6 +217,7 @@ class HttpClient {
 
 			if (ex instanceof AxiosError) {
 				if (ex.request !== undefined) {
+					console.log(ex.message);
 					throw new ServerError('No response received.');
 				} else {
 					throw new InternalError('Failed to setup request.');

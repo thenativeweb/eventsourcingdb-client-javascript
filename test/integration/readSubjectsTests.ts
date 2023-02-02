@@ -325,7 +325,7 @@ suite('Client.readSubjects()', function () {
 					(error) =>
 						error instanceof ServerError &&
 						error.message ===
-							'Server error occurred: Failed to observe events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
+							'Server error occurred: Failed to read subjects, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
 				);
 		});
 	});

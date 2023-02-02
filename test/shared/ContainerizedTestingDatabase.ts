@@ -1,3 +1,4 @@
+import { ServerError } from '../../lib/util/error/ServerError';
 import { Container } from './docker/Container';
 import { Image } from './docker/Image';
 import { Client } from '../../lib';
@@ -42,12 +43,19 @@ class ContainerizedTestingDatabase {
 	private static async start(image: Image, command: string, options: ClientOptions) {
 		const container = image.run(command, true, true);
 		const exposedPort = container.getExposedPort(3_000);
-		const baseUrl = `http://localhost:${exposedPort}`;
-
+		const baseUrl = `http://127.0.0.1:${exposedPort}`;
 		const client = new Client(baseUrl, options);
 
 		await retryWithBackoff(new AbortController(), 10, async () => {
-			await client.ping();
+			try {
+				await client.ping();
+			} catch (ex: unknown) {
+				if (ex instanceof ServerError) {
+					return { retry: ex };
+				}
+
+				throw ex;
+			}
 
 			return done;
 		});
