@@ -24,8 +24,9 @@ type ResponseDataType<TResponseType extends ResponseType> = TResponseType extend
 	: TResponseType extends 'stream'
 	? Readable
 	: never;
-type Response<TResponseType extends ResponseType> = Promise<
-	AxiosResponse<ResponseDataType<TResponseType>>
+type Response<TResponseType extends ResponseType> = AxiosResponse<
+	ResponseDataType<TResponseType>,
+	unknown
 >;
 
 class HttpClient {
@@ -112,7 +113,7 @@ class HttpClient {
 		responseType: TResponseType;
 		requestBody: string;
 		abortController?: AbortController;
-	}): Response<TResponseType> {
+	}): Promise<Response<TResponseType>> {
 		let configuration = this.getDefaultRequestConfig();
 		configuration = HttpClient.setContentType(configuration, 'application/json');
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
@@ -122,7 +123,7 @@ class HttpClient {
 		const signal = abortController.signal;
 
 		try {
-			const response = await retryWithBackoff<AxiosResponse<any, any>>(
+			const response = await retryWithBackoff<Response<TResponseType>>(
 				abortController,
 				this.databaseClient.configuration.maxTries,
 				async () => {
@@ -174,7 +175,7 @@ class HttpClient {
 		responseType: TResponseType;
 		abortController?: AbortController;
 		withAuthorization?: boolean;
-	}): Response<TResponseType> {
+	}): Promise<Response<TResponseType>> {
 		let configuration = this.getDefaultRequestConfig(options.withAuthorization);
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
 		const axiosInstance = axios.create(configuration);
@@ -183,7 +184,7 @@ class HttpClient {
 		const signal = abortController.signal;
 
 		try {
-			const response = await retryWithBackoff<AxiosResponse<any, any>>(
+			const response = await retryWithBackoff<Response<TResponseType>>(
 				abortController,
 				this.databaseClient.configuration.maxTries,
 				async () => {

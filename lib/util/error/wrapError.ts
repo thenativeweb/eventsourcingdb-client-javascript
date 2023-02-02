@@ -1,7 +1,7 @@
 import { InternalError } from './InternalError';
 
 const isPromise = function (value: unknown): value is Promise<unknown> {
-	return typeof value === 'object' && typeof (value as any).then === 'function';
+	return typeof value === 'object' && typeof (value as Record<string, unknown>).then === 'function';
 };
 
 function wrapError<TReturn = void>(fn: () => TReturn, onError: (error: Error) => void): TReturn;
@@ -30,20 +30,24 @@ function wrapError<TReturn = void>(
 					const onErrorInvocationResult = onError(err);
 
 					if (isPromise(onErrorInvocationResult)) {
-						return onErrorInvocationResult.catch((newEx: unknown) => {
-							let newErr: Error;
+						return onErrorInvocationResult
+							.then(() => {
+								return Promise.reject(new InternalError('onError did not throw.'));
+							})
+							.catch((newEx: unknown): Promise<TReturn> => {
+								let newErr: Error;
 
-							if (newEx instanceof Error) {
-								newErr = newEx;
-							} else {
-								newErr = new InternalError(newEx);
-							}
+								if (newEx instanceof Error) {
+									newErr = newEx;
+								} else {
+									newErr = new InternalError(newEx);
+								}
 
-							return Promise.reject(newErr);
-						});
+								return Promise.reject(newErr);
+							});
 					}
 
-					return Promise.reject(err) as any;
+					return Promise.reject(err);
 				} catch (newEx: unknown) {
 					let newErr: Error;
 

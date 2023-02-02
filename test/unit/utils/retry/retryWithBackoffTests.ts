@@ -100,8 +100,6 @@ suite('retryWithBackoff', (): void => {
 					count += 1;
 
 					throw new Error('Abort the retries.');
-
-					return { retry: new Error(`Error no. ${count}`) };
 				});
 			})
 			.is.throwingAsync((error) => !(error instanceof RetryError));
