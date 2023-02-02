@@ -40,14 +40,14 @@ const observeEvents = async function* (
 		},
 	);
 
-	const requestBody = await wrapError(
+	const requestBody = wrapError(
 		() => {
 			return JSON.stringify({
 				subject,
 				options,
 			});
 		},
-		(ex) => {
+		() => {
 			throw new InvalidParameterError(
 				'options',
 				'Parameter contains values that cannot be marshaled.',

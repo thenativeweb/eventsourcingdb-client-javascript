@@ -1,6 +1,7 @@
 import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
 import { ValidationError } from '../../util/error/ValidationError';
+import { wrapError } from '../../util/error/wrapError';
 import { isPositiveInteger } from '../../util/isPositiveInteger';
 
 interface ObserveEventsOptions {
@@ -28,9 +29,19 @@ const validateObserveEventsOptions = function (options: ObserveEventsOptions): v
 		);
 	}
 
-	if (options.fromLatestEvent !== undefined) {
-		validateSubject(options.fromLatestEvent.subject);
-		validateType(options.fromLatestEvent.type);
+	const { fromLatestEvent } = options;
+	if (fromLatestEvent !== undefined) {
+		wrapError(
+			() => {
+				validateSubject(fromLatestEvent.subject);
+				validateType(fromLatestEvent.type);
+			},
+			(error) => {
+				throw new ValidationError(
+					`ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': ${error.message}`,
+				);
+			},
+		);
 	}
 };
 

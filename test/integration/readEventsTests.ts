@@ -1,13 +1,14 @@
 import { assert } from 'assertthat';
 import { StoreItem } from '../../lib';
-import { Source } from '../../lib/event/Source';
+import { Source } from '../../lib';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
 import { buildDatabase } from '../shared/buildDatabase';
 import { Database } from '../shared/Database';
 import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
-import { CancelationError } from '../../lib/util/error/CancelationError';
+import { CancelationError } from '../../lib';
 
 suite('Client.readEvents()', function () {
 	this.timeout(20_000);
@@ -273,12 +274,111 @@ suite('Client.readEvents()', function () {
 			);
 	});
 
-	test('throws an error if incorrect options are used.', async (): Promise<void> => {
+	test('throws an error if the subject is invalid.', async (): Promise<void> => {
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), 'invalid', {
+			recursive: true,
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'subject' is invalid: Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
+			);
+	});
+
+	test('throws an error if the given lowerBoundID does not contain an integer.', async (): Promise<void> => {
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			lowerBoundId: 'invalid',
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ReadEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if the given lowerBoundID contains an integer that is negative.', async (): Promise<void> => {
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			lowerBoundId: '-1',
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ReadEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if the given upperBoundID does not contain an integer.', async (): Promise<void> => {
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			upperBoundId: 'invalid',
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ReadEventOptions are invalid: upperBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if the given upperBoundID contains an integer that is negative.', async (): Promise<void> => {
+		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			upperBoundId: '-1',
+		});
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ReadEventOptions are invalid: upperBoundId needs to be a positive integer.",
+			);
+	});
+
+	test('throws an error if an incorrect subject is used in ReadFromLatestEvent.', async (): Promise<void> => {
 		let result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
 			recursive: true,
 			fromLatestEvent: {
-				subject: '',
-				type: 'com.foobar.barbaz',
+				subject: 'invalid',
+				type: 'com.foo.bar',
 				ifEventIsMissing: 'read-everything',
 			},
 		});
@@ -290,24 +390,50 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Failed to validate subject: '' must be an absolute, slash-separated path.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: Failed to validate subject, 'invalid' must be an absolute, slash-separated path.",
 			);
+	});
 
-		result = database.withoutAuthorization.client.readEvents(new AbortController(), '/users', {
-			recursive: true,
-			fromLatestEvent: {
-				subject: '/',
-				type: 'com.',
-				ifEventIsMissing: 'read-everything',
-			},
+	test('throws an error if an incorrect type is used in ReadFromLatestEvent.', async (): Promise<void> => {
+		assert.that(false).is.true();
+	});
+
+	suite('using a mock server', () => {
+		let stopServer: () => void;
+
+		teardown(async () => {
+			stopServer();
 		});
 
-		await assert
-			.that(async () => {
-				for await (const item of result) {
-					// Intentionally left blank.
-				}
-			})
-			.is.throwingAsync("Failed to validate type: 'com.' must be reverse domain name.");
+		test('throws a sever error if the server responds with HTTP 5xx on every try.', async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test('throws a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
+
+		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
+			assert.that(false).is.true();
+		});
 	});
 });

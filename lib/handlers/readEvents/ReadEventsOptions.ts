@@ -1,6 +1,7 @@
 import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
 import { ValidationError } from '../../util/error/ValidationError';
+import { wrapError } from '../../util/error/wrapError';
 
 interface ReadEventsOptions {
 	recursive: boolean;
@@ -24,8 +25,18 @@ const validateReadEventsOptions = function (options: ReadEventsOptions): void {
 			);
 		}
 
-		validateSubject(options.fromLatestEvent.subject);
-		validateType(options.fromLatestEvent.type);
+		const { fromLatestEvent } = options;
+		wrapError(
+			() => {
+				validateSubject(fromLatestEvent.subject);
+				validateType(fromLatestEvent.type);
+			},
+			(error) => {
+				throw new ValidationError(
+					`ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': ${error.message}`,
+				);
+			},
+		);
 	}
 };
 

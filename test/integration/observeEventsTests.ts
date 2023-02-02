@@ -10,7 +10,7 @@ import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
-import { CancelationError } from '../../lib/util/error/CancelationError';
+import { CancelationError } from '../../lib';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 import { ServerError } from '../../lib/util/error/ServerError';
@@ -380,7 +380,10 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
 			);
 	});
 
@@ -401,7 +404,10 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -422,7 +428,10 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -447,7 +456,10 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Parameter 'options' is invalid: Failed to validate subject: 'this is wrong' must be an absolute, slash-separated path.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate subject: 'this is wrong' must be an absolute, slash-separated path.",
 			);
 	});
 
@@ -472,7 +484,10 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Parameter 'options' is invalid: Failed to validate type: 'this is wrong' must be a reverse domain name.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate type: 'this is wrong' must be a reverse domain name.",
 			);
 	});
 
