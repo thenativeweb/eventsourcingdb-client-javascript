@@ -1,7 +1,7 @@
-const positiveIntegerMatcher = /^\d+$/u;
+const nonNegativeIntegerMatcher = /^\d+$/u;
 
 const IsNonNegativeInteger = function (value: string): boolean {
-	return positiveIntegerMatcher.test(value);
+	return nonNegativeIntegerMatcher.test(value);
 };
 
 export { IsNonNegativeInteger };

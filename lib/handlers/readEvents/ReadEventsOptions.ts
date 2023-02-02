@@ -20,14 +20,10 @@ interface ReadFromLatestEvent {
 
 const validateReadEventsOptions = function (options: ReadEventsOptions): void {
 	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
-		throw new ValidationError(
-			'ReadEventsOptions are invalid: lowerBoundId must be a positive integer.',
-		);
+		throw new ValidationError('ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.');
 	}
 	if (options.upperBoundId !== undefined && !IsNonNegativeInteger(options.upperBoundId)) {
-		throw new ValidationError(
-			'ReadEventsOptions are invalid: upperBoundId must be a positive integer.',
-		);
+		throw new ValidationError('ReadEventsOptions are invalid: upperBoundId must be 0 or greater.');
 	}
 
 	if (options.fromLatestEvent !== undefined) {

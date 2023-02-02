@@ -407,7 +407,7 @@ suite('Client.observeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.",
 			);
 	});
 
@@ -431,7 +431,7 @@ suite('Client.observeEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ObserveEventOptions are invalid: lowerBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.",
 			);
 	});
 

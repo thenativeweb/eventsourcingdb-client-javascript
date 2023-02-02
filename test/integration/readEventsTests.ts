@@ -321,7 +321,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
 			);
 	});
 
@@ -345,7 +345,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
 			);
 	});
 
@@ -369,7 +369,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
 			);
 	});
 
@@ -393,7 +393,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
 			);
 	});
 

@@ -19,7 +19,7 @@ interface ObserveFromLatestEvent {
 const validateObserveEventsOptions = function (options: ObserveEventsOptions): void {
 	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
 		throw new ValidationError(
-			'ObserveEventOptions are invalid: lowerBoundId must be a positive integer.',
+			'ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.',
 		);
 	}
 
