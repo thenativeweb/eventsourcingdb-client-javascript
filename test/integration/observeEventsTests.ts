@@ -748,36 +748,5 @@ suite('Client.observeEvents()', function () {
 							'Server error occurred: Failed to observe events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
 				);
 		});
-
-		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
-			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
-					res.send('{"type": "error", "payload": 42}\n');
-				});
-			}));
-
-			let result = client.observeEvents(new AbortController(), '/users', {
-				recursive: true,
-				fromLatestEvent: {
-					type: 'com.subject.some',
-					subject: '/some/subject',
-					ifEventIsMissing: 'wait-for-event',
-				},
-			});
-
-			await assert
-				.that(async () => {
-					for await (const item of result) {
-						// Intentionally left blank.
-					}
-				})
-				.is.throwingAsync(
-					(error) =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed to observe events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
-				);
-		});
 	});
 });
