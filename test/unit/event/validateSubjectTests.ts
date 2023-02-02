@@ -1,5 +1,6 @@
 import { assert } from 'assertthat';
 import { validateSubject } from '../../../lib/event/validateSubject';
+import { ValidationError } from '../../../lib/util/error/ValidationError';
 
 suite('validateSubject()', () => {
 	test('returns without throwing on a valid subject.', () => {
@@ -15,7 +16,10 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('invalidExampleSubject');
 			})
-			.is.throwing((error) => error.message.includes('invalidExampleSubject'));
+			.is.throwing(
+				(error) =>
+					error.message.includes('invalidExampleSubject') && error instanceof ValidationError,
+			);
 	});
 
 	test('is throwing if the subject is not an absolute slash separated path.', () => {
@@ -23,7 +27,7 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('invalidExampleSubject');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test('is throwing if the subject is a relative path.', () => {
@@ -31,7 +35,7 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('this/is/invalid');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 
 	test('is throwing if the subject has invalid characters.', () => {
@@ -39,6 +43,6 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('/user/günter/registered');
 			})
-			.is.throwing();
+			.is.throwing((error) => error instanceof ValidationError);
 	});
 });

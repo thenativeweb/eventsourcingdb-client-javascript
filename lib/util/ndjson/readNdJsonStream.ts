@@ -4,6 +4,7 @@ import { UnknownObject } from '../UnknownObject';
 import { LinesDecoder } from './LinesDecoder';
 import { CancelationError } from '../error/CancelationError';
 import { CanceledError } from 'axios';
+import { ServerError } from '../error/ServerError';
 
 const readNdJsonStream = async function* (
 	stream: Readable,
@@ -25,7 +26,7 @@ const readNdJsonStream = async function* (
 			throw new CancelationError();
 		}
 
-		throw ex;
+		throw new ServerError('Failed to read response.');
 	}
 };
 

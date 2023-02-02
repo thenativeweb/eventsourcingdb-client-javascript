@@ -1,6 +1,8 @@
 import { assert } from 'assertthat';
-import { StoreItem } from '../../lib';
+import { Client, StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
+import { ClientError } from '../../lib/util/error/ClientError';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
 import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline';
 import { buildDatabase } from '../shared/buildDatabase';
 import { Database } from '../shared/Database';
@@ -8,7 +10,10 @@ import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
-import { CancelationError } from '../../lib/util/error/CancelationError';
+import { CancelationError } from '../../lib';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer';
+import { StatusCodes, ReasonPhrases } from 'http-status-codes';
+import { ServerError } from '../../lib/util/error/ServerError';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);
@@ -84,7 +89,32 @@ suite('Client.observeEvents()', function () {
 					console.log(JSON.stringify({ event, hash }));
 				}
 			})
-			.is.throwingAsync();
+			.is.throwingAsync(
+				(error) =>
+					error instanceof ServerError &&
+					error.message === 'Server error occurred: No response received.',
+			);
+	});
+
+	test('throws an error if the subject is invalid.', async (): Promise<void> => {
+		const client = database.withInvalidUrl.client;
+
+		await assert
+			.that(async () => {
+				const result = client.observeEvents(new AbortController(), 'applepie', {
+					recursive: false,
+				});
+
+				for await (const { event, hash } of result) {
+					console.log(JSON.stringify({ event, hash }));
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'subject' is invalid: Failed to validate subject: 'applepie' must be an absolute, slash-separated path.",
+			);
 	});
 
 	test('supports authorization.', async (): Promise<void> => {
@@ -350,20 +380,71 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				'ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.',
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
 			);
 	});
 
-	test('throws an error if incorrect options are used.', async (): Promise<void> => {
+	test('throws an error if the given lowerBoundId does not contain an integer', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				lowerBoundId: 'some-id',
+			},
+		);
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.",
+			);
+	});
+
+	test('throws an error if the given lowerBoundId does not contain a negative integer', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				lowerBoundId: '-3',
+			},
+		);
+
+		await assert
+			.that(async () => {
+				for await (const item of result) {
+					// Intentionally left blank.
+				}
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.",
+			);
+	});
+
+	test('throws an error if an incorrect subject is used in fromLatestEvent.', async () => {
 		let result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
 				recursive: true,
 				fromLatestEvent: {
-					subject: '',
-					type: 'com.foobar.barbaz',
-					ifEventIsMissing: 'read-nothing',
+					type: 'com.some.type',
+					subject: 'this is wrong',
+					ifEventIsMissing: 'wait-for-event',
 				},
 			},
 		);
@@ -375,17 +456,26 @@ suite('Client.observeEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				"Failed to validate subject: '' must be an absolute, slash-separated path.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate subject: 'this is wrong' must be an absolute, slash-separated path.",
 			);
+	});
 
-		result = database.withoutAuthorization.client.observeEvents(new AbortController(), '/users', {
-			recursive: true,
-			fromLatestEvent: {
-				subject: '/',
-				type: 'com.',
-				ifEventIsMissing: 'read-nothing',
+	test('throws an error if an incorrect type is used in fromLatestEvent.', async () => {
+		let result = database.withoutAuthorization.client.observeEvents(
+			new AbortController(),
+			'/users',
+			{
+				recursive: true,
+				fromLatestEvent: {
+					type: 'this is wrong',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
 			},
-		});
+		);
 
 		await assert
 			.that(async () => {
@@ -393,6 +483,270 @@ suite('Client.observeEvents()', function () {
 					// Intentionally left blank.
 				}
 			})
-			.is.throwingAsync("Failed to validate type: 'com.' must be reverse domain name.");
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'options' is invalid: ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate type: 'this is wrong' must be a reverse domain name.",
+			);
+	});
+
+	suite('using a mock server', () => {
+		let stopServer: () => void;
+
+		teardown(async () => {
+			stopServer();
+		});
+
+		test('throws a server error if the server responds with http 5xx on every try.', async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.status(StatusCodes.BAD_GATEWAY);
+					res.send(ReasonPhrases.BAD_GATEWAY);
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed operation with 2 errors:\n' +
+								"Error: Server error occurred: Request failed with status code '502'.\n" +
+								"Error: Server error occurred: Request failed with status code '502'.",
+				);
+		});
+
+		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
+					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
+					res.send(ReasonPhrases.UNPROCESSABLE_ENTITY);
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message ===
+							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
+				);
+		});
+
+		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.status(StatusCodes.IM_A_TEAPOT);
+					res.send(ReasonPhrases.IM_A_TEAPOT);
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message === "Client error occurred: Request failed with status code '418'.",
+				);
+		});
+
+		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.status(StatusCodes.ACCEPTED);
+					res.send(ReasonPhrases.ACCEPTED);
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
+				);
+		});
+
+		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.send('utter garbage\n');
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: Failed to read response.',
+				);
+		});
+
+		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.send('{"type": ":clown:"}\n');
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed to observe events, an unexpected stream item was received: \'{"type":":clown:"}\'.',
+				);
+		});
+
+		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.send('{"type": "error", "payload": { "error": "not enough JUICE 😩" }}\n');
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: not enough JUICE 😩.',
+				);
+		});
+
+		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/observe-events', (req, res) => {
+					res.send('{"type": "error", "payload": 42}\n');
+				});
+			}));
+
+			let result = client.observeEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'wait-for-event',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed to observe events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
+				);
+		});
 	});
 });

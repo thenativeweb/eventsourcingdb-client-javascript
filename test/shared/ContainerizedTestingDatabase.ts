@@ -1,8 +1,9 @@
+import { ServerError } from '../../lib/util/error/ServerError';
 import { Container } from './docker/Container';
 import { Image } from './docker/Image';
 import { Client } from '../../lib';
 import { ClientOptions } from '../../lib/ClientOptions';
-import { retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
+import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
 
 class ContainerizedTestingDatabase {
 	private readonly command: string;
@@ -42,12 +43,21 @@ class ContainerizedTestingDatabase {
 	private static async start(image: Image, command: string, options: ClientOptions) {
 		const container = image.run(command, true, true);
 		const exposedPort = container.getExposedPort(3_000);
-		const baseUrl = `http://localhost:${exposedPort}`;
-
+		const baseUrl = `http://127.0.0.1:${exposedPort}`;
 		const client = new Client(baseUrl, options);
 
-		await retryWithBackoff(new AbortController(), 10, async (): Promise<void> => {
-			await client.ping();
+		await retryWithBackoff(new AbortController(), 10, async () => {
+			try {
+				await client.ping();
+			} catch (ex: unknown) {
+				if (ex instanceof ServerError) {
+					return { retry: ex };
+				}
+
+				throw ex;
+			}
+
+			return done;
 		});
 
 		return {

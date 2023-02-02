@@ -1,7 +1,6 @@
-import { CanceledError } from 'axios';
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { validateSubject } from '../../event/validateSubject';
-import { ChainedError } from '../../util/error/ChainedError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isHeartbeat } from '../isHeartbeat';
@@ -10,7 +9,11 @@ import { isStreamError } from '../isStreamError';
 import { StoreItem } from '../StoreItem';
 import { ReadEventsOptions, validateReadEventsOptions } from './ReadEventsOptions';
 import { Event } from '../../event/Event';
-import { CancelationError } from '../../util/error/CancelationError';
+import { ValidationError } from '../../util/error/ValidationError';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError';
+import { CustomError } from '../../util/error/CustomError';
+import { InternalError } from '../../util/error/InternalError';
+import { ServerError } from '../../util/error/ServerError';
 
 const readEvents = async function* (
 	client: Client,
@@ -18,13 +21,38 @@ const readEvents = async function* (
 	subject: string,
 	options: ReadEventsOptions,
 ): AsyncGenerator<StoreItem, void, void> {
-	validateSubject(subject);
-	validateReadEventsOptions(options);
+	wrapError(
+		() => validateSubject(subject),
+		(ex) => {
+			if (ex instanceof ValidationError) {
+				throw new InvalidParameterError('subject', ex.message);
+			}
+		},
+	);
+	wrapError(
+		() => {
+			validateReadEventsOptions(options);
+		},
+		(ex) => {
+			if (ex instanceof ValidationError) {
+				throw new InvalidParameterError('options', ex.message);
+			}
+		},
+	);
 
-	const requestBody = JSON.stringify({
-		subject,
-		options,
-	});
+	const requestBody = wrapError(
+		() =>
+			JSON.stringify({
+				subject,
+				options,
+			}),
+		() => {
+			throw new InvalidParameterError(
+				'options',
+				'Parameter contains values that cannot be marshaled.',
+			);
+		},
+	);
 
 	const response = await wrapError(
 		async () =>
@@ -35,13 +63,16 @@ const readEvents = async function* (
 				abortController,
 			}),
 		async (error) => {
-			if (error instanceof CancelationError) {
-				return error;
+			if (error instanceof CustomError) {
+				throw error;
 			}
 
-			return new ChainedError('Failed to read events.', error);
+			throw new InternalError(error);
 		},
 	);
+	if (response.status !== StatusCodes.OK) {
+		throw new ServerError(`Unexpected response status: ${response.status} ${response.statusText}.`);
+	}
 
 	const stream = response.data;
 
@@ -50,7 +81,7 @@ const readEvents = async function* (
 			continue;
 		}
 		if (isStreamError(message)) {
-			throw new ChainedError('Failed to read events.', new Error(message.payload.error));
+			throw new ServerError(`${message.payload.error}.`);
 		}
 		if (isItem(message)) {
 			const event = Event.parse(message.payload.event);
@@ -63,7 +94,11 @@ const readEvents = async function* (
 			continue;
 		}
 
-		throw new Error(`Failed to read events, an unexpected stream item was received: '${message}'.`);
+		throw new ServerError(
+			`Failed to read events, an unexpected stream item was received: '${JSON.stringify(
+				message,
+			)}'.`,
+		);
 	}
 };
 

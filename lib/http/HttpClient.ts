@@ -1,10 +1,15 @@
-import { AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
+import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
 import { Client } from '../Client';
+import { RetryError } from '../util/retry/RetryError';
 import { retryWithBackoff } from '../util/retry/retryWithBackoff';
 import { CancelationError } from '../util/error/CancelationError';
+import { ClientError } from '../util/error/ClientError';
+import { ServerError } from '../util/error/ServerError';
+import { InternalError } from '../util/error/InternalError';
+import { CustomError } from '../util/error/CustomError';
 
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
@@ -19,8 +24,9 @@ type ResponseDataType<TResponseType extends ResponseType> = TResponseType extend
 	: TResponseType extends 'stream'
 	? Readable
 	: never;
-type Response<TResponseType extends ResponseType> = Promise<
-	AxiosResponse<ResponseDataType<TResponseType>>
+type Response<TResponseType extends ResponseType> = AxiosResponse<
+	ResponseDataType<TResponseType>,
+	unknown
 >;
 
 class HttpClient {
@@ -37,6 +43,7 @@ class HttpClient {
 			headers: {
 				'X-EventSourcingDB-Protocol-Version': this.databaseClient.configuration.protocolVersion,
 			},
+			validateStatus: () => true,
 		};
 
 		if (withAuthorization && this.databaseClient.configuration.accessToken !== undefined) {
@@ -90,13 +97,13 @@ class HttpClient {
 			return;
 		}
 
-		let serverProtocolVersion = headers['X-EventSourcingDB-Protocol-Version'];
+		let serverProtocolVersion = headers['x-eventsourcingdb-protocol-version'];
 
-		if (serverProtocolVersion === '') {
+		if (serverProtocolVersion === undefined) {
 			serverProtocolVersion = 'unknown version';
 		}
 
-		throw new Error(
+		throw new ClientError(
 			`Protocol version mismatch, server '${serverProtocolVersion}', client '${this.databaseClient.configuration.protocolVersion}.'`,
 		);
 	}
@@ -106,7 +113,7 @@ class HttpClient {
 		responseType: TResponseType;
 		requestBody: string;
 		abortController?: AbortController;
-	}): Response<TResponseType> {
+	}): Promise<Response<TResponseType>> {
 		let configuration = this.getDefaultRequestConfig();
 		configuration = HttpClient.setContentType(configuration, 'application/json');
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
@@ -116,20 +123,50 @@ class HttpClient {
 		const signal = abortController.signal;
 
 		try {
-			const response = await retryWithBackoff(
+			const response = await retryWithBackoff<Response<TResponseType>>(
 				abortController,
 				this.databaseClient.configuration.maxTries,
-				async () => axiosInstance.post(options.path, options.requestBody, { signal }),
+				async () => {
+					const response = await axiosInstance.post(options.path, options.requestBody, { signal });
+					if (response.status >= 500 && response.status < 600) {
+						return {
+							retry: new ServerError(`Request failed with status code '${response.status}'.`),
+						};
+					}
+
+					response.headers.get;
+					this.validateProtocolVersion(response.status, response.headers);
+
+					if (response.status >= 400 && response.status < 500) {
+						throw new ClientError(`Request failed with status code '${response.status}'.`);
+					}
+
+					return { return: response };
+				},
 			);
-			this.validateProtocolVersion(response.status, response.headers);
 
 			return response;
 		} catch (ex) {
+			if (ex instanceof RetryError) {
+				throw new ServerError(ex.message);
+			}
+			if (ex instanceof CustomError) {
+				throw ex;
+			}
+
 			if (ex instanceof CanceledError) {
 				throw new CancelationError();
 			}
 
-			throw ex;
+			if (ex instanceof AxiosError) {
+				if (ex.request !== undefined) {
+					throw new ServerError('No response received.');
+				} else {
+					throw new InternalError('Failed to setup request.');
+				}
+			}
+
+			throw new InternalError(ex);
 		}
 	}
 
@@ -138,7 +175,7 @@ class HttpClient {
 		responseType: TResponseType;
 		abortController?: AbortController;
 		withAuthorization?: boolean;
-	}): Response<TResponseType> {
+	}): Promise<Response<TResponseType>> {
 		let configuration = this.getDefaultRequestConfig(options.withAuthorization);
 		configuration = HttpClient.setResponseType(configuration, options.responseType);
 		const axiosInstance = axios.create(configuration);
@@ -147,20 +184,48 @@ class HttpClient {
 		const signal = abortController.signal;
 
 		try {
-			const response = await retryWithBackoff(
+			const response = await retryWithBackoff<Response<TResponseType>>(
 				abortController,
 				this.databaseClient.configuration.maxTries,
-				async () => axiosInstance.get(options.path, { signal }),
+				async () => {
+					const response = await axiosInstance.get(options.path, { signal });
+					if (response.status >= 500 && response.status < 600) {
+						return {
+							retry: new ServerError(`Request failed with status code '${response.status}'.`),
+						};
+					}
+
+					this.validateProtocolVersion(response.status, response.headers);
+
+					if (response.status >= 400 && response.status < 500) {
+						throw new ClientError(`Request failed with status code '${response.status}'.`);
+					}
+
+					return { return: response };
+				},
 			);
 			this.validateProtocolVersion(response.status, response.headers);
 
 			return response;
 		} catch (ex) {
+			if (ex instanceof CustomError) {
+				throw ex;
+			}
+
 			if (ex instanceof CanceledError) {
 				throw new CancelationError();
 			}
 
-			throw ex;
+			if (ex instanceof AxiosError) {
+				if (ex.request !== undefined) {
+					console.log(ex.message);
+					throw new ServerError('No response received.');
+				} else {
+					throw new InternalError('Failed to setup request.');
+				}
+			}
+
+			throw new InternalError(ex);
 		}
 	}
 }

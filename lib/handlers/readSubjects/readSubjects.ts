@@ -1,20 +1,43 @@
 import { Client } from '../../Client';
 import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
 import { wrapError } from '../../util/error/wrapError';
-import { ChainedError } from '../../util/error/ChainedError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
 import { isSubject } from './isSubject';
-import { CancelationError } from '../../util/error/CancelationError';
+import { ValidationError } from '../../util/error/ValidationError';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError';
+import { CustomError } from '../../util/error/CustomError';
+import { InternalError } from '../../util/error/InternalError';
+import { ServerError } from '../../util/error/ServerError';
+import { getReasonPhrase, StatusCodes } from 'http-status-codes';
 
 const readSubjects = async function* (
 	client: Client,
 	abortController: AbortController,
 	options: ReadSubjectsOptions,
 ): AsyncGenerator<string, void, void> {
-	validateReadSubjectsOptions(options);
+	await wrapError(
+		() => {
+			validateReadSubjectsOptions(options);
+		},
+		(ex) => {
+			if (ex instanceof ValidationError) {
+				throw new InvalidParameterError('options', ex.message);
+			}
+		},
+	);
 
-	const requestBody = JSON.stringify(options);
+	const requestBody = wrapError(
+		() => {
+			return JSON.stringify(options);
+		},
+		(ex) => {
+			throw new InvalidParameterError(
+				'options',
+				'Parameter contains values that cannot be marshaled.',
+			);
+		},
+	);
 
 	const response = await wrapError(
 		async () =>
@@ -25,19 +48,25 @@ const readSubjects = async function* (
 				abortController,
 			}),
 		async (error) => {
-			if (error instanceof CancelationError) {
-				return error;
+			if (error instanceof CustomError) {
+				throw error;
 			}
 
-			return new ChainedError('Failed to read subjects.', error);
+			throw new InternalError(error);
 		},
 	);
+
+	if (response.status !== StatusCodes.OK) {
+		throw new ServerError(
+			`Unexpected response status: ${response.status} ${getReasonPhrase(response.status)}.`,
+		);
+	}
 
 	const stream = response.data;
 
 	for await (const message of readNdJsonStream(stream)) {
 		if (isStreamError(message)) {
-			throw new ChainedError('Failed to read subjects.', new Error(message.payload.error));
+			throw new ServerError(message.payload.error);
 		}
 
 		if (isSubject(message)) {
@@ -45,8 +74,10 @@ const readSubjects = async function* (
 			continue;
 		}
 
-		throw new Error(
-			`Failed to read subjects, an unexpected stream item was received: '${message}'.`,
+		throw new ServerError(
+			`Failed to read subjects, an unexpected stream item was received: '${JSON.stringify(
+				message,
+			)}'.`,
 		);
 	}
 };
