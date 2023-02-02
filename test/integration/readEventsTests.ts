@@ -274,7 +274,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				'ReadEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.',
+				"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
 			);
 	});
 
@@ -321,7 +321,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -345,7 +345,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventOptions are invalid: lowerBoundId needs to be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -369,7 +369,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventOptions are invalid: upperBoundId needs to be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -393,7 +393,7 @@ suite('Client.readEvents()', function () {
 				(error) =>
 					error instanceof InvalidParameterError &&
 					error.message ===
-						"Parameter 'options' is invalid: ReadEventOptions are invalid: upperBoundId needs to be a positive integer.",
+						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId needs to be a positive integer.",
 			);
 	});
 
@@ -559,19 +559,156 @@ suite('Client.readEvents()', function () {
 		});
 
 		test('throws a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
-			assert.that(false).is.true();
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/read-events', (req, res) => {
+					res.status(StatusCodes.ACCEPTED);
+					res.send(ReasonPhrases.ACCEPTED);
+				});
+			}));
+
+			let result = client.readEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'read-nothing',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
+				);
 		});
 
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
-			assert.that(false).is.true();
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/read-events', (req, res) => {
+					res.send('utter garbage\n');
+				});
+			}));
+
+			let result = client.readEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'read-nothing',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: Failed to read response.',
+				);
+		});
+
+		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/read-events', (req, res) => {
+					res.send('{"type": ":clown:"}\n');
+				});
+			}));
+
+			let result = client.readEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'read-nothing',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":":clown:"}\'.',
+				);
 		});
 
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
-			assert.that(false).is.true();
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/read-events', (req, res) => {
+					res.send('{"type": "error", "payload": { "error": "not enough JUICE 😩" }}\n');
+				});
+			}));
+
+			let result = client.readEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'read-nothing',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: not enough JUICE 😩.',
+				);
 		});
 
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
-			assert.that(false).is.true();
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/read-events', (req, res) => {
+					res.send('{"type": "error", "payload": 42}\n');
+				});
+			}));
+
+			let result = client.readEvents(new AbortController(), '/users', {
+				recursive: true,
+				fromLatestEvent: {
+					type: 'com.subject.some',
+					subject: '/some/subject',
+					ifEventIsMissing: 'read-nothing',
+				},
+			});
+
+			await assert
+				.that(async () => {
+					for await (const item of result) {
+						// Intentionally left blank.
+					}
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
+				);
 		});
 	});
 });
