@@ -2,7 +2,7 @@ import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
-import { isPositiveInteger } from '../../util/isPositiveInteger';
+import { IsNonNegativeInteger } from '../../util/isNonNegativeInteger';
 
 interface ReadEventsOptions {
 	recursive: boolean;
@@ -19,12 +19,12 @@ interface ReadFromLatestEvent {
 }
 
 const validateReadEventsOptions = function (options: ReadEventsOptions): void {
-	if (options.lowerBoundId !== undefined && !isPositiveInteger(options.lowerBoundId)) {
+	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
 		throw new ValidationError(
 			'ReadEventsOptions are invalid: lowerBoundId must be a positive integer.',
 		);
 	}
-	if (options.upperBoundId !== undefined && !isPositiveInteger(options.upperBoundId)) {
+	if (options.upperBoundId !== undefined && !IsNonNegativeInteger(options.upperBoundId)) {
 		throw new ValidationError(
 			'ReadEventsOptions are invalid: upperBoundId must be a positive integer.',
 		);

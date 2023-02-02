@@ -2,7 +2,7 @@ import { validateSubject } from '../../event/validateSubject';
 import { validateType } from '../../event/validateType';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
-import { isPositiveInteger } from '../../util/isPositiveInteger';
+import { IsNonNegativeInteger } from '../../util/isNonNegativeInteger';
 
 interface ObserveEventsOptions {
 	recursive: boolean;
@@ -17,7 +17,7 @@ interface ObserveFromLatestEvent {
 }
 
 const validateObserveEventsOptions = function (options: ObserveEventsOptions): void {
-	if (options.lowerBoundId !== undefined && !isPositiveInteger(options.lowerBoundId)) {
+	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
 		throw new ValidationError(
 			'ObserveEventOptions are invalid: lowerBoundId must be a positive integer.',
 		);
