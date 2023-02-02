@@ -1,7 +1,11 @@
 import { assert } from 'assertthat';
-import { StoreItem } from '../../lib';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
+import { Client, StoreItem } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
+import { ClientError } from '../../lib/util/error/ClientError';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
+import { ServerError } from '../../lib/util/error/ServerError';
 import { UnknownObject } from '../../lib/util/UnknownObject';
 import { buildDatabase } from '../shared/buildDatabase';
 import { Database } from '../shared/Database';
@@ -9,6 +13,7 @@ import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { prefixEventType } from '../shared/events/type';
 import { startDatabase } from '../shared/startDatabase';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
 
 suite('Client.writeEvents()', function () {
@@ -41,7 +46,26 @@ suite('Client.writeEvents()', function () {
 					),
 				]);
 			})
-			.is.throwingAsync();
+			.is.throwingAsync(
+				(error) =>
+					error instanceof ServerError &&
+					error.message === 'Server error occurred: No response received.',
+			);
+	});
+
+	test('throws an error if no candidates are passed.', async (): Promise<void> => {
+		const client = database.withoutAuthorization.client;
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([]);
+			})
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'eventCandidates' is invalid: eventCandidates must contain at least one EventCandidate.",
+			);
 	});
 
 	test('throws an error if a candidate subject is malformed.', async (): Promise<void> => {
@@ -53,7 +77,12 @@ suite('Client.writeEvents()', function () {
 					source.newEvent('foobar', events.registered.janeDoe.type, events.registered.janeDoe.data),
 				]);
 			})
-			.is.throwingAsync(/Failed to validate subject/gu);
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'eventCandidates' is invalid: Failed to validate subject: 'foobar' must be an absolute, slash-separated path.",
+			);
 	});
 
 	test('throws an error if a candidate type is malformed.', async (): Promise<void> => {
@@ -65,11 +94,16 @@ suite('Client.writeEvents()', function () {
 					source.newEvent('/foobar', 'haram', events.registered.janeDoe.data),
 				]);
 			})
-			.is.throwingAsync(/Failed to validate type/gu);
+			.is.throwingAsync(
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Parameter 'eventCandidates' is invalid: Failed to validate type: 'haram' must be a reverse domain name.",
+			);
 	});
 
-	test('throws an error if a precondition uses an invalid source.', async (): Promise<void> => {
-		//TODO: implement URI validation?
+	test.skip('throws an error if a precondition uses an invalid source.', async (): Promise<void> => {
+		assert.that(true).is.false();
 	});
 
 	test('supports authorization.', async (): Promise<void> => {
@@ -164,16 +198,6 @@ suite('Client.writeEvents()', function () {
 			.is.not.throwingAsync();
 	});
 
-	test('throws an error when trying to write an empty list of events.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([]);
-			})
-			.is.throwingAsync();
-	});
-
 	suite('when using the isSubjectPristine precondition', (): void => {
 		test('writes the events if the subject is pristine.', async (): Promise<void> => {
 			const client = database.withoutAuthorization.client;
@@ -225,7 +249,11 @@ suite('Client.writeEvents()', function () {
 						[isSubjectPristine({ subject: '/users/registered' })],
 					);
 				})
-				.is.throwingAsync();
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message === "Client error occurred: Request failed with status code '409'.",
+				);
 		});
 	});
 
@@ -313,7 +341,11 @@ suite('Client.writeEvents()', function () {
 						[isSubjectOnEventId({ subject: '/users/registered', eventId: lastEventId })],
 					);
 				})
-				.is.throwingAsync();
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message === "Client error occurred: Request failed with status code '409'.",
+				);
 		});
 	});
 
@@ -327,14 +359,20 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
 			);
 		await assert
 			.that(async () => {
 				await client.writeEvents([source.newEvent('/', 'com.foobar.baz', { lost: () => {} })]);
 			})
 			.is.throwingAsync(
-				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
 			);
 
 		const dataWithNonEnumerableProperty = {};
@@ -347,7 +385,10 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
 			);
 
 		class ClassWithoutExplicitToJsonMethod {}
@@ -360,7 +401,10 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
+				(error) =>
+					error instanceof InvalidParameterError &&
+					error.message ===
+						"Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
 			);
 	});
 
@@ -410,5 +454,120 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.not.throwingAsync();
+	});
+
+	suite('using mocked HTTP server', (): void => {
+		let stopServer: () => void;
+
+		teardown(async () => {
+			stopServer();
+		});
+
+		const events = [source.newEvent('/', 'com.foobar.baz', {})];
+
+		test('throws a server error if the server responds with http 5xx on every try.', async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/write-events', (req, res) => {
+					res.status(StatusCodes.BAD_GATEWAY);
+					res.send(ReasonPhrases.BAD_GATEWAY);
+				});
+			}));
+
+			await assert
+				.that(async () => {
+					await client.writeEvents(events);
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							'Server error occurred: Failed operation with 2 errors:\n' +
+								"Error: Server error occurred: Request failed with status code '502'.\n" +
+								"Error: Server error occurred: Request failed with status code '502'.",
+				);
+		});
+
+		test("throws an error if the server's protocol version does not match.", async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/write-events', (req, res) => {
+					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
+					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
+					res.send(ReasonPhrases.UNPROCESSABLE_ENTITY);
+				});
+			}));
+
+			await assert
+				.that(async () => {
+					await client.writeEvents(events);
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message ===
+							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
+				);
+		});
+
+		test('throws a client error if the server returns a 4xx status code.', async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/write-events', (req, res) => {
+					res.status(StatusCodes.IM_A_TEAPOT);
+					res.send(ReasonPhrases.IM_A_TEAPOT);
+				});
+			}));
+
+			await assert
+				.that(async () => {
+					await client.writeEvents(events);
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ClientError &&
+						error.message === "Client error occurred: Request failed with status code '418'.",
+				);
+		});
+
+		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/write-events', (req, res) => {
+					res.status(StatusCodes.ACCEPTED);
+					res.send(ReasonPhrases.ACCEPTED);
+				});
+			}));
+
+			await assert
+				.that(async () => {
+					await client.writeEvents(events);
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
+				);
+		});
+
+		test("throws a server error if the server's response can't be parsed.", async () => {
+			let client: Client;
+			({ client, stopServer } = await startLocalHttpServer((app) => {
+				app.post('/api/write-events', (req, res) => {
+					res.send('utter garbage');
+				});
+			}));
+
+			await assert
+				.that(async () => {
+					await client.writeEvents(events);
+				})
+				.is.throwingAsync(
+					(error) =>
+						error instanceof ServerError &&
+						error.message ===
+							"Server error occurred: Failed to parse response 'utter garbage' to array.",
+				);
+		});
 	});
 });

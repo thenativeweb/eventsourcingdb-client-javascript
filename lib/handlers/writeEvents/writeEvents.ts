@@ -15,6 +15,12 @@ const writeEvents = async function (
 	eventCandidates: EventCandidate[],
 	preconditions: Precondition[],
 ): Promise<EventContext[]> {
+	if (eventCandidates.length < 1) {
+		throw new InvalidParameterError(
+			'eventCandidates',
+			'eventCandidates must contain at least one EventCandidate.',
+		);
+	}
 	for (const eventCandidate of eventCandidates) {
 		await wrapError(
 			() => {
