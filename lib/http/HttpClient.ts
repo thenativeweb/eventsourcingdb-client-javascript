@@ -134,7 +134,6 @@ class HttpClient {
 						};
 					}
 
-					response.headers.get;
 					this.validateProtocolVersion(response.status, response.headers);
 
 					if (response.status >= 400 && response.status < 500) {
@@ -189,6 +188,7 @@ class HttpClient {
 				this.databaseClient.configuration.maxTries,
 				async () => {
 					const response = await axiosInstance.get(options.path, { signal });
+
 					if (response.status >= 500 && response.status < 600) {
 						return {
 							retry: new ServerError(`Request failed with status code '${response.status}'.`),
@@ -208,6 +208,9 @@ class HttpClient {
 
 			return response;
 		} catch (ex) {
+			if (ex instanceof RetryError) {
+				throw new ServerError(ex.message);
+			}
 			if (ex instanceof CustomError) {
 				throw ex;
 			}

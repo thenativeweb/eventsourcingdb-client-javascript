@@ -1,13 +1,13 @@
 import { Database } from '../shared/Database';
 import { testSource } from '../shared/events/source';
-import { Source } from '../../lib/event/Source';
+import { Source } from '../../lib';
 import { buildDatabase } from '../shared/buildDatabase';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
 import { assert } from 'assertthat';
 import { Client, EventCandidate } from '../../lib';
 import { events } from '../shared/events/events';
-import { CancelationError } from '../../lib/util/error/CancelationError';
+import { CancelationError } from '../../lib';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { ServerError } from '../../lib/util/error/ServerError';
@@ -16,7 +16,6 @@ import { ClientError } from '../../lib/util/error/ClientError';
 suite('Client.readSubjects()', function () {
 	this.timeout(20_000);
 	let database: Database;
-	const source = new Source(testSource);
 
 	suiteSetup(async () => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
