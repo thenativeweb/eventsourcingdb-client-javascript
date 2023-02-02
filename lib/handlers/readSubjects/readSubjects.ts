@@ -9,6 +9,7 @@ import { InvalidParameterError } from '../../util/error/InvalidParameterError';
 import { CustomError } from '../../util/error/CustomError';
 import { InternalError } from '../../util/error/InternalError';
 import { ServerError } from '../../util/error/ServerError';
+import { getReasonPhrase, StatusCodes } from 'http-status-codes';
 
 const readSubjects = async function* (
 	client: Client,
@@ -26,7 +27,7 @@ const readSubjects = async function* (
 		},
 	);
 
-	const requestBody = await wrapError(
+	const requestBody = wrapError(
 		() => {
 			return JSON.stringify(options);
 		},
@@ -55,6 +56,12 @@ const readSubjects = async function* (
 		},
 	);
 
+	if (response.status !== StatusCodes.OK) {
+		throw new ServerError(
+			`Unexpected response status: ${response.status} ${getReasonPhrase(response.status)}.`,
+		);
+	}
+
 	const stream = response.data;
 
 	for await (const message of readNdJsonStream(stream)) {
@@ -68,7 +75,9 @@ const readSubjects = async function* (
 		}
 
 		throw new ServerError(
-			`Failed to read subjects, an unexpected stream item was received: '${message}'.`,
+			`Failed to read subjects, an unexpected stream item was received: '${JSON.stringify(
+				message,
+			)}'.`,
 		);
 	}
 };
