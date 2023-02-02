@@ -1,4 +1,4 @@
-import { getStatusText, StatusCodes } from 'http-status-codes';
+import { getReasonPhrase, getStatusText, StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
@@ -74,7 +74,7 @@ const observeEvents = async function* (
 
 	if (response.status !== StatusCodes.OK) {
 		throw new ServerError(
-			`Unexpected response status: ${response.status} ${getStatusText(response.status)}.`,
+			`Unexpected response status: ${response.status} ${getReasonPhrase(response.status)}.`,
 		);
 	}
 

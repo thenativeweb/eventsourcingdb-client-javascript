@@ -749,7 +749,7 @@ suite('Client.observeEvents()', function () {
 				);
 		});
 
-		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
+		test("throws a server error if the server sends a an item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
 				app.post('/api/observe-events', (req, res) => {
