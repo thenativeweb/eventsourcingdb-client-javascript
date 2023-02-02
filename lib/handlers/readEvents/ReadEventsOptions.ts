@@ -26,7 +26,7 @@ const validateReadEventsOptions = function (options: ReadEventsOptions): void {
 	}
 	if (options.upperBoundId !== undefined && !isPositiveInteger(options.upperBoundId)) {
 		throw new ValidationError(
-			'ReadEventsOptions are invalid: upperBoundId needs to be a positive integer.',
+			'ReadEventsOptions are invalid: upperBoundId must be a positive integer.',
 		);
 	}
 
