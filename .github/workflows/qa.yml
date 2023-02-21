@@ -10,6 +10,7 @@ jobs:
   qa:
     name: QA
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Clone repository
