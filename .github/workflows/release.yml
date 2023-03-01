@@ -27,7 +27,7 @@ jobs:
         node-version: 19.x
     - name: Install dependencies
       run: |
-        npm install
+        npm ci
     - name: Run QA
       run: |
         npm run qa
@@ -49,14 +49,8 @@ jobs:
       if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
       run: |
         npm run build
-    # Before uncommenting the following lines, we first
-    # need to decide how to publish, i.e. to which registry.
-    # One aspect here is that only the obfuscated code
-    # should be visible to the public, so for now we can
-    # defer this, until we have obfuscation set up and
-    # running.
-    # - name: Publish new version
-    #   if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
-    #   run: |
-    #     echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-    #     npm publish
+    - name: Publish new version
+      if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
+      run: |
+        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+        npm publish

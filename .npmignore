@@ -1,2 +1,7 @@
-.github
-test
+.github/
+lib/
+test/
+.gitignore
+.npmignore
+rome.json
+tsconfig.json
