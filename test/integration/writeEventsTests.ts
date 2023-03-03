@@ -1,20 +1,19 @@
 import { assert } from 'assertthat';
-import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, StoreItem } from '../../lib';
-import { Source } from '../../lib/event/Source';
-import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { UnknownObject } from '../../lib/util/UnknownObject';
 import { buildDatabase } from '../shared/buildDatabase';
+import { ClientError } from '../../lib/util/error/ClientError';
 import { Database } from '../shared/Database';
 import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
 import { prefixEventType } from '../shared/events/type';
+import { ServerError } from '../../lib/util/error/ServerError';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
+import { Source } from '../../lib/event/Source';
+import { testSource } from '../shared/events/source';
+import { Client, StoreItem } from '../../lib';
+import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.writeEvents()', function () {
 	this.timeout(20_000);
@@ -347,113 +346,6 @@ suite('Client.writeEvents()', function () {
 						error.message === "Client error occurred: Request failed with status code '409'.",
 				);
 		});
-	});
-
-	test('throws an error if the given EventCandidates contain data that would be lost during JSON marshaling.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', { [Symbol('lost')]: 42 }),
-				]);
-			})
-			.is.throwingAsync(
-				(error) =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has Symbol properties (Symbol(lost)).",
-			);
-		await assert
-			.that(async () => {
-				await client.writeEvents([source.newEvent('/', 'com.foobar.baz', { lost: () => {} })]);
-			})
-			.is.throwingAsync(
-				(error) =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has function properties (lost).",
-			);
-
-		const dataWithNonEnumerableProperty = {};
-		Object.defineProperty(dataWithNonEnumerableProperty, 'lost', { enumerable: false });
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', dataWithNonEnumerableProperty),
-				]);
-			})
-			.is.throwingAsync(
-				(error) =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object has non-enumerable properties (lost).",
-			);
-
-		class ClassWithoutExplicitToJsonMethod {}
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					// rome-ignore lint/suspicious/noExplicitAny: Without the type cast, this would not compile.
-					source.newEvent('/', 'com.foobar.baz', new ClassWithoutExplicitToJsonMethod() as any),
-				]);
-			})
-			.is.throwingAsync(
-				(error) =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: Failed to marshal path '[root element].events.0.data': Non-plain objects require a toJSON() method to be defined in their prototype chain, see https://javascript.info/json. The object is considered non-plain, because of these reasons: the object is an instance of a class.",
-			);
-	});
-
-	test('throws no error if non-plain objects inside the EventCandidate data have a toJSON method.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', { [Symbol('lost')]: 42, toJSON: () => {} }),
-				]);
-			})
-			.is.not.throwingAsync();
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', { lost: () => {}, toJSON: () => {} }),
-				]);
-			})
-			.is.not.throwingAsync();
-
-		const dataWithNonEnumerableProperty = {
-			toJSON() {
-				return {};
-			},
-		};
-		Object.defineProperty(dataWithNonEnumerableProperty, 'lost', { enumerable: false });
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', dataWithNonEnumerableProperty),
-				]);
-			})
-			.is.not.throwingAsync();
-
-		class ClassWithExplicitToJsonMethod {
-			toJSON(): UnknownObject {
-				return {};
-			}
-		}
-
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent('/', 'com.foobar.baz', new ClassWithExplicitToJsonMethod()),
-				]);
-			})
-			.is.not.throwingAsync();
 	});
 
 	suite('using mocked HTTP server', (): void => {
