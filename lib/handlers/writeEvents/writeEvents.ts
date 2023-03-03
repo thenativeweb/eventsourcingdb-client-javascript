@@ -1,15 +1,14 @@
-import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
+import { CustomError } from '../../util/error/CustomError';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
-import { marshalJson } from '../../util/json/marshalJson';
-import { wrapError } from '../../util/error/wrapError';
-import { Precondition } from './Precondition';
-import { ValidationError } from '../../util/error/ValidationError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
 import { InternalError } from '../../util/error/InternalError';
-import { CustomError } from '../../util/error/CustomError';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError';
+import { Precondition } from './Precondition';
 import { ServerError } from '../../util/error/ServerError';
+import { StatusCodes } from 'http-status-codes';
+import { ValidationError } from '../../util/error/ValidationError';
+import { wrapError } from '../../util/error/wrapError';
 
 const writeEvents = async function (
 	client: Client,
@@ -35,20 +34,10 @@ const writeEvents = async function (
 		);
 	}
 
-	const requestBody = await wrapError(
-		() => {
-			return marshalJson({
-				events: eventCandidates,
-				preconditions,
-			});
-		},
-		(ex) => {
-			throw new InvalidParameterError('options', ex.message);
-		},
-	);
-	if (requestBody === undefined) {
-		throw new InternalError('Failed to marshal request body.');
-	}
+	const requestBody = JSON.stringify({
+		events: eventCandidates,
+		preconditions,
+	});
 
 	const response = await wrapError(
 		async () =>
