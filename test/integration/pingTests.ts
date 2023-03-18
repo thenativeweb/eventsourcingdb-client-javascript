@@ -8,7 +8,7 @@ import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { StatusCodes } from 'http-status-codes';
 import { ServerError } from '../../lib/util/error/ServerError';
 
-suite('Client.readSubjects()', function () {
+suite('Client.ping()', function () {
 	this.timeout(20_000);
 	let database: Database;
 
