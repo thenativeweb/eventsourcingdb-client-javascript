@@ -1,17 +1,16 @@
+import { Client, EventCandidate } from '../../lib';
+import { CancelationError } from '../../lib';
+import { ClientError } from '../../lib/util/error/ClientError';
+import { ServerError } from '../../lib/util/error/ServerError';
 import { Database } from '../shared/Database';
-import { testSource } from '../shared/events/source';
-import { Source } from '../../lib';
 import { buildDatabase } from '../shared/buildDatabase';
+import { events } from '../shared/events/events';
+import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
 import { assert } from 'assertthat';
-import { Client, EventCandidate } from '../../lib';
-import { events } from '../shared/events/events';
-import { CancelationError } from '../../lib';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { ClientError } from '../../lib/util/error/ClientError';
 
 suite('Client.readSubjects()', function () {
 	this.timeout(20_000);
@@ -136,17 +135,17 @@ suite('Client.readSubjects()', function () {
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send(ReasonPhrases.BAD_GATEWAY);
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -163,18 +162,18 @@ suite('Client.readSubjects()', function () {
 		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
 					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
 					res.send(ReasonPhrases.UNPROCESSABLE_ENTITY);
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -189,17 +188,17 @@ suite('Client.readSubjects()', function () {
 		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.status(StatusCodes.IM_A_TEAPOT);
 					res.send(ReasonPhrases.IM_A_TEAPOT);
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -213,17 +212,17 @@ suite('Client.readSubjects()', function () {
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.status(StatusCodes.ACCEPTED);
 					res.send(ReasonPhrases.ACCEPTED);
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -237,16 +236,16 @@ suite('Client.readSubjects()', function () {
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.send('utter garbage\n');
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -260,16 +259,16 @@ suite('Client.readSubjects()', function () {
 		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.send('{"type": ":clown:"}\n');
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -284,16 +283,16 @@ suite('Client.readSubjects()', function () {
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.send('{"type": "error", "payload": { "error": "not enough JUICE 😩." }}\n');
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -307,16 +306,16 @@ suite('Client.readSubjects()', function () {
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/read-subjects', (req, res) => {
+				app.post('/api/read-subjects', (_req, res) => {
 					res.send('{"type": "error", "payload": 42}\n');
 				});
 			}));
 
-			let result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController());
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})

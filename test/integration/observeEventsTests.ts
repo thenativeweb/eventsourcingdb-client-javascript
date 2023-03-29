@@ -1,19 +1,19 @@
-import { assert } from 'assertthat';
 import { Client, StoreItem } from '../../lib';
+import { CancelationError } from '../../lib';
 import { Source } from '../../lib/event/Source';
 import { ClientError } from '../../lib/util/error/ClientError';
 import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
+import { ServerError } from '../../lib/util/error/ServerError';
+import { Database } from '../shared/Database';
 import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline';
 import { buildDatabase } from '../shared/buildDatabase';
-import { Database } from '../shared/Database';
 import { events } from '../shared/events/events';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
-import { stopDatabase } from '../shared/stopDatabase';
-import { CancelationError } from '../../lib';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { StatusCodes, ReasonPhrases } from 'http-status-codes';
-import { ServerError } from '../../lib/util/error/ServerError';
+import { stopDatabase } from '../shared/stopDatabase';
+import { assert } from 'assertthat';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);
@@ -126,7 +126,7 @@ suite('Client.observeEvents()', function () {
 				let observedItemsCount = 0;
 				const result = client.observeEvents(abortController, '/', { recursive: true });
 
-				for await (const data of result) {
+				for await (const _data of result) {
 					observedItemsCount += 1;
 
 					if (observedItemsCount === 4) {
@@ -351,7 +351,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					abortController.abort();
 				}
 			})
@@ -375,7 +375,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					// Intentionally left blank.
 				}
 			})
@@ -388,7 +388,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundId does not contain an integer', async () => {
-		let result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -399,7 +399,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					// Intentionally left blank.
 				}
 			})
@@ -412,7 +412,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundId does not contain a negative integer', async () => {
-		let result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -423,7 +423,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					// Intentionally left blank.
 				}
 			})
@@ -436,7 +436,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if an incorrect subject is used in fromLatestEvent.', async () => {
-		let result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -451,7 +451,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					// Intentionally left blank.
 				}
 			})
@@ -464,7 +464,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if an incorrect type is used in fromLatestEvent.', async () => {
-		let result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withoutAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -479,7 +479,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const item of result) {
+				for await (const _item of result) {
 					// Intentionally left blank.
 				}
 			})
@@ -501,13 +501,13 @@ suite('Client.observeEvents()', function () {
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send(ReasonPhrases.BAD_GATEWAY);
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -518,7 +518,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -535,14 +535,14 @@ suite('Client.observeEvents()', function () {
 		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
 					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
 					res.send(ReasonPhrases.UNPROCESSABLE_ENTITY);
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -553,7 +553,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -568,13 +568,13 @@ suite('Client.observeEvents()', function () {
 		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.status(StatusCodes.IM_A_TEAPOT);
 					res.send(ReasonPhrases.IM_A_TEAPOT);
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -585,7 +585,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -599,13 +599,13 @@ suite('Client.observeEvents()', function () {
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.status(StatusCodes.ACCEPTED);
 					res.send(ReasonPhrases.ACCEPTED);
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -616,7 +616,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -630,12 +630,12 @@ suite('Client.observeEvents()', function () {
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.send('utter garbage\n');
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -646,7 +646,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -660,12 +660,12 @@ suite('Client.observeEvents()', function () {
 		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.send('{"type": ":clown:"}\n');
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -676,7 +676,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -691,12 +691,12 @@ suite('Client.observeEvents()', function () {
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.send('{"type": "error", "payload": { "error": "not enough JUICE 😩" }}\n');
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -707,7 +707,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})
@@ -721,12 +721,12 @@ suite('Client.observeEvents()', function () {
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/observe-events', (req, res) => {
+				app.post('/api/observe-events', (_req, res) => {
 					res.send('{"type": "error", "payload": 42}\n');
 				});
 			}));
 
-			let result = client.observeEvents(new AbortController(), '/users', {
+			const result = client.observeEvents(new AbortController(), '/users', {
 				recursive: true,
 				fromLatestEvent: {
 					type: 'com.subject.some',
@@ -737,7 +737,7 @@ suite('Client.observeEvents()', function () {
 
 			await assert
 				.that(async () => {
-					for await (const item of result) {
+					for await (const _item of result) {
 						// Intentionally left blank.
 					}
 				})

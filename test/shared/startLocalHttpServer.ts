@@ -10,8 +10,8 @@ const startLocalHttpServer = async function (
 	attachHandlers(app);
 
 	const server = await new Promise<http.Server>((resolve) => {
-		const server = app.listen(0, () => {
-			resolve(server);
+		const _server = app.listen(0, () => {
+			resolve(_server);
 		});
 	});
 

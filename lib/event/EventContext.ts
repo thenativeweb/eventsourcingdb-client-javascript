@@ -1,7 +1,7 @@
-import { validateSubject } from './validateSubject';
-import { validateType } from './validateType';
 import { UnknownObject } from '../util/UnknownObject';
 import { ValidationError } from '../util/error/ValidationError';
+import { validateSubject } from './validateSubject';
+import { validateType } from './validateType';
 
 class EventContext {
 	public readonly source: string;

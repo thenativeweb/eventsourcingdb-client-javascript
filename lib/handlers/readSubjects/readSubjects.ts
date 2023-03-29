@@ -1,15 +1,15 @@
 import { Client } from '../../Client';
-import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
+import { CustomError } from '../../util/error/CustomError';
+import { InternalError } from '../../util/error/InternalError';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError';
+import { ServerError } from '../../util/error/ServerError';
+import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
+import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
 import { isSubject } from './isSubject';
-import { ValidationError } from '../../util/error/ValidationError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { ServerError } from '../../util/error/ServerError';
-import { getReasonPhrase, StatusCodes } from 'http-status-codes';
+import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
 const readSubjects = async function* (
 	client: Client,
@@ -31,7 +31,7 @@ const readSubjects = async function* (
 		() => {
 			return JSON.stringify(options);
 		},
-		(ex) => {
+		(_ex) => {
 			throw new InvalidParameterError(
 				'options',
 				'Parameter contains values that cannot be marshaled.',

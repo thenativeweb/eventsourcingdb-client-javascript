@@ -1,19 +1,19 @@
 import { ClientConfiguration } from './ClientConfiguration';
-import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
-import { observeEvents } from './handlers/observeEvents/observeEvents';
-import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
-import { readEvents } from './handlers/readEvents/readEvents';
-import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
-import { StoreItem } from './handlers/StoreItem';
-import { EventCandidate } from './event/EventCandidate';
-import { ping } from './handlers/ping/ping';
-import { writeEvents } from './handlers/writeEvents/writeEvents';
-import { EventContext } from './event/EventContext';
-import { Precondition } from './handlers/writeEvents/Precondition';
 import { ClientOptions } from './ClientOptions';
-import { HttpClient } from './http/HttpClient';
+import { EventCandidate } from './event/EventCandidate';
+import { EventContext } from './event/EventContext';
+import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
+import { StoreItem } from './handlers/StoreItem';
+import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
+import { observeEvents } from './handlers/observeEvents/observeEvents';
+import { ping } from './handlers/ping/ping';
+import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
+import { readEvents } from './handlers/readEvents/readEvents';
 import { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
 import { readSubjects } from './handlers/readSubjects/readSubjects';
+import { Precondition } from './handlers/writeEvents/Precondition';
+import { writeEvents } from './handlers/writeEvents/writeEvents';
+import { HttpClient } from './http/HttpClient';
 
 class Client {
 	public readonly configuration: ClientConfiguration;
