@@ -1,19 +1,19 @@
-import { getReasonPhrase, getStatusText, StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
+import { CustomError } from '../../util/error/CustomError';
+import { InternalError } from '../../util/error/InternalError';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError';
+import { ServerError } from '../../util/error/ServerError';
+import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
 import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
+import { StoreItem } from '../StoreItem';
 import { isHeartbeat } from '../isHeartbeat';
 import { isItem } from '../isItem';
 import { isStreamError } from '../isStreamError';
 import { ObserveEventsOptions, validateObserveEventsOptions } from './ObserveEventsOptions';
-import { StoreItem } from '../StoreItem';
-import { ServerError } from '../../util/error/ServerError';
-import { CustomError } from '../../util/error/CustomError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { ValidationError } from '../../util/error/ValidationError';
-import { InternalError } from '../../util/error/InternalError';
+import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
 const observeEvents = async function* (
 	client: Client,

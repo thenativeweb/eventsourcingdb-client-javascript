@@ -1,28 +1,32 @@
 {
-  "$schema": "./node_modules/rome/configuration_schema.json",
-  "files": {
-    "ignore": [ "build", "node_modules", "*.txt", "*.md" ]
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "formatWithErrors": false,
-    "ignore": [],
-    "indentStyle": "tab",
-    "indentSize": 2,
-    "lineWidth": 100
-  },
-  "javascript": {
-    "formatter": {
-      "quoteProperties": "asNeeded",
-      "quoteStyle": "single",
-      "semicolons": "always",
-      "trailingComma": "all"
-    }
-  }
+	"$schema": "./node_modules/rome/configuration_schema.json",
+	"files": {
+		"ignore": [ "build", "node_modules", "*.txt", "*.md" ]
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"all": true
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"ignore": [],
+		"indentStyle": "tab",
+		"indentSize": 2,
+		"lineWidth": 100
+	},
+	"organizeImports": {
+		"enabled": true
+	},
+	"javascript": {
+		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"],
+		"formatter": {
+			"quoteProperties": "asNeeded",
+			"quoteStyle": "single",
+			"semicolons": "always",
+			"trailingComma": "all"
+		}
+	}
 }

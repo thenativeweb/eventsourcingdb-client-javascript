@@ -1,15 +1,15 @@
+import { Client } from '../Client';
+import { CancelationError } from '../util/error/CancelationError';
+import { ClientError } from '../util/error/ClientError';
+import { CustomError } from '../util/error/CustomError';
+import { InternalError } from '../util/error/InternalError';
+import { ServerError } from '../util/error/ServerError';
+import { RetryError } from '../util/retry/RetryError';
+import { retryWithBackoff } from '../util/retry/retryWithBackoff';
 import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import { Readable } from 'stream';
-import { Client } from '../Client';
-import { RetryError } from '../util/retry/RetryError';
-import { retryWithBackoff } from '../util/retry/retryWithBackoff';
-import { CancelationError } from '../util/error/CancelationError';
-import { ClientError } from '../util/error/ClientError';
-import { ServerError } from '../util/error/ServerError';
-import { InternalError } from '../util/error/InternalError';
-import { CustomError } from '../util/error/CustomError';
 
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
@@ -36,7 +36,7 @@ class HttpClient {
 		this.databaseClient = dbClient;
 	}
 
-	private getDefaultRequestConfig(withAuthorization: boolean = true): CreateAxiosDefaults {
+	private getDefaultRequestConfig(withAuthorization = true): CreateAxiosDefaults {
 		let configuration: CreateAxiosDefaults = {
 			baseURL: this.databaseClient.configuration.baseUrl,
 			timeout: this.databaseClient.configuration.timeoutMilliseconds,

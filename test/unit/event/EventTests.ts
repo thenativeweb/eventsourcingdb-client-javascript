@@ -1,7 +1,7 @@
-import { testSource } from '../../shared/events/source';
-import { events } from '../../shared/events/events';
-import { assert } from 'assertthat';
 import { Event } from '../../../lib';
+import { events } from '../../shared/events/events';
+import { testSource } from '../../shared/events/source';
+import { assert } from 'assertthat';
 
 suite('Event', () => {
 	suite('.parse()', () => {

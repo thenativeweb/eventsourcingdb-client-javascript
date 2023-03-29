@@ -1,5 +1,5 @@
-import { assert } from 'assertthat';
 import { LinesDecoder } from '../../../../lib/util/ndjson/LinesDecoder';
+import { assert } from 'assertthat';
 
 suite('LinesDecoder', (): void => {
 	test('returns all completed lines on write().', async (): Promise<void> => {

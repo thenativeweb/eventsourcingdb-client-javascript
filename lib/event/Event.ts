@@ -1,5 +1,5 @@
-import { isObject } from '../util/isObject';
 import { UnknownObject } from '../util/UnknownObject';
+import { isObject } from '../util/isObject';
 import { EventContext } from './EventContext';
 
 class Event extends EventContext {

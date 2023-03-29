@@ -1,6 +1,6 @@
-import { clearTimeout } from 'timers';
-import { RetryError } from './RetryError';
 import { CancelationError } from '../error/CancelationError';
+import { RetryError } from './RetryError';
+import { clearTimeout } from 'timers';
 
 type RetryResult<TResult> =
 	| {

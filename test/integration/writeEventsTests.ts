@@ -1,18 +1,18 @@
-import { assert } from 'assertthat';
-import { buildDatabase } from '../shared/buildDatabase';
+import { Client, StoreItem } from '../../lib';
+import { Source } from '../../lib/event/Source';
+import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
 import { ClientError } from '../../lib/util/error/ClientError';
-import { Database } from '../shared/Database';
-import { events } from '../shared/events/events';
 import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
-import { prefixEventType } from '../shared/events/type';
 import { ServerError } from '../../lib/util/error/ServerError';
+import { Database } from '../shared/Database';
+import { buildDatabase } from '../shared/buildDatabase';
+import { events } from '../shared/events/events';
+import { testSource } from '../shared/events/source';
+import { prefixEventType } from '../shared/events/type';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { Source } from '../../lib/event/Source';
-import { testSource } from '../shared/events/source';
-import { Client, StoreItem } from '../../lib';
-import { isSubjectOnEventId, isSubjectPristine } from '../../lib/handlers/writeEvents/Precondition';
+import { assert } from 'assertthat';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.writeEvents()', function () {
@@ -360,7 +360,7 @@ suite('Client.writeEvents()', function () {
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/write-events', (req, res) => {
+				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send(ReasonPhrases.BAD_GATEWAY);
 				});
@@ -383,7 +383,7 @@ suite('Client.writeEvents()', function () {
 		test("throws an error if the server's protocol version does not match.", async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/write-events', (req, res) => {
+				app.post('/api/write-events', (_req, res) => {
 					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
 					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
 					res.send(ReasonPhrases.UNPROCESSABLE_ENTITY);
@@ -405,7 +405,7 @@ suite('Client.writeEvents()', function () {
 		test('throws a client error if the server returns a 4xx status code.', async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/write-events', (req, res) => {
+				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.IM_A_TEAPOT);
 					res.send(ReasonPhrases.IM_A_TEAPOT);
 				});
@@ -425,7 +425,7 @@ suite('Client.writeEvents()', function () {
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/write-events', (req, res) => {
+				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.ACCEPTED);
 					res.send(ReasonPhrases.ACCEPTED);
 				});
@@ -445,7 +445,7 @@ suite('Client.writeEvents()', function () {
 		test("throws a server error if the server's response can't be parsed.", async () => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.post('/api/write-events', (req, res) => {
+				app.post('/api/write-events', (_req, res) => {
 					res.send('utter garbage');
 				});
 			}));

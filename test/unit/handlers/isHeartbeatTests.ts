@@ -1,5 +1,5 @@
-import { assert } from 'assertthat';
 import { isHeartbeat } from '../../../lib/handlers/isHeartbeat';
+import { assert } from 'assertthat';
 
 suite('isHeartbeat()', () => {
 	test('returns true for a heartbeat object.', () => {

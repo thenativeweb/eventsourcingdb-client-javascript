@@ -1,12 +1,12 @@
+import { Client } from '../../lib';
+import { ServerError } from '../../lib/util/error/ServerError';
 import { Database } from '../shared/Database';
 import { buildDatabase } from '../shared/buildDatabase';
 import { startDatabase } from '../shared/startDatabase';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
 import { assert } from 'assertthat';
-import { Client } from '../../lib';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { StatusCodes } from 'http-status-codes';
-import { ServerError } from '../../lib/util/error/ServerError';
 
 suite('Client.ping()', function () {
 	this.timeout(20_000);
@@ -68,7 +68,7 @@ suite('Client.ping()', function () {
 		test('throws an error if the server responds with an unexpected status code.', async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.get('/ping', (req, res) => {
+				app.get('/ping', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send('OK');
 				});
@@ -91,7 +91,7 @@ suite('Client.ping()', function () {
 		test("throws an error if the server's response body is not 'OK'.", async (): Promise<void> => {
 			let client: Client;
 			({ client, stopServer } = await startLocalHttpServer((app) => {
-				app.get('/ping', (req, res) => {
+				app.get('/ping', (_req, res) => {
 					res.status(StatusCodes.OK);
 					res.send('Gude');
 				});

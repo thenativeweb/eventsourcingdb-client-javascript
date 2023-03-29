@@ -1,8 +1,8 @@
 import { Client } from '../../Client';
-import { wrapError } from '../../util/error/wrapError';
 import { CustomError } from '../../util/error/CustomError';
 import { InternalError } from '../../util/error/InternalError';
 import { ServerError } from '../../util/error/ServerError';
+import { wrapError } from '../../util/error/wrapError';
 
 const ping = async function (client: Client): Promise<void> {
 	const response = await wrapError(

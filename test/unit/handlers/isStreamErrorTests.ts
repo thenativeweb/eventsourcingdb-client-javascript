@@ -1,5 +1,5 @@
-import { assert } from 'assertthat';
 import { isStreamError } from '../../../lib/handlers/isStreamError';
+import { assert } from 'assertthat';
 
 suite('isStreamError()', () => {
 	test('returns true for a error object.', () => {

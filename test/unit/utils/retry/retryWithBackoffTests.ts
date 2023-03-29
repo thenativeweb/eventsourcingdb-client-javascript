@@ -1,12 +1,12 @@
-import { assert } from 'assertthat';
 import { CancelationError } from '../../../../lib';
-import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
 import { RetryError } from '../../../../lib/util/retry/RetryError';
+import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
+import { assert } from 'assertthat';
 
 suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
 		let count = 0;
-		let maxTries = 3;
+		const maxTries = 3;
 
 		await assert
 			.that(async () => {
@@ -23,7 +23,7 @@ suite('retryWithBackoff', (): void => {
 
 	test('throws a RetryError if an error occurs during all tries.', async (): Promise<void> => {
 		let count = 0;
-		let maxTries = 3;
+		const maxTries = 3;
 
 		await assert
 			.that(async () => {
@@ -45,7 +45,7 @@ suite('retryWithBackoff', (): void => {
 
 	test('returns when no error occurs anymore.', async (): Promise<void> => {
 		let count = 0;
-		let maxTries = 5;
+		const maxTries = 5;
 		const successfulTry = 3;
 
 		await assert
@@ -67,7 +67,7 @@ suite('retryWithBackoff', (): void => {
 
 	test('returns immediately when the AbortController is canceled.', async (): Promise<void> => {
 		let count = 0;
-		let maxTries = 5;
+		const maxTries = 5;
 		const cancelingTry = 3;
 
 		const abortController = new AbortController();

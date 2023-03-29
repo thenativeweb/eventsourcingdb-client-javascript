@@ -1,14 +1,14 @@
 import { Client } from '../../Client';
-import { CustomError } from '../../util/error/CustomError';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
+import { CustomError } from '../../util/error/CustomError';
 import { InternalError } from '../../util/error/InternalError';
 import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { Precondition } from './Precondition';
 import { ServerError } from '../../util/error/ServerError';
-import { StatusCodes } from 'http-status-codes';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
+import { Precondition } from './Precondition';
+import { StatusCodes } from 'http-status-codes';
 
 const writeEvents = async function (
 	client: Client,

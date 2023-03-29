@@ -1,9 +1,9 @@
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Container } from './docker/Container';
-import { Image } from './docker/Image';
 import { Client } from '../../lib';
 import { ClientOptions } from '../../lib/ClientOptions';
+import { ServerError } from '../../lib/util/error/ServerError';
 import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
+import { Container } from './docker/Container';
+import { Image } from './docker/Image';
 
 class ContainerizedTestingDatabase {
 	private readonly command: string;
