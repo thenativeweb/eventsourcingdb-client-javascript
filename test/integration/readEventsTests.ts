@@ -136,7 +136,7 @@ suite('Client.readEvents()', function () {
 		assert.that(readItems[3].event.data).is.equalTo(events.loggedIn.johnDoe.data);
 	});
 
-	test('reads the events in reversed chronological order.', async (): Promise<void> => {
+	test('reads the events in antichronological order.', async (): Promise<void> => {
 		const result = database.withoutAuthorization.client.readEvents(
 			new AbortController(),
 			'/users/registered',
