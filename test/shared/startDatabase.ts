@@ -11,13 +11,10 @@ const startDatabase = async function (): Promise<Database> {
 	const accessToken = randomUUID();
 	const withAuthorization = await ContainerizedTestingDatabase.create(
 		image,
-		`server --dev --ui --access-token ${accessToken}`,
+		`run --dev --ui --access-token ${accessToken}`,
 		{ accessToken },
 	);
-	const withoutAuthorization = await ContainerizedTestingDatabase.create(
-		image,
-		'server --dev --ui',
-	);
+	const withoutAuthorization = await ContainerizedTestingDatabase.create(image, 'run --dev --ui');
 	const withInvalidUrl = new TestingDatabase(new Client('http://localhost.invalid'));
 
 	return {

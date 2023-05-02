@@ -6,11 +6,13 @@ import { IsNonNegativeInteger } from '../../util/isNonNegativeInteger';
 
 interface ReadEventsOptions {
 	recursive: boolean;
-	chronological?: boolean;
+	order?: Order;
 	lowerBoundId?: string;
 	upperBoundId?: string;
 	fromLatestEvent?: ReadFromLatestEvent;
 }
+
+type Order = 'chronological' | 'antichronological';
 
 interface ReadFromLatestEvent {
 	subject: string;
