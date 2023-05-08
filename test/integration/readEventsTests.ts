@@ -140,7 +140,7 @@ suite('Client.readEvents()', function () {
 		const result = database.withoutAuthorization.client.readEvents(
 			new AbortController(),
 			'/users/registered',
-			{ recursive: false, chronological: false },
+			{ recursive: false, order: 'antichronological' },
 		);
 
 		const readItems: StoreItem[] = [];
