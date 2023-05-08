@@ -256,7 +256,7 @@ suite('Client.observeEvents()', function () {
 					fromLatestEvent: {
 						subject: '/users/loggedIn',
 						type: events.loggedIn.janeDoe.type,
-						ifEventIsMissing: 'read-nothing',
+						ifEventIsMissing: 'read-everything',
 					},
 				});
 
