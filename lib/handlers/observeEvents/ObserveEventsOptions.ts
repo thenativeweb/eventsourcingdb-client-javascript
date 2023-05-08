@@ -13,7 +13,7 @@ interface ObserveEventsOptions {
 interface ObserveFromLatestEvent {
 	subject: string;
 	type: string;
-	ifEventIsMissing: 'read-nothing' | 'wait-for-event';
+	ifEventIsMissing: 'read-everything' | 'wait-for-event';
 }
 
 const validateObserveEventsOptions = function (options: ObserveEventsOptions): void {
