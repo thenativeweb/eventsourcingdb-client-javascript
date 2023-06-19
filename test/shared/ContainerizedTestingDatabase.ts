@@ -33,7 +33,7 @@ class ContainerizedTestingDatabase {
 	public static async create(
 		image: Image,
 		command: string,
-		options: ClientOptions = {},
+		options: ClientOptions,
 	): Promise<ContainerizedTestingDatabase> {
 		const { client, container } = await ContainerizedTestingDatabase.start(image, command, options);
 

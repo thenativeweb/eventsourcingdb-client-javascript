@@ -53,7 +53,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('throws an error if no candidates are passed.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -68,7 +68,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('throws an error if a candidate subject is malformed.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -85,7 +85,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('throws an error if a candidate type is malformed.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -122,7 +122,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('writes a single event.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -138,7 +138,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('returns the written event metadata.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -177,7 +177,7 @@ suite('Client.writeEvents()', function () {
 	});
 
 	test('writes multiple events.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -199,7 +199,7 @@ suite('Client.writeEvents()', function () {
 
 	suite('when using the isSubjectPristine precondition', (): void => {
 		test('writes the events if the subject is pristine.', async (): Promise<void> => {
-			const client = database.withoutAuthorization.client;
+			const client = database.withAuthorization.client;
 
 			await assert
 				.that(async () => {
@@ -218,7 +218,7 @@ suite('Client.writeEvents()', function () {
 		});
 
 		test('throws an error if the subject is not pristine.', async (): Promise<void> => {
-			const client = database.withoutAuthorization.client;
+			const client = database.withAuthorization.client;
 
 			await assert
 				.that(async () => {
@@ -258,7 +258,7 @@ suite('Client.writeEvents()', function () {
 
 	suite('when using the isSubjectOnEventId precondition', (): void => {
 		test('writes the events if the last event of the subject has the given event ID.', async (): Promise<void> => {
-			const client = database.withoutAuthorization.client;
+			const client = database.withAuthorization.client;
 
 			await assert
 				.that(async () => {
@@ -277,7 +277,7 @@ suite('Client.writeEvents()', function () {
 				})
 				.is.not.throwingAsync();
 
-			const readEventsResult = database.withoutAuthorization.client.readEvents(
+			const readEventsResult = database.withAuthorization.client.readEvents(
 				new AbortController(),
 				'/users/registered',
 				{ recursive: false },
@@ -306,7 +306,7 @@ suite('Client.writeEvents()', function () {
 		});
 
 		test('throws an error if the last event of the subject does not have the given event ID.', async (): Promise<void> => {
-			const client = database.withoutAuthorization.client;
+			const client = database.withAuthorization.client;
 
 			await assert
 				.that(async () => {

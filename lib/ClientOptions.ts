@@ -1,6 +1,6 @@
 interface ClientOptions {
 	timeoutMilliseconds?: number;
-	accessToken?: string;
+	accessToken: string;
 	protocolVersion?: string;
 	maxTries?: number;
 }

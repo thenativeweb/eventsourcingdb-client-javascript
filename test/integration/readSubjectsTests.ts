@@ -33,7 +33,7 @@ suite('Client.readSubjects()', function () {
 
 		await assert
 			.that(async () => {
-				const readSubjectsResult = client.readSubjects(new AbortController());
+				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 				for await (const _ of readSubjectsResult) {
 					// Intentionally left blank.
@@ -47,7 +47,7 @@ suite('Client.readSubjects()', function () {
 
 		await assert
 			.that(async () => {
-				const readSubjectsResult = client.readSubjects(new AbortController());
+				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 				for await (const _ of readSubjectsResult) {
 					// Intentionally left blank.
@@ -57,7 +57,7 @@ suite('Client.readSubjects()', function () {
 	});
 
 	test('reads all subjects starting from /.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await client.writeEvents([
 			new EventCandidate(testSource, '/foo', events.loggedIn.janeDoe.type, {}),
@@ -65,7 +65,7 @@ suite('Client.readSubjects()', function () {
 
 		const actualSubjects: string[] = [];
 
-		const readSubjectsResult = client.readSubjects(new AbortController());
+		const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 		for await (const subject of readSubjectsResult) {
 			actualSubjects.push(subject);
@@ -75,7 +75,7 @@ suite('Client.readSubjects()', function () {
 	});
 
 	test('reads all subjects starting from the given base subject.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await client.writeEvents([
 			new EventCandidate(testSource, '/foo/bar', events.loggedIn.janeDoe.type, {}),
@@ -93,13 +93,13 @@ suite('Client.readSubjects()', function () {
 	});
 
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		const abortController = new AbortController();
 
 		await assert
 			.that(async () => {
-				const readSubjectsResult = client.readSubjects(abortController);
+				const readSubjectsResult = client.readSubjects(abortController, { baseSubject: '/' });
 				abortController.abort();
 
 				for await (const _ of readSubjectsResult) {
@@ -110,7 +110,7 @@ suite('Client.readSubjects()', function () {
 	});
 
 	test('throws an error if the base subject is malformed.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {
@@ -141,7 +141,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -169,7 +169,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -194,7 +194,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -218,7 +218,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -241,7 +241,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -264,7 +264,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -288,7 +288,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {
@@ -311,7 +311,7 @@ suite('Client.readSubjects()', function () {
 				});
 			}));
 
-			const result = client.readSubjects(new AbortController());
+			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
 			await assert
 				.that(async () => {

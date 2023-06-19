@@ -24,7 +24,10 @@ const startLocalHttpServer = async function (
 		throw new Error('Failed to start server');
 	}
 
-	const client = new Client(`http://localhost:${address.port}`, { maxTries: 2 });
+	const client = new Client(`http://localhost:${address.port}`, {
+		maxTries: 2,
+		accessToken: 'irrelevant',
+	});
 	const stopServer = async function () {
 		await new Promise<void>((resolve) => {
 			server.close(() => {
