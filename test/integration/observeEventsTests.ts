@@ -28,28 +28,6 @@ suite('Client.observeEvents()', function () {
 	setup(async () => {
 		database = await startDatabase();
 
-		await database.withoutAuthorization.client.writeEvents([
-			source.newEvent(
-				'/users/registered',
-				events.registered.janeDoe.type,
-				events.registered.janeDoe.data,
-			),
-			source.newEvent(
-				'/users/loggedIn',
-				events.loggedIn.janeDoe.type,
-				events.loggedIn.janeDoe.data,
-			),
-			source.newEvent(
-				'/users/registered',
-				events.registered.johnDoe.type,
-				events.registered.johnDoe.data,
-			),
-			source.newEvent(
-				'/users/loggedIn',
-				events.loggedIn.johnDoe.type,
-				events.loggedIn.johnDoe.data,
-			),
-		]);
 		await database.withAuthorization.client.writeEvents([
 			source.newEvent(
 				'/users/registered',
@@ -138,7 +116,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('observes events from a single subject.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 		const abortController = newAbortControllerWithDeadline(testDeadline);
 
 		const observedItems: StoreItem[] = [];
@@ -187,7 +165,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('observes events from a subject including child subjects.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 		const abortController = newAbortControllerWithDeadline(testDeadline);
 
 		const observedItems: StoreItem[] = [];
@@ -244,7 +222,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('observes events starting from the newest event matching the given event name.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 		const abortController = newAbortControllerWithDeadline(testDeadline);
 
 		const observedItems: StoreItem[] = [];
@@ -294,7 +272,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('observes events starting from the lower bound ID.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 		const abortController = newAbortControllerWithDeadline(testDeadline);
 
 		const observedItems: StoreItem[] = [];
@@ -345,7 +323,7 @@ suite('Client.observeEvents()', function () {
 
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
 		const abortController = new AbortController();
-		const result = database.withoutAuthorization.client.observeEvents(abortController, '/', {
+		const result = database.withAuthorization.client.observeEvents(abortController, '/', {
 			recursive: true,
 		});
 
@@ -359,7 +337,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if mutually exclusive options are used.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -388,7 +366,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundId does not contain an integer', async () => {
-		const result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -412,7 +390,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundId does not contain a negative integer', async () => {
-		const result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -436,7 +414,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if an incorrect subject is used in fromLatestEvent.', async () => {
-		const result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{
@@ -464,7 +442,7 @@ suite('Client.observeEvents()', function () {
 	});
 
 	test('throws an error if an incorrect type is used in fromLatestEvent.', async () => {
-		const result = database.withoutAuthorization.client.observeEvents(
+		const result = database.withAuthorization.client.observeEvents(
 			new AbortController(),
 			'/users',
 			{

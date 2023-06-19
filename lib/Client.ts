@@ -19,7 +19,7 @@ class Client {
 	public readonly configuration: ClientConfiguration;
 	public readonly httpClient: HttpClient;
 
-	public constructor(baseUrl: string, options?: ClientOptions) {
+	public constructor(baseUrl: string, options: ClientOptions) {
 		this.configuration = {
 			...getDefaultClientConfiguration(baseUrl),
 			...options,
@@ -49,7 +49,7 @@ class Client {
 
 	public readSubjects(
 		abortController: AbortController,
-		options: ReadSubjectsOptions = {},
+		options: ReadSubjectsOptions,
 	): AsyncGenerator<string, void, void> {
 		return readSubjects(this, abortController, options);
 	}

@@ -1,1 +1,1 @@
-FROM ghcr.io/thenativeweb/eventsourcingdb:0.42.0
+FROM ghcr.io/thenativeweb/eventsourcingdb:0.59.1

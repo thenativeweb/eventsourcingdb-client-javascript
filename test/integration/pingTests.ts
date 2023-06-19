@@ -38,18 +38,8 @@ suite('Client.ping()', function () {
 			);
 	});
 
-	test('supports authorization.', async (): Promise<void> => {
-		const client = database.withAuthorization.client;
-
-		await assert
-			.that(async () => {
-				await client.ping();
-			})
-			.is.not.throwingAsync();
-	});
-
 	test('does not throw an error if EventSourcingDB is reachable.', async (): Promise<void> => {
-		const client = database.withoutAuthorization.client;
+		const client = database.withAuthorization.client;
 
 		await assert
 			.that(async () => {

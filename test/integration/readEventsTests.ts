@@ -26,7 +26,7 @@ suite('Client.readEvents()', function () {
 	setup(async () => {
 		database = await startDatabase();
 
-		await database.withoutAuthorization.client.writeEvents([
+		await database.withAuthorization.client.writeEvents([
 			source.newEvent(
 				'/users/registered',
 				events.registered.janeDoe.type,
@@ -83,7 +83,7 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads events from a single subject.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
+		const result = database.withAuthorization.client.readEvents(
 			new AbortController(),
 			'/users/registered',
 			{ recursive: false },
@@ -106,11 +106,9 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads events from a subject including child subjects.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{ recursive: true },
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+		});
 
 		const readItems: StoreItem[] = [];
 		for await (const item of result) {
@@ -137,7 +135,7 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads the events in antichronological order.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
+		const result = database.withAuthorization.client.readEvents(
 			new AbortController(),
 			'/users/registered',
 			{ recursive: false, order: 'antichronological' },
@@ -160,18 +158,14 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads events starting from the latest event matching the given event name.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				fromLatestEvent: {
-					subject: '/users/loggedIn',
-					type: events.loggedIn.janeDoe.type,
-					ifEventIsMissing: 'read-everything',
-				},
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: '/users/loggedIn',
+				type: events.loggedIn.janeDoe.type,
+				ifEventIsMissing: 'read-everything',
 			},
-		);
+		});
 
 		const readItems: StoreItem[] = [];
 		for await (const item of result) {
@@ -186,14 +180,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads events starting from the lower bound ID.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				lowerBoundId: '2',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			lowerBoundId: '2',
+		});
 
 		const readItems: StoreItem[] = [];
 		for await (const item of result) {
@@ -212,14 +202,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('reads events up to the upper bound ID.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				upperBoundId: '1',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			upperBoundId: '1',
+		});
 
 		const readItems: StoreItem[] = [];
 		for await (const item of result) {
@@ -239,7 +225,7 @@ suite('Client.readEvents()', function () {
 
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
 		const abortController = new AbortController();
-		const result = database.withoutAuthorization.client.readEvents(abortController, '/users', {
+		const result = database.withAuthorization.client.readEvents(abortController, '/users', {
 			recursive: true,
 		});
 
@@ -253,19 +239,15 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if mutually exclusive options are used.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				fromLatestEvent: {
-					subject: '/',
-					type: 'com.foobar.barbaz',
-					ifEventIsMissing: 'read-everything',
-				},
-				lowerBoundId: '2',
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: '/',
+				type: 'com.foobar.barbaz',
+				ifEventIsMissing: 'read-everything',
 			},
-		);
+			lowerBoundId: '2',
+		});
 
 		await assert
 			.that(async () => {
@@ -279,13 +261,9 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if the subject is invalid.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'invalid',
-			{
-				recursive: true,
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), 'invalid', {
+			recursive: true,
+		});
 
 		await assert
 			.that(async () => {
@@ -302,14 +280,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundID does not contain an integer.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				lowerBoundId: 'invalid',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			lowerBoundId: 'invalid',
+		});
 
 		await assert
 			.that(async () => {
@@ -326,14 +300,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if the given lowerBoundID contains an integer that is negative.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				lowerBoundId: '-1',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			lowerBoundId: '-1',
+		});
 
 		await assert
 			.that(async () => {
@@ -350,14 +320,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if the given upperBoundID does not contain an integer.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				upperBoundId: 'invalid',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			upperBoundId: 'invalid',
+		});
 
 		await assert
 			.that(async () => {
@@ -374,14 +340,10 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if the given upperBoundID contains an integer that is negative.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				upperBoundId: '-1',
-			},
-		);
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			upperBoundId: '-1',
+		});
 
 		await assert
 			.that(async () => {
@@ -398,18 +360,14 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if an incorrect subject is used in ReadFromLatestEvent.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				fromLatestEvent: {
-					subject: 'invalid',
-					type: 'com.foo.bar',
-					ifEventIsMissing: 'read-everything',
-				},
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: 'invalid',
+				type: 'com.foo.bar',
+				ifEventIsMissing: 'read-everything',
 			},
-		);
+		});
 
 		await assert
 			.that(async () => {
@@ -426,18 +384,14 @@ suite('Client.readEvents()', function () {
 	});
 
 	test('throws an error if an incorrect type is used in ReadFromLatestEvent.', async (): Promise<void> => {
-		const result = database.withoutAuthorization.client.readEvents(
-			new AbortController(),
-			'/users',
-			{
-				recursive: true,
-				fromLatestEvent: {
-					subject: '/users',
-					type: 'invalid',
-					ifEventIsMissing: 'read-everything',
-				},
+		const result = database.withAuthorization.client.readEvents(new AbortController(), '/users', {
+			recursive: true,
+			fromLatestEvent: {
+				subject: '/users',
+				type: 'invalid',
+				ifEventIsMissing: 'read-everything',
 			},
-		);
+		});
 
 		await assert
 			.that(async () => {
