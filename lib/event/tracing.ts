@@ -50,8 +50,12 @@ class TracingContext {
 		};
 	}
 
+	public traceFlagsToString(): string {
+		return this.traceFlags.toString(16).padStart(2, '0')
+	}
+
 	public traceParent(): string {
-		return `00-${this.traceId}-${this.spanId}-${this.traceFlags.toString(16).padStart(2, '0')}`;
+		return `00-${this.traceId}-${this.spanId}-${this.traceFlagsToString()}`;
 	}
 
 	public toExtractable(): { traceparent: string; tracestate: string } {
@@ -68,6 +72,15 @@ class TracingContext {
 			spanContext.traceFlags,
 			spanContext.traceState,
 		);
+	}
+
+	public toJSON(): Record<string, unknown> {
+		return {
+			traceId: this.traceId,
+			spanId: this.spanId,
+			traceFlags: this.traceFlagsToString(),
+			traceState: this.traceState?.serialize() ?? '',
+		};
 	}
 }
 
