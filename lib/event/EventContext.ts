@@ -2,6 +2,10 @@ import { UnknownObject } from '../util/UnknownObject';
 import { ValidationError } from '../util/error/ValidationError';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
+import {
+	parseTracingContext,
+	TracingContext,
+} from './tracing';
 
 class EventContext {
 	public readonly source: string;
@@ -20,6 +24,8 @@ class EventContext {
 
 	public readonly predecessorHash: string;
 
+	public readonly tracingContext?: TracingContext;
+
 	protected constructor(
 		source: string,
 		subject: string,
@@ -29,6 +35,7 @@ class EventContext {
 		time: Date,
 		dataContentType: string,
 		predecessorHash: string,
+		tracingContext?: TracingContext,
 	) {
 		this.source = source;
 		this.subject = subject;
@@ -38,6 +45,7 @@ class EventContext {
 		this.time = time;
 		this.dataContentType = dataContentType;
 		this.predecessorHash = predecessorHash;
+		this.tracingContext = tracingContext;
 	}
 
 	public static parse(unknownObject: UnknownObject): EventContext {
@@ -81,6 +89,8 @@ class EventContext {
 			);
 		}
 
+		const tracingContext = parseTracingContext(unknownObject.tracingContext);
+
 		return new EventContext(
 			unknownObject.source,
 			unknownObject.subject,
@@ -90,6 +100,7 @@ class EventContext {
 			time,
 			unknownObject.datacontenttype,
 			unknownObject.predecessorhash,
+			tracingContext,
 		);
 	}
 
