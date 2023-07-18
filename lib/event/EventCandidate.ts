@@ -1,7 +1,7 @@
 import { UnknownObject } from '../util/UnknownObject';
+import { TracingContext } from './tracing';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
-import { TracingContext } from './tracing';
 
 class EventCandidate {
 	public readonly data: Record<string, unknown>;

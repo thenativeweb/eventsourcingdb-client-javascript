@@ -1,12 +1,12 @@
+import { ValidationError } from '../util/error/ValidationError';
 import {
-	createTraceState,
-	isValidSpanId,
-	isValidTraceId,
 	SpanContext,
 	TraceFlags,
 	TraceState,
+	createTraceState,
+	isValidSpanId,
+	isValidTraceId,
 } from '@opentelemetry/api';
-import { ValidationError } from '../util/error/ValidationError';
 
 class TracingContext {
 	public readonly traceId: string;
@@ -29,13 +29,13 @@ class TracingContext {
 	public validate(): void {
 		if (!isValidTraceId(this.traceId)) {
 			throw new ValidationError(
-				`Failed to validate trace ID: Must be a 16-byte hex-encoded string.`,
+				'Failed to validate trace ID: Must be a 16-byte hex-encoded string.',
 			);
 		}
 
 		if (!isValidSpanId(this.spanId)) {
 			throw new ValidationError(
-				`Failed to validate span ID: Must be an 8-byte hex-encoded string.`,
+				'Failed to validate span ID: Must be an 8-byte hex-encoded string.',
 			);
 		}
 	}
@@ -51,7 +51,7 @@ class TracingContext {
 	}
 
 	public traceFlagsToString(): string {
-		return this.traceFlags.toString(16).padStart(2, '0')
+		return this.traceFlags.toString(16).padStart(2, '0');
 	}
 
 	public traceParent(): string {
@@ -86,7 +86,7 @@ class TracingContext {
 
 const parseTraceId = (traceId: unknown): string => {
 	if (typeof traceId !== 'string' || !isValidTraceId(traceId)) {
-		throw new ValidationError(`Failed to parse trace ID: Must be a 16-byte hex-encoded string.`);
+		throw new ValidationError('Failed to parse trace ID: Must be a 16-byte hex-encoded string.');
 	}
 
 	return traceId;
@@ -94,7 +94,7 @@ const parseTraceId = (traceId: unknown): string => {
 
 const parseSpanId = (spanId: unknown): string => {
 	if (typeof spanId !== 'string' || !isValidSpanId(spanId)) {
-		throw new ValidationError(`Failed to parse span ID: Must be an 8-byte hex-encoded string.`);
+		throw new ValidationError('Failed to parse span ID: Must be an 8-byte hex-encoded string.');
 	}
 
 	return spanId;
@@ -102,11 +102,11 @@ const parseSpanId = (spanId: unknown): string => {
 
 const parseTraceFlags = (traceFlags: unknown): TraceFlags => {
 	if (typeof traceFlags !== 'string') {
-		throw new ValidationError(`Failed to parse trace flags: Must be a hex-encoded byte.`);
+		throw new ValidationError('Failed to parse trace flags: Must be a hex-encoded byte.');
 	}
 	const number = parseInt(traceFlags, 16);
 	if (isNaN(number)) {
-		throw new ValidationError(`Failed to parse trace flags: Must be a hex-encoded byte.`);
+		throw new ValidationError('Failed to parse trace flags: Must be a hex-encoded byte.');
 	}
 	if (number !== TraceFlags.NONE && number !== TraceFlags.SAMPLED) {
 		throw new ValidationError(
@@ -118,7 +118,7 @@ const parseTraceFlags = (traceFlags: unknown): TraceFlags => {
 
 const parseTraceState = (traceState: unknown): TraceState => {
 	if (typeof traceState !== 'string') {
-		throw new ValidationError(`Failed to parse trace state.`);
+		throw new ValidationError('Failed to parse trace state.');
 	}
 	const parsedTraceState = createTraceState(traceState);
 	return parsedTraceState;
@@ -130,10 +130,15 @@ const parseTracingContext = (tracingContext: unknown): TracingContext | undefine
 	}
 
 	if (typeof tracingContext !== 'object' || tracingContext === null) {
-		throw new ValidationError(`Failed to parse tracing context: Must be an object.`);
+		throw new ValidationError('Failed to parse tracing context: Must be an object.');
 	}
 
-	const anyTracingContext = tracingContext as any;
+	const anyTracingContext = tracingContext as {
+		traceId: string;
+		spanId: string;
+		traceFlags: string;
+		traceState: string;
+	};
 
 	const traceId = parseTraceId(anyTracingContext.traceId);
 	const spanId = parseSpanId(anyTracingContext.spanId);

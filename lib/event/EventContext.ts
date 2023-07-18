@@ -1,8 +1,8 @@
 import { UnknownObject } from '../util/UnknownObject';
 import { ValidationError } from '../util/error/ValidationError';
+import { TracingContext, parseTracingContext } from './tracing';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
-import { parseTracingContext, TracingContext } from './tracing';
 
 class EventContext {
 	public readonly source: string;

@@ -1,5 +1,5 @@
-import { TracingContext } from '../../../lib/event/tracing';
-import { createTraceState, TraceFlags } from '@opentelemetry/api';
+import { TracingContext } from '../../../lib';
+import { TraceFlags, createTraceState } from '@opentelemetry/api';
 import { assert } from 'assertthat';
 
 suite('tracing', (): void => {
