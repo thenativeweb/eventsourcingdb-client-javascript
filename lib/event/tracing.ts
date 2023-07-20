@@ -23,7 +23,7 @@ class TracingContext {
 		this.traceId = traceId;
 		this.spanId = spanId;
 		this.traceFlags = traceFlags;
-		this.traceState = traceState;
+		this.traceState = traceState ?? createTraceState();
 	}
 
 	public validate(): void {
@@ -125,11 +125,11 @@ const parseTraceState = (traceState: unknown): TraceState => {
 };
 
 const parseTracingContext = (tracingContext: unknown): TracingContext | undefined => {
-	if (tracingContext === undefined) {
+	if (tracingContext === undefined || tracingContext === null) {
 		return undefined;
 	}
 
-	if (typeof tracingContext !== 'object' || tracingContext === null) {
+	if (typeof tracingContext !== 'object') {
 		throw new ValidationError('Failed to parse tracing context: Must be an object.');
 	}
 
