@@ -33,4 +33,22 @@ suite('tracing', (): void => {
 
 		assert.that(againTracingContext).is.equalTo(tracingContext);
 	});
+
+	test('converts TracingContext to OpenTelemetryContextCarrier.', async (): Promise<void> => {
+		const traceState = createTraceState().set('foo', 'bar').set('heck', 'meck');
+
+		const tracingContext = new TracingContext(
+			'eb0e08452e7ee4b0d3b8b30987c37951',
+			'c31bc0a7013beab8',
+			TraceFlags.NONE,
+			traceState,
+		);
+
+		const openTelemetryContextCarrier = tracingContext.toOpenTelemetryContextCarrier();
+
+		assert.that(openTelemetryContextCarrier).is.equalTo({
+			traceparent: '00-eb0e08452e7ee4b0d3b8b30987c37951-c31bc0a7013beab8-00',
+			tracestate: 'heck=meck,foo=bar',
+		});
+	});
 });

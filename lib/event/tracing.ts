@@ -8,6 +8,11 @@ import {
 	isValidTraceId,
 } from '@opentelemetry/api';
 
+interface OpenTelemetryContextCarrier {
+	traceparent: string;
+	tracestate: string;
+}
+
 class TracingContext {
 	public readonly traceId: string;
 	public readonly spanId: string;
@@ -58,7 +63,11 @@ class TracingContext {
 		return `00-${this.traceId}-${this.spanId}-${this.traceFlagsToString()}`;
 	}
 
-	public toExtractable(): { traceparent: string; tracestate: string } {
+	public toOpenTelemetryContextCarrier(): OpenTelemetryContextCarrier {
+		console.log({
+			tracestate: this.traceState,
+			serializedTraceState: this.traceState?.serialize(),
+		});
 		return {
 			traceparent: this.traceParent(),
 			tracestate: this.traceState?.serialize() ?? '',
