@@ -64,10 +64,6 @@ class TracingContext {
 	}
 
 	public toOpenTelemetryContextCarrier(): OpenTelemetryContextCarrier {
-		console.log({
-			tracestate: this.traceState,
-			serializedTraceState: this.traceState?.serialize(),
-		});
 		return {
 			traceparent: this.traceParent(),
 			tracestate: this.traceState?.serialize() ?? '',
