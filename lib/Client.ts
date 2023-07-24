@@ -7,16 +7,16 @@ import { StoreItem } from './handlers/StoreItem';
 import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
 import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ping } from './handlers/ping/ping';
+import { EventType } from './handlers/readEventTypes/EventType';
+import { readEventTypes } from './handlers/readEventTypes/readEventTypes';
 import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
 import { readEvents } from './handlers/readEvents/readEvents';
-import { readEventTypes } from './handlers/readEventTypes/readEventTypes';
 import { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
 import { readSubjects } from './handlers/readSubjects/readSubjects';
 import { registerEventSchema } from './handlers/registerEventSchema/registerEventSchema';
 import { Precondition } from './handlers/writeEvents/Precondition';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { HttpClient } from './http/HttpClient';
-import {EventType} from "./handlers/readEventTypes/EventType";
 
 class Client {
 	public readonly configuration: ClientConfiguration;
@@ -50,9 +50,7 @@ class Client {
 		return readEvents(this, abortController, subject, options);
 	}
 
-	public readEventTypes(
-		abortController: AbortController,
-	): AsyncGenerator<EventType, void, void> {
+	public readEventTypes(abortController: AbortController): AsyncGenerator<EventType, void, void> {
 		return readEventTypes(this, abortController);
 	}
 
@@ -63,10 +61,7 @@ class Client {
 		return readSubjects(this, abortController, options);
 	}
 
-	public async registerEventSchema(
-		eventType: string,
-		schema: string | object,
-	): Promise<void> {
+	public async registerEventSchema(eventType: string, schema: string | object): Promise<void> {
 		return registerEventSchema(this, eventType, schema);
 	}
 

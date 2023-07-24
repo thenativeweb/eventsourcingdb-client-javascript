@@ -67,8 +67,8 @@ suite('Client.observeEvents()', function () {
 			.that(async () => {
 				const result = client.observeEvents(new AbortController(), '/', { recursive: false });
 
-				for await (const { event, hash } of result) {
-					console.log(JSON.stringify({ event, hash }));
+				for await (const _ of result) {
+					// Do nothing.
 				}
 			})
 			.is.throwingAsync(
@@ -87,8 +87,8 @@ suite('Client.observeEvents()', function () {
 					recursive: false,
 				});
 
-				for await (const { event, hash } of result) {
-					console.log(JSON.stringify({ event, hash }));
+				for await (const _ of result) {
+					// Do nothing.
 				}
 			})
 			.is.throwingAsync(
@@ -367,7 +367,7 @@ suite('Client.observeEvents()', function () {
 
 		await assert
 			.that(async () => {
-				for await (const _item of result) {
+				for await (const _ of result) {
 					// Intentionally left blank.
 				}
 			})

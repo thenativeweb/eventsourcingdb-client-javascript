@@ -1,18 +1,18 @@
-import {isObject} from "../../util/isObject";
+import { isObject } from '../../util/isObject';
 
 interface EventType {
-    eventType: string;
-    isPhantom: boolean;
-    schema?: string;
+	eventType: string;
+	isPhantom: boolean;
+	schema?: string;
 }
 
 const isEventType = (message: unknown): message is { payload: EventType } => {
-    if (!isObject(message) || message.type !== 'eventType') {
-        return false;
-    }
+	if (!isObject(message) || message.type !== 'eventType') {
+		return false;
+	}
 
-    return true;
-}
+	return true;
+};
 
-export {isEventType};
-export type {EventType};
+export { isEventType };
+export type { EventType };

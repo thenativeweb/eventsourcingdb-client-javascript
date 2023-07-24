@@ -65,8 +65,8 @@ suite('Client.readEvents()', function () {
 			.that(async () => {
 				const result = client.readEvents(new AbortController(), '/', { recursive: false });
 
-				for await (const { event, hash } of result) {
-					console.log(JSON.stringify({ event, hash }));
+				for await (const _ of result) {
+					// Do nothing.
 				}
 			})
 			.is.throwingAsync();
@@ -79,8 +79,8 @@ suite('Client.readEvents()', function () {
 			.that(async () => {
 				const result = client.readEvents(new AbortController(), '/', { recursive: false });
 
-				for await (const { event, hash } of result) {
-					console.log(JSON.stringify({ event, hash }));
+				for await (const _ of result) {
+					// Do nothing.
 				}
 			})
 			.is.not.throwingAsync();
