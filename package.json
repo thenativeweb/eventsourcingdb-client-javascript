@@ -1,6 +1,6 @@
 {
   "name": "@thenativeweb/eventsourcingdb",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "eventsourcingdb is the JavaScript client for EventSourcingDB.",
   "contributors": [
     {
