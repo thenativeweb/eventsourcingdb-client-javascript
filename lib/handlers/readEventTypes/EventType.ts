@@ -1,7 +1,7 @@
 import {isObject} from "../../util/isObject";
 
 interface EventType {
-    type: string;
+    eventType: string;
     isPhantom: boolean;
     schema?: string;
 }

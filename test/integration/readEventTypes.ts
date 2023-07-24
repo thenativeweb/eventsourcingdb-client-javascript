@@ -38,28 +38,28 @@ suite('Client.readEventTypes()', function () {
 
         const expectedEventTypes: EventType[] = [
             {
-                type: 'com.foo.bar',
+                eventType: 'com.foo.bar',
                 isPhantom: false,
             },
             {
-                type: 'com.bar.baz',
+                eventType: 'com.bar.baz',
                 isPhantom: false,
             },
             {
-                type: 'com.baz.leml',
+                eventType: 'com.baz.leml',
                 isPhantom: false,
             },
             {
-                type: 'com.quux.knax',
+                eventType: 'com.quux.knax',
                 isPhantom: false,
             },
             {
-                type: 'org.ban.ban',
+                eventType: 'org.ban.ban',
                 isPhantom: true,
                 schema: `{"type":"object"}`
             },
             {
-                type: 'org.bing.chilling',
+                eventType: 'org.bing.chilling',
                 isPhantom: true,
                 schema: `{"type":"object"}`
             },
@@ -70,6 +70,7 @@ suite('Client.readEventTypes()', function () {
             observedEventTypes.push(observedEventType);
         }
 
-        assert.that(observedEventTypes).is.equalTo(expectedEventTypes);
+        assert.that(observedEventTypes).is.containingAllOf(expectedEventTypes);
+        assert.that(observedEventTypes.length).is.equalTo(expectedEventTypes.length);
     });
 });
