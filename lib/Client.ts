@@ -9,12 +9,14 @@ import { observeEvents } from './handlers/observeEvents/observeEvents';
 import { ping } from './handlers/ping/ping';
 import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
 import { readEvents } from './handlers/readEvents/readEvents';
+import { readEventTypes } from './handlers/readEventTypes/readEventTypes';
 import { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
 import { readSubjects } from './handlers/readSubjects/readSubjects';
 import { registerEventSchema } from './handlers/registerEventSchema/registerEventSchema';
 import { Precondition } from './handlers/writeEvents/Precondition';
 import { writeEvents } from './handlers/writeEvents/writeEvents';
 import { HttpClient } from './http/HttpClient';
+import {EventType} from "./handlers/readEventTypes/EventType";
 
 class Client {
 	public readonly configuration: ClientConfiguration;
@@ -46,6 +48,12 @@ class Client {
 		options: ReadEventsOptions,
 	): AsyncGenerator<StoreItem, void, void> {
 		return readEvents(this, abortController, subject, options);
+	}
+
+	public readEventTypes(
+		abortController: AbortController,
+	): AsyncGenerator<EventType, void, void> {
+		return readEventTypes(this, abortController);
 	}
 
 	public readSubjects(

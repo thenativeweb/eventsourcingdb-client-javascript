@@ -4,12 +4,24 @@ import { InternalError } from "../../util/error/InternalError";
 import { ServerError } from "../../util/error/ServerError";
 import { wrapError } from "../../util/error/wrapError";
 import { StatusCodes } from "http-status-codes";
+import {validateType} from "../../event/validateType";
+import {ValidationError} from "../../util/error/ValidationError";
+import {InvalidParameterError} from "../../util/error/InvalidParameterError";
 
 const registerEventSchema = async function (
     client: Client,
     eventType: string,
     schema: object | string,
 ): Promise<void> {
+    wrapError(
+        () => validateType(eventType),
+        (ex) => {
+            if (ex instanceof ValidationError) {
+                throw new InvalidParameterError('eventType', ex.message);
+            }
+        }
+    )
+
     let schemaString = schema;
     if (typeof schema == "object") {
         schemaString = JSON.stringify(schema)
@@ -37,6 +49,6 @@ const registerEventSchema = async function (
     if (response.status !== StatusCodes.OK) {
         throw new ServerError(`Unexpected response status: ${response.status} ${response.statusText}: ${response.data}.`);
     }
-}
+};
 
 export { registerEventSchema };
