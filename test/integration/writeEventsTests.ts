@@ -208,6 +208,23 @@ suite('Client.writeEvents()', function () {
 			.is.not.throwingAsync();
 	});
 
+	test('throws an error if any of the given events does not validate against the schema.', async (): Promise<void> => {
+		const client = database.withAuthorization.client;
+
+		await client.registerEventSchema('com.knackige.wuerstchen', {
+			type: 'object',
+			additionalProperties: false,
+		});
+
+		await assert
+			.that(async () => {
+				await client.writeEvents([
+					source.newEvent('/users/registered', 'com.knackige.wuerstchen', { oh: 'no' }),
+				]);
+			})
+			.is.throwingAsync("Client error occurred: Request failed with status code '409'.");
+	});
+
 	suite('when using the isSubjectPristine precondition', (): void => {
 		test('writes the events if the subject is pristine.', async (): Promise<void> => {
 			const client = database.withAuthorization.client;
