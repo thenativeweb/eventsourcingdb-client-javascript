@@ -6,7 +6,6 @@ export { EventCandidate } from './event/EventCandidate';
 export { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
 export { Source } from './event/Source';
 export { StoreItem } from './handlers/StoreItem';
-export { TracingContext } from './event/tracing';
 export {
 	ObserveEventsOptions,
 	ObserveFromLatestEvent,

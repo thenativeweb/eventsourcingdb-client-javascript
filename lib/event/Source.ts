@@ -1,6 +1,5 @@
 import { UnknownObject } from '../util/UnknownObject';
 import { EventCandidate } from './EventCandidate';
-import { TracingContext } from './tracing';
 
 class Source {
 	public readonly source: string;
@@ -13,9 +12,10 @@ class Source {
 		subject: string,
 		type: string,
 		data: UnknownObject,
-		tracingContext?: TracingContext,
+		traceParent?: string,
+		traceState?: string,
 	): EventCandidate {
-		return new EventCandidate(this.source, subject, type, data, tracingContext);
+		return new EventCandidate(this.source, subject, type, data, traceParent, traceState);
 	}
 }
 

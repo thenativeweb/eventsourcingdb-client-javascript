@@ -33,25 +33,25 @@ suite('Client.observeEvents()', function () {
 				'/users/registered',
 				events.registered.janeDoe.type,
 				events.registered.janeDoe.data,
-				events.registered.janeDoe.tracingContext,
+				events.registered.janeDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/loggedIn',
 				events.loggedIn.janeDoe.type,
 				events.loggedIn.janeDoe.data,
-				events.loggedIn.janeDoe.tracingContext,
+				events.loggedIn.janeDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/registered',
 				events.registered.johnDoe.type,
 				events.registered.johnDoe.data,
-				events.registered.johnDoe.tracingContext,
+				events.registered.johnDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/loggedIn',
 				events.loggedIn.johnDoe.type,
 				events.loggedIn.johnDoe.data,
-				events.loggedIn.johnDoe.tracingContext,
+				events.loggedIn.johnDoe.traceParent,
 			),
 		]);
 	});
@@ -140,7 +140,7 @@ suite('Client.observeEvents()', function () {
 								'/users/registered',
 								events.registered.apfelFred.type,
 								events.registered.apfelFred.data,
-								events.registered.apfelFred.tracingContext,
+								events.registered.apfelFred.traceParent,
 							),
 						]);
 
@@ -160,22 +160,22 @@ suite('Client.observeEvents()', function () {
 		assert.that(observedItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
 		assert.that(observedItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
 		assert
-			.that(observedItems[0].event.tracingContext)
-			.is.equalTo(events.registered.janeDoe.tracingContext);
+			.that(observedItems[0].event.traceParent)
+			.is.equalTo(events.registered.janeDoe.traceParent);
 		assert.that(observedItems[1].event.source).is.equalTo(testSource);
 		assert.that(observedItems[1].event.subject).is.equalTo('/users/registered');
 		assert.that(observedItems[1].event.type).is.equalTo(events.registered.johnDoe.type);
 		assert.that(observedItems[1].event.data).is.equalTo(events.registered.johnDoe.data);
 		assert
-			.that(observedItems[1].event.tracingContext)
-			.is.equalTo(events.registered.johnDoe.tracingContext);
+			.that(observedItems[1].event.traceParent)
+			.is.equalTo(events.registered.johnDoe.traceParent);
 		assert.that(observedItems[2].event.source).is.equalTo(testSource);
 		assert.that(observedItems[2].event.subject).is.equalTo('/users/registered');
 		assert.that(observedItems[2].event.type).is.equalTo(events.registered.apfelFred.type);
 		assert.that(observedItems[2].event.data).is.equalTo(events.registered.apfelFred.data);
 		assert
-			.that(observedItems[2].event.tracingContext)
-			.is.equalTo(events.registered.apfelFred.tracingContext);
+			.that(observedItems[2].event.traceParent)
+			.is.equalTo(events.registered.apfelFred.traceParent);
 	});
 
 	test('observes events from a subject including child subjects.', async (): Promise<void> => {

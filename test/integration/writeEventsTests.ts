@@ -2,7 +2,6 @@ import {
 	Client,
 	Source,
 	StoreItem,
-	TracingContext,
 	isSubjectOnEventId,
 	isSubjectPristine,
 } from '../../lib';
@@ -137,11 +136,7 @@ suite('Client.writeEvents()', function () {
 						'/foobar',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
-						new TracingContext(
-							'eb0e08452e7ee4b0d3b8b30987c37951',
-							'c31bc0a7013beab8',
-							TraceFlags.NONE,
-						),
+						'00-eb0e08452e7ee4b0d3b8b30987c37951-c31bc0a7013beab8-00'
 					),
 				]);
 			})

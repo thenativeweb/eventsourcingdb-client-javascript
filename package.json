@@ -24,7 +24,6 @@
   },
   "types": "build/index.d.ts",
   "dependencies": {
-    "@opentelemetry/api": "1.4.1",
     "axios": "1.5.0",
     "http-status-codes": "2.2.0",
     "stream-to-async-iterator": "1.0.0"

@@ -1,27 +1,19 @@
 import { UnknownObject } from '../util/UnknownObject';
 import { ValidationError } from '../util/error/ValidationError';
-import { TracingContext, parseTracingContext } from './tracing';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
 
 class EventContext {
 	public readonly source: string;
-
 	public readonly subject: string;
-
 	public readonly type: string;
-
 	public readonly specVersion: string;
-
 	public readonly id: string;
-
 	public readonly time: Date;
-
 	public readonly dataContentType: string;
-
 	public readonly predecessorHash: string;
-
-	public readonly tracingContext?: TracingContext;
+	public readonly traceParent?: string;
+	public readonly traceState?: string;
 
 	protected constructor(
 		source: string,
@@ -32,7 +24,8 @@ class EventContext {
 		time: Date,
 		dataContentType: string,
 		predecessorHash: string,
-		tracingContext?: TracingContext,
+		traceParent?: string,
+		traceState?: string,
 	) {
 		this.source = source;
 		this.subject = subject;
@@ -42,7 +35,8 @@ class EventContext {
 		this.time = time;
 		this.dataContentType = dataContentType;
 		this.predecessorHash = predecessorHash;
-		this.tracingContext = tracingContext;
+		this.traceParent = traceParent;
+		this.traceState = traceState;
 	}
 
 	public static parse(unknownObject: UnknownObject): EventContext {
@@ -85,8 +79,16 @@ class EventContext {
 				`Failed to parse predecessorHash '${unknownObject.predecessorhash}' to string.`,
 			);
 		}
-
-		const tracingContext = parseTracingContext(unknownObject.tracingContext);
+		if (unknownObject.traceparent !== undefined && typeof unknownObject.traceparent !== 'string') {
+			throw new ValidationError(
+				`Failed to parse traceparent '${unknownObject.traceparent}' to string.`,
+			);
+		}
+		if (unknownObject.tracestate !== undefined && typeof unknownObject.tracestate !== 'string') {
+			throw new ValidationError(
+				`Failed to parse tracestate '${unknownObject.tracestate}' to string.`,
+			);
+		}
 
 		return new EventContext(
 			unknownObject.source,
@@ -97,7 +99,8 @@ class EventContext {
 			time,
 			unknownObject.datacontenttype,
 			unknownObject.predecessorhash,
-			tracingContext,
+			unknownObject.traceparent,
+			unknownObject.tracestate,
 		);
 	}
 
@@ -111,6 +114,8 @@ class EventContext {
 			type: this.type,
 			datacontenttype: this.dataContentType,
 			predecessorhash: this.predecessorHash,
+			traceparent: this.traceParent,
+			tracestate: this.traceState,
 		};
 	}
 
