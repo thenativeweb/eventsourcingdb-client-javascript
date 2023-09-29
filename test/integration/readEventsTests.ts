@@ -103,16 +103,12 @@ suite('Client.readEvents()', function () {
 		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
 		assert.that(readItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
 		assert.that(readItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
-		assert
-			.that(readItems[0].event.traceParent)
-			.is.equalTo(events.registered.janeDoe.traceParent);
+		assert.that(readItems[0].event.traceParent).is.equalTo(events.registered.janeDoe.traceParent);
 		assert.that(readItems[1].event.source).is.equalTo(testSource);
 		assert.that(readItems[1].event.subject).is.equalTo('/users/registered');
 		assert.that(readItems[1].event.type).is.equalTo(events.registered.johnDoe.type);
 		assert.that(readItems[1].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert
-			.that(readItems[1].event.traceParent)
-			.is.equalTo(events.registered.johnDoe.traceParent);
+		assert.that(readItems[1].event.traceParent).is.equalTo(events.registered.johnDoe.traceParent);
 	});
 
 	test('reads events from a subject including child subjects.', async (): Promise<void> => {

@@ -1,5 +1,5 @@
-import { ValidationError } from '../util/error/ValidationError';
 import { UnknownObject } from '../util/UnknownObject';
+import { ValidationError } from '../util/error/ValidationError';
 import { validateSubject } from './validateSubject';
 import { validateType } from './validateType';
 
@@ -33,7 +33,7 @@ class EventCandidate {
 
 		if (this.traceState !== undefined && this.traceParent === undefined) {
 			throw new ValidationError(
-				`Failed to validate trace state: trace parent must be set if trace state is set.`,
+				'Failed to validate trace state: trace parent must be set if trace state is set.',
 			);
 		}
 	}
