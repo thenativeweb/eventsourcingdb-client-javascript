@@ -1,11 +1,4 @@
-import {
-	Client,
-	Source,
-	StoreItem,
-	TracingContext,
-	isSubjectOnEventId,
-	isSubjectPristine,
-} from '../../lib';
+import { Client, Source, StoreItem, isSubjectOnEventId, isSubjectPristine } from '../../lib';
 import { ClientError } from '../../lib/util/error/ClientError';
 import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
 import { ServerError } from '../../lib/util/error/ServerError';
@@ -17,7 +10,6 @@ import { prefixEventType } from '../shared/events/type';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { TraceFlags } from '@opentelemetry/api';
 import { assert } from 'assertthat';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
@@ -137,11 +129,7 @@ suite('Client.writeEvents()', function () {
 						'/foobar',
 						events.registered.janeDoe.type,
 						events.registered.janeDoe.data,
-						new TracingContext(
-							'eb0e08452e7ee4b0d3b8b30987c37951',
-							'c31bc0a7013beab8',
-							TraceFlags.NONE,
-						),
+						'00-eb0e08452e7ee4b0d3b8b30987c37951-c31bc0a7013beab8-00',
 					),
 				]);
 			})

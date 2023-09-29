@@ -31,25 +31,25 @@ suite('Client.readEvents()', function () {
 				'/users/registered',
 				events.registered.janeDoe.type,
 				events.registered.janeDoe.data,
-				events.registered.janeDoe.tracingContext,
+				events.registered.janeDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/loggedIn',
 				events.loggedIn.janeDoe.type,
 				events.loggedIn.janeDoe.data,
-				events.loggedIn.janeDoe.tracingContext,
+				events.loggedIn.janeDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/registered',
 				events.registered.johnDoe.type,
 				events.registered.johnDoe.data,
-				events.registered.johnDoe.tracingContext,
+				events.registered.johnDoe.traceParent,
 			),
 			source.newEvent(
 				'/users/loggedIn',
 				events.loggedIn.johnDoe.type,
 				events.loggedIn.johnDoe.data,
-				events.loggedIn.johnDoe.tracingContext,
+				events.loggedIn.johnDoe.traceParent,
 			),
 		]);
 	});
@@ -103,16 +103,12 @@ suite('Client.readEvents()', function () {
 		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
 		assert.that(readItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
 		assert.that(readItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
-		assert
-			.that(readItems[0].event.tracingContext)
-			.is.equalTo(events.registered.janeDoe.tracingContext);
+		assert.that(readItems[0].event.traceParent).is.equalTo(events.registered.janeDoe.traceParent);
 		assert.that(readItems[1].event.source).is.equalTo(testSource);
 		assert.that(readItems[1].event.subject).is.equalTo('/users/registered');
 		assert.that(readItems[1].event.type).is.equalTo(events.registered.johnDoe.type);
 		assert.that(readItems[1].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert
-			.that(readItems[1].event.tracingContext)
-			.is.equalTo(events.registered.johnDoe.tracingContext);
+		assert.that(readItems[1].event.traceParent).is.equalTo(events.registered.johnDoe.traceParent);
 	});
 
 	test('reads events from a subject including child subjects.', async (): Promise<void> => {

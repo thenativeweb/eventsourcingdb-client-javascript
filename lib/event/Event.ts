@@ -1,7 +1,6 @@
 import { UnknownObject } from '../util/UnknownObject';
 import { isObject } from '../util/isObject';
 import { EventContext } from './EventContext';
-import { TracingContext } from './tracing';
 
 class Event extends EventContext {
 	public readonly data: Record<string, unknown>;
@@ -16,7 +15,8 @@ class Event extends EventContext {
 		time: Date,
 		dataContentType: string,
 		predecessorHash: string,
-		tracingContext?: TracingContext,
+		traceParent?: string,
+		traceState?: string,
 	) {
 		super(
 			source,
@@ -27,7 +27,8 @@ class Event extends EventContext {
 			time,
 			dataContentType,
 			predecessorHash,
-			tracingContext,
+			traceParent,
+			traceState,
 		);
 		this.data = data;
 	}
@@ -48,7 +49,8 @@ class Event extends EventContext {
 			eventContext.time,
 			eventContext.dataContentType,
 			eventContext.predecessorHash,
-			eventContext.tracingContext,
+			eventContext.traceParent,
+			eventContext.traceState,
 		);
 	}
 
