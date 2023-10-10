@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { validateType } from '../../event/validateType';
 import { CustomError } from '../../util/error/CustomError';
@@ -6,7 +7,6 @@ import { InvalidParameterError } from '../../util/error/InvalidParameterError';
 import { ServerError } from '../../util/error/ServerError';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
-import { StatusCodes } from 'http-status-codes';
 
 const registerEventSchema = async function (
 	client: Client,

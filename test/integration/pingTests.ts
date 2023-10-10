@@ -1,3 +1,5 @@
+import { assert } from 'assertthat';
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../lib';
 import { ServerError } from '../../lib/util/error/ServerError';
 import { Database } from '../shared/Database';
@@ -5,8 +7,6 @@ import { buildDatabase } from '../shared/buildDatabase';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { assert } from 'assertthat';
-import { StatusCodes } from 'http-status-codes';
 
 suite('Client.ping()', function () {
 	this.timeout(20_000);

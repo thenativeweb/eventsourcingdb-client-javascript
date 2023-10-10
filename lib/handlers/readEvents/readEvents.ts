@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
@@ -13,7 +14,6 @@ import { isHeartbeat } from '../isHeartbeat';
 import { isItem } from '../isItem';
 import { isStreamError } from '../isStreamError';
 import { ReadEventsOptions, validateReadEventsOptions } from './ReadEventsOptions';
-import { StatusCodes } from 'http-status-codes';
 
 const readEvents = async function* (
 	client: Client,

@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { EventCandidate } from '../../event/EventCandidate';
 import { EventContext } from '../../event/EventContext';
@@ -8,7 +9,6 @@ import { ServerError } from '../../util/error/ServerError';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
 import { Precondition } from './Precondition';
-import { StatusCodes } from 'http-status-codes';
 
 const writeEvents = async function (
 	client: Client,

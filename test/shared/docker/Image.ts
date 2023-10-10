@@ -1,5 +1,5 @@
-import { Container } from './Container';
 import { exec } from 'shelljs';
+import { Container } from './Container';
 
 class Image {
 	private readonly name: string;

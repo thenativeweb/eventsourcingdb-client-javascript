@@ -1,3 +1,7 @@
+import { Readable } from 'stream';
+import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
+import axios from 'axios';
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../Client';
 import { CancelationError } from '../util/error/CancelationError';
 import { ClientError } from '../util/error/ClientError';
@@ -6,11 +10,8 @@ import { InternalError } from '../util/error/InternalError';
 import { ServerError } from '../util/error/ServerError';
 import { RetryError } from '../util/retry/RetryError';
 import { retryWithBackoff } from '../util/retry/retryWithBackoff';
-import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
-import axios from 'axios';
-import { StatusCodes } from 'http-status-codes';
-import { Readable } from 'stream';
 
+// biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
 	: TResponseType extends 'blob'
@@ -24,6 +25,7 @@ type ResponseDataType<TResponseType extends ResponseType> = TResponseType extend
 	: TResponseType extends 'stream'
 	? Readable
 	: never;
+// biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 type Response<TResponseType extends ResponseType> = AxiosResponse<
 	ResponseDataType<TResponseType>,
 	unknown
@@ -38,6 +40,7 @@ class HttpClient {
 
 	private getDefaultRequestConfig(withAuthorization = true): CreateAxiosDefaults {
 		let configuration: CreateAxiosDefaults = {
+			// biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 			baseURL: this.databaseClient.configuration.baseUrl,
 			timeout: this.databaseClient.configuration.timeoutMilliseconds,
 			headers: {
@@ -77,7 +80,7 @@ class HttpClient {
 			...configuration,
 			headers: {
 				...configuration.headers,
-				Authorization: `Bearer ${accessToken}`,
+				authorization: `Bearer ${accessToken}`,
 			} as Record<string, unknown>,
 		};
 	}
@@ -108,6 +111,7 @@ class HttpClient {
 		);
 	}
 
+	// biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 	public async post<TResponseType extends ResponseType>(options: {
 		path: string;
 		responseType: TResponseType;
@@ -169,6 +173,7 @@ class HttpClient {
 		}
 	}
 
+	// biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 	public async get<TResponseType extends ResponseType>(options: {
 		path: string;
 		responseType: TResponseType;

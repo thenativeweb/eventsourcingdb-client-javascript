@@ -1,3 +1,4 @@
+import { StatusCodes } from 'http-status-codes';
 import { Client } from '../../Client';
 import { CustomError } from '../../util/error/CustomError';
 import { InternalError } from '../../util/error/InternalError';
@@ -7,7 +8,6 @@ import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isHeartbeat } from '../isHeartbeat';
 import { isStreamError } from '../isStreamError';
 import { EventType, isEventType } from './EventType';
-import { StatusCodes } from 'http-status-codes';
 
 const readEventTypes = async function* (
 	client: Client,

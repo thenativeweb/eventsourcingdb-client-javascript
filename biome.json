@@ -1,12 +1,15 @@
 {
-	"$schema": "./node_modules/rome/configuration_schema.json",
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"ignore": [ "build", "node_modules", "*.txt", "*.md" ]
+		"ignore": ["build", "node_modules", "*.txt", "*.md"]
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"all": true
+			"all": true,
+			"nursery": {
+				"useImportRestrictions": "off"
+			}
 		}
 	},
 	"formatter": {
@@ -23,6 +26,7 @@
 	"javascript": {
 		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"],
 		"formatter": {
+			"jsxQuoteStyle": "single",
 			"quoteProperties": "asNeeded",
 			"quoteStyle": "single",
 			"semicolons": "always",

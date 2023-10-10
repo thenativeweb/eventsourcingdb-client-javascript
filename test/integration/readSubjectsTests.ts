@@ -1,3 +1,5 @@
+import { assert } from 'assertthat';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Client, EventCandidate } from '../../lib';
 import { CancelationError } from '../../lib';
 import { ClientError } from '../../lib/util/error/ClientError';
@@ -9,8 +11,6 @@ import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { assert } from 'assertthat';
-import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.readSubjects()', function () {
 	this.timeout(20_000);

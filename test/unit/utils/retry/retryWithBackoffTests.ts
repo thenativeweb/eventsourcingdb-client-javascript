@@ -1,7 +1,7 @@
+import { assert } from 'assertthat';
 import { CancelationError } from '../../../../lib';
 import { RetryError } from '../../../../lib/util/retry/RetryError';
 import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
-import { assert } from 'assertthat';
 
 suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
@@ -90,6 +90,7 @@ suite('retryWithBackoff', (): void => {
 	});
 
 	test('aborts the retries if an error is thrown.', async () => {
+		// biome-ignore lint/correctness/noUnusedVariables: count is not a unused variable
 		let count = 0;
 		const maxTries = 5;
 		const abortController = new AbortController();

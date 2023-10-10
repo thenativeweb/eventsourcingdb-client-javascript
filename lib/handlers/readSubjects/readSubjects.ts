@@ -1,3 +1,4 @@
+import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 import { Client } from '../../Client';
 import { CustomError } from '../../util/error/CustomError';
 import { InternalError } from '../../util/error/InternalError';
@@ -9,7 +10,6 @@ import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
 import { isStreamError } from '../isStreamError';
 import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
 import { isSubject } from './isSubject';
-import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
 const readSubjects = async function* (
 	client: Client,

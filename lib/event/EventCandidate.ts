@@ -37,7 +37,7 @@ class EventCandidate {
 			);
 		}
 	}
-
+	// biome-ignore lint/style/useNamingConvention: We want to use this function name
 	public toJSON(): Record<string, unknown> {
 		return {
 			data: this.data,

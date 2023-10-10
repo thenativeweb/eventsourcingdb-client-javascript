@@ -1,3 +1,4 @@
+import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 import { Client } from '../../Client';
 import { Event } from '../../event/Event';
 import { validateSubject } from '../../event/validateSubject';
@@ -13,7 +14,6 @@ import { isHeartbeat } from '../isHeartbeat';
 import { isItem } from '../isItem';
 import { isStreamError } from '../isStreamError';
 import { ObserveEventsOptions, validateObserveEventsOptions } from './ObserveEventsOptions';
-import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
 const observeEvents = async function* (
 	client: Client,
