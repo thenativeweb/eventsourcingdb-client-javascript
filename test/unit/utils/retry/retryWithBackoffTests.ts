@@ -90,16 +90,12 @@ suite('retryWithBackoff', (): void => {
 	});
 
 	test('aborts the retries if an error is thrown.', async () => {
-		// biome-ignore lint/correctness/noUnusedVariables: count is not a unused variable
-		let count = 0;
 		const maxTries = 5;
 		const abortController = new AbortController();
 
 		await assert
 			.that(async () => {
 				await retryWithBackoff(abortController, maxTries, async () => {
-					count += 1;
-
 					throw new Error('Abort the retries.');
 				});
 			})
