@@ -1,7 +1,7 @@
+import { assert } from 'assertthat';
 import { CancelationError } from '../../../../lib';
 import { RetryError } from '../../../../lib/util/retry/RetryError';
 import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
-import { assert } from 'assertthat';
 
 suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
@@ -90,15 +90,12 @@ suite('retryWithBackoff', (): void => {
 	});
 
 	test('aborts the retries if an error is thrown.', async () => {
-		let count = 0;
 		const maxTries = 5;
 		const abortController = new AbortController();
 
 		await assert
 			.that(async () => {
 				await retryWithBackoff(abortController, maxTries, async () => {
-					count += 1;
-
 					throw new Error('Abort the retries.');
 				});
 			})

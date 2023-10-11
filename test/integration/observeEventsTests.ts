@@ -1,3 +1,5 @@
+import { assert } from 'assertthat';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Client, StoreItem } from '../../lib';
 import { CancelationError } from '../../lib';
 import { Source } from '../../lib';
@@ -12,8 +14,6 @@ import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { assert } from 'assertthat';
-import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);

@@ -1,3 +1,5 @@
+import { assert } from 'assertthat';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Client, Source, StoreItem, isSubjectOnEventId, isSubjectPristine } from '../../lib';
 import { ClientError } from '../../lib/util/error/ClientError';
 import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
@@ -10,8 +12,6 @@ import { prefixEventType } from '../shared/events/type';
 import { startDatabase } from '../shared/startDatabase';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer';
 import { stopDatabase } from '../shared/stopDatabase';
-import { assert } from 'assertthat';
-import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 
 suite('Client.writeEvents()', function () {
 	this.timeout(20_000);

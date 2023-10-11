@@ -1,7 +1,8 @@
+import { clearTimeout } from 'timers';
 import { CancelationError } from '../error/CancelationError';
 import { RetryError } from './RetryError';
-import { clearTimeout } from 'timers';
 
+// biome-ignore lint/style/useNamingConvention: We want to use this return type
 type RetryResult<TResult> =
 	| {
 			return: TResult;
@@ -22,6 +23,7 @@ const getRandomizedDuration = function (
 	return milliseconds;
 };
 
+// biome-ignore lint/style/useNamingConvention: We want to use this return type
 const retryWithBackoff = async function <TReturn = void>(
 	abortController: AbortController,
 	tries: number,

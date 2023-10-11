@@ -1,6 +1,6 @@
+import { assert } from 'assertthat';
 import { validateType } from '../../../lib/event/validateType';
 import { ValidationError } from '../../../lib/util/error/ValidationError';
-import { assert } from 'assertthat';
 
 suite('validateType()', () => {
 	test('returns without throwing on a valid type.', async () => {

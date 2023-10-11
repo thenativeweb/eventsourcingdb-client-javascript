@@ -1,10 +1,10 @@
+import { assert } from 'assertthat';
 import { EventCandidate } from '../../lib';
 import { Database } from '../shared/Database';
 import { buildDatabase } from '../shared/buildDatabase';
 import { testSource } from '../shared/events/source';
 import { startDatabase } from '../shared/startDatabase';
 import { stopDatabase } from '../shared/stopDatabase';
-import { assert } from 'assertthat';
 
 suite('Client.registerEventSchema()', function () {
 	this.timeout(20_000);

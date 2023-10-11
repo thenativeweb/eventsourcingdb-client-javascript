@@ -4,11 +4,14 @@ const isPromise = function (value: unknown): value is Promise<unknown> {
 	return typeof value === 'object' && typeof (value as Record<string, unknown>).then === 'function';
 };
 
+// biome-ignore lint/style/useNamingConvention: We want to use this return type
 function wrapError<TReturn = void>(fn: () => TReturn, onError: (error: Error) => void): TReturn;
+// biome-ignore lint/style/useNamingConvention: We want to use this return type
 function wrapError<TReturn = void>(
 	fn: () => Promise<TReturn>,
 	onError: (error: Error) => Promise<void>,
 ): Promise<TReturn>;
+// biome-ignore lint/style/useNamingConvention: We want to use this return type
 function wrapError<TReturn = void>(
 	fn: () => TReturn | Promise<TReturn>,
 	onError: (error: Error) => void | Promise<void>,
