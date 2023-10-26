@@ -14,6 +14,7 @@ function wrapError<TReturn = void>(
 // biome-ignore lint/style/useNamingConvention: We want to use this return type
 function wrapError<TReturn = void>(
 	fn: () => TReturn | Promise<TReturn>,
+	// biome-ignore lint/suspicious/noConfusingVoidType: Although void should not be used in a union type, here it makes sense, to support synchronous and asynchronous functions.
 	onError: (error: Error) => void | Promise<void>,
 ): TReturn | Promise<TReturn> {
 	try {
