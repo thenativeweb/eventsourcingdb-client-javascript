@@ -32,7 +32,7 @@ suite('Client.ping()', function () {
 				await client.ping();
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof ServerError &&
 					error.message === 'Server error occurred: No response received.',
 			);
@@ -57,7 +57,7 @@ suite('Client.ping()', function () {
 
 		test('throws an error if the server responds with an unexpected status code.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.get('/ping', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send('OK');
@@ -69,7 +69,7 @@ suite('Client.ping()', function () {
 					await client.ping();
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							'Server error occurred: Failed operation with 2 errors:\n' +
@@ -80,7 +80,7 @@ suite('Client.ping()', function () {
 
 		test("throws an error if the server's response body is not 'OK'.", async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.get('/ping', (_req, res) => {
 					res.status(StatusCodes.OK);
 					res.send('Gude');
@@ -92,7 +92,7 @@ suite('Client.ping()', function () {
 					await client.ping();
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message === 'Server error occurred: Received unexpected response.',
 				);

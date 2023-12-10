@@ -17,7 +17,7 @@ suite('validateType()', () => {
 				validateType('invalidExampleType');
 			})
 			.is.throwing(
-				(error) => error.message.includes('invalidExampleType') && error instanceof ValidationError,
+				error => error.message.includes('invalidExampleType') && error instanceof ValidationError,
 			);
 	});
 
@@ -26,7 +26,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('invalidExampleType');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test("is throwing an error if the separator is not not a '.'.", () => {
@@ -34,7 +34,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com:example:exampleType');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the reverse domain has less than 3 segments.', () => {
@@ -42,7 +42,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com.example');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the type has invalid characters.', () => {
@@ -50,7 +50,7 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('com.example.apfel-günter.registered');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test('is throwing an error if the tld of the reverse domain has less than 1 character.', () => {
@@ -58,6 +58,6 @@ suite('validateType()', () => {
 			.that(() => {
 				validateType('a.example.exampleType');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 });

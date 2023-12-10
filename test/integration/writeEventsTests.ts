@@ -44,7 +44,7 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof ServerError &&
 					error.message === 'Server error occurred: No response received.',
 			);
@@ -58,7 +58,7 @@ suite('Client.writeEvents()', function () {
 				await client.writeEvents([]);
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'eventCandidates' is invalid: eventCandidates must contain at least one EventCandidate.",
@@ -75,7 +75,7 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'eventCandidates' is invalid: Failed to validate subject: 'foobar' must be an absolute, slash-separated path.",
@@ -92,7 +92,7 @@ suite('Client.writeEvents()', function () {
 				]);
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'eventCandidates' is invalid: Failed to validate type: 'haram' must be a reverse domain name.",
@@ -265,7 +265,7 @@ suite('Client.writeEvents()', function () {
 					);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message === "Client error occurred: Request failed with status code '409'.",
 				);
@@ -357,7 +357,7 @@ suite('Client.writeEvents()', function () {
 					);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message === "Client error occurred: Request failed with status code '409'.",
 				);
@@ -375,7 +375,7 @@ suite('Client.writeEvents()', function () {
 
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send(ReasonPhrases.BAD_GATEWAY);
@@ -387,7 +387,7 @@ suite('Client.writeEvents()', function () {
 					await client.writeEvents(events);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							'Server error occurred: Failed operation with 2 errors:\n' +
@@ -398,7 +398,7 @@ suite('Client.writeEvents()', function () {
 
 		test("throws an error if the server's protocol version does not match.", async () => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/write-events', (_req, res) => {
 					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
 					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
@@ -411,7 +411,7 @@ suite('Client.writeEvents()', function () {
 					await client.writeEvents(events);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message ===
 							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
@@ -420,7 +420,7 @@ suite('Client.writeEvents()', function () {
 
 		test('throws a client error if the server returns a 4xx status code.', async () => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.IM_A_TEAPOT);
 					res.send(ReasonPhrases.IM_A_TEAPOT);
@@ -432,7 +432,7 @@ suite('Client.writeEvents()', function () {
 					await client.writeEvents(events);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message === "Client error occurred: Request failed with status code '418'.",
 				);
@@ -440,7 +440,7 @@ suite('Client.writeEvents()', function () {
 
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async () => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/write-events', (_req, res) => {
 					res.status(StatusCodes.ACCEPTED);
 					res.send(ReasonPhrases.ACCEPTED);
@@ -452,7 +452,7 @@ suite('Client.writeEvents()', function () {
 					await client.writeEvents(events);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
 				);
@@ -460,7 +460,7 @@ suite('Client.writeEvents()', function () {
 
 		test("throws a server error if the server's response can't be parsed.", async () => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/write-events', (_req, res) => {
 					res.send('utter garbage');
 				});
@@ -471,7 +471,7 @@ suite('Client.writeEvents()', function () {
 					await client.writeEvents(events);
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							"Server error occurred: Failed to parse response 'utter garbage' to array.",

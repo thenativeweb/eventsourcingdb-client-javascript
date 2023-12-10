@@ -16,7 +16,7 @@ interface ObserveFromLatestEvent {
 	ifEventIsMissing: 'read-everything' | 'wait-for-event';
 }
 
-const validateObserveEventsOptions = function (options: ObserveEventsOptions): void {
+const validateObserveEventsOptions = (options: ObserveEventsOptions): void => {
 	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
 		throw new ValidationError(
 			'ObserveEventsOptions are invalid: lowerBoundId must be 0 or greater.',
@@ -36,7 +36,7 @@ const validateObserveEventsOptions = function (options: ObserveEventsOptions): v
 				validateSubject(fromLatestEvent.subject);
 				validateType(fromLatestEvent.type);
 			},
-			(error) => {
+			error => {
 				throw new ValidationError(
 					`ObserveEventsOptions are invalid: Failed to validate 'fromLatestEvent': ${error.message}`,
 				);

@@ -27,7 +27,7 @@ suite('validateObserveEventOptions', () => {
 				}),
 			)
 			.is.throwing(
-				(error) =>
+				error =>
 					error.message ===
 						'ObserveEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.' &&
 					error instanceof ValidationError,

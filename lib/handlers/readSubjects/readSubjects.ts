@@ -20,7 +20,7 @@ const readSubjects = async function* (
 		() => {
 			validateReadSubjectsOptions(options);
 		},
-		(ex) => {
+		ex => {
 			if (ex instanceof ValidationError) {
 				throw new InvalidParameterError('options', ex.message);
 			}
@@ -31,7 +31,7 @@ const readSubjects = async function* (
 		() => {
 			return JSON.stringify(options);
 		},
-		(_ex) => {
+		_ex => {
 			throw new InvalidParameterError(
 				'options',
 				'Parameter contains values that cannot be marshaled.',
@@ -47,7 +47,7 @@ const readSubjects = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

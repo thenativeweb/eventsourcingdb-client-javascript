@@ -1,6 +1,6 @@
 const nonNegativeIntegerMatcher = /^\d+$/u;
 
-const IsNonNegativeInteger = function (value: string): boolean {
+const IsNonNegativeInteger = (value: string): boolean => {
 	return nonNegativeIntegerMatcher.test(value);
 };
 

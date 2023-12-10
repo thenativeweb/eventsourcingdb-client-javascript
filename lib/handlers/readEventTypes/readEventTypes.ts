@@ -21,7 +21,7 @@ const readEventTypes = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

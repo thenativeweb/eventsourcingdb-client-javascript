@@ -1,6 +1,6 @@
 import { Database } from './Database';
 
-const stopDatabase = async function (database: Database): Promise<void> {
+const stopDatabase = async (database: Database): Promise<void> => {
 	database.withAuthorization.stop();
 };
 

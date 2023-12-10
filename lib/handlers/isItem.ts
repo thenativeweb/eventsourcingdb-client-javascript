@@ -1,7 +1,7 @@
 import { isObject } from '../util/isObject';
 import { Item } from './Item';
 
-const isItem = function (message: unknown): message is Item {
+const isItem = (message: unknown): message is Item => {
 	if (!isObject(message) || message.type !== 'item') {
 		return false;
 	}

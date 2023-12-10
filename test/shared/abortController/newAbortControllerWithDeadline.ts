@@ -1,4 +1,4 @@
-const newAbortControllerWithDeadline = function (deadlineMilliseconds: number): AbortController {
+const newAbortControllerWithDeadline = (deadlineMilliseconds: number): AbortController => {
 	const abortController = new AbortController();
 
 	setTimeout(() => {

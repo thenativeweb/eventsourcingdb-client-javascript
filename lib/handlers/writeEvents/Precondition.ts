@@ -17,14 +17,14 @@ interface IsSubjectOnEventIdPrecondition {
 	eventId: string;
 }
 
-const isSubjectPristine = function (payload: IsSubjectPristinePrecondition): Precondition {
+const isSubjectPristine = (payload: IsSubjectPristinePrecondition): Precondition => {
 	return {
 		type: 'isSubjectPristine',
 		payload,
 	};
 };
 
-const isSubjectOnEventId = function (payload: IsSubjectOnEventIdPrecondition): Precondition {
+const isSubjectOnEventId = (payload: IsSubjectOnEventIdPrecondition): Precondition => {
 	return {
 		type: 'isSubjectOnEventId',
 		payload,

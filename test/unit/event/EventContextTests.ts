@@ -42,7 +42,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse source '42' to string." &&
 						error instanceof ValidationError,
 				);
@@ -65,7 +65,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message ===
 							"Failed to validate subject: 'this/is/invalid' must be an absolute, slash-separated path." &&
 						error instanceof ValidationError,
@@ -89,7 +89,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message ===
 							"Failed to validate type: 'a.this.is.invalid' must be a reverse domain name." &&
 						error instanceof ValidationError,
@@ -113,7 +113,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse specVersion '1' to string." &&
 						error instanceof ValidationError,
 				);
@@ -136,7 +136,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse id '[object Object]' to string." &&
 						error instanceof ValidationError,
 				);
@@ -159,7 +159,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse time 'not a date' to Date." &&
 						error instanceof ValidationError,
 				);
@@ -182,7 +182,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse dataContentType 'undefined' to string." &&
 						error instanceof ValidationError,
 				);
@@ -205,7 +205,7 @@ suite('EventContext', () => {
 					EventContext.parse(toParse);
 				})
 				.is.throwing(
-					(error) =>
+					error =>
 						error.message === "Failed to parse predecessorHash 'null' to string." &&
 						error instanceof ValidationError,
 				);

@@ -17,7 +17,7 @@ suite('validateSubject()', () => {
 				validateSubject('invalidExampleSubject');
 			})
 			.is.throwing(
-				(error) =>
+				error =>
 					error.message.includes('invalidExampleSubject') && error instanceof ValidationError,
 			);
 	});
@@ -27,7 +27,7 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('invalidExampleSubject');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test('is throwing if the subject is a relative path.', () => {
@@ -35,7 +35,7 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('this/is/invalid');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 
 	test('is throwing if the subject has invalid characters.', () => {
@@ -43,6 +43,6 @@ suite('validateSubject()', () => {
 			.that(() => {
 				validateSubject('/user/günter/registered');
 			})
-			.is.throwing((error) => error instanceof ValidationError);
+			.is.throwing(error => error instanceof ValidationError);
 	});
 });

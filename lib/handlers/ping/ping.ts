@@ -4,7 +4,7 @@ import { InternalError } from '../../util/error/InternalError';
 import { ServerError } from '../../util/error/ServerError';
 import { wrapError } from '../../util/error/wrapError';
 
-const ping = async function (client: Client): Promise<void> {
+const ping = async (client: Client): Promise<void> => {
 	const response = await wrapError(
 		async () =>
 			client.httpClient.get({
@@ -12,7 +12,7 @@ const ping = async function (client: Client): Promise<void> {
 				responseType: 'text',
 				withAuthorization: false,
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}
