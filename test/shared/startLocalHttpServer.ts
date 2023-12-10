@@ -2,14 +2,14 @@ import * as http from 'http';
 import express from 'express';
 import { Client } from '../../lib';
 
-const startLocalHttpServer = async function (
+const startLocalHttpServer = async (
 	attachHandlers: (app: express.Express) => void,
-): Promise<{ client: Client; stopServer: () => Promise<void> }> {
+): Promise<{ client: Client; stopServer: () => Promise<void> }> => {
 	const app = express();
 
 	attachHandlers(app);
 
-	const server = await new Promise<http.Server>((resolve) => {
+	const server = await new Promise<http.Server>(resolve => {
 		const _server = app.listen(0, () => {
 			resolve(_server);
 		});
@@ -28,8 +28,8 @@ const startLocalHttpServer = async function (
 		maxTries: 2,
 		accessToken: 'irrelevant',
 	});
-	const stopServer = async function () {
-		await new Promise<void>((resolve) => {
+	const stopServer = async () => {
+		await new Promise<void>(resolve => {
 			server.close(() => {
 				resolve();
 			});

@@ -20,7 +20,7 @@ interface ReadFromLatestEvent {
 	ifEventIsMissing: 'read-nothing' | 'read-everything';
 }
 
-const validateReadEventsOptions = function (options: ReadEventsOptions): void {
+const validateReadEventsOptions = (options: ReadEventsOptions): void => {
 	if (options.lowerBoundId !== undefined && !IsNonNegativeInteger(options.lowerBoundId)) {
 		throw new ValidationError('ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.');
 	}
@@ -41,7 +41,7 @@ const validateReadEventsOptions = function (options: ReadEventsOptions): void {
 				validateSubject(fromLatestEvent.subject);
 				validateType(fromLatestEvent.type);
 			},
-			(error) => {
+			error => {
 				throw new ValidationError(
 					`ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': ${error.message}`,
 				);

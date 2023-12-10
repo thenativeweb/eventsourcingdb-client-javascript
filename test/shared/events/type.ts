@@ -1,4 +1,4 @@
-const prefixEventType = function (suffix: string): string {
+const prefixEventType = (suffix: string): string => {
 	return `io.thenativeweb.eventsourcingdb.test.${suffix}`;
 };
 

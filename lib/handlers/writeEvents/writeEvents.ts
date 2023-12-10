@@ -10,11 +10,11 @@ import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
 import { Precondition } from './Precondition';
 
-const writeEvents = async function (
+const writeEvents = async (
 	client: Client,
 	eventCandidates: EventCandidate[],
 	preconditions: Precondition[],
-): Promise<EventContext[]> {
+): Promise<EventContext[]> => {
 	if (eventCandidates.length < 1) {
 		throw new InvalidParameterError(
 			'eventCandidates',
@@ -26,7 +26,7 @@ const writeEvents = async function (
 			() => {
 				eventCandidate.validate();
 			},
-			(ex) => {
+			ex => {
 				if (ex instanceof ValidationError) {
 					throw new InvalidParameterError('eventCandidates', ex.message);
 				}
@@ -46,7 +46,7 @@ const writeEvents = async function (
 				requestBody,
 				responseType: 'json',
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}
@@ -65,7 +65,7 @@ const writeEvents = async function (
 	const responseData = response.data;
 	return await wrapError(
 		() => responseData.map((eventContext): EventContext => EventContext.parse(eventContext)),
-		(error) => {
+		error => {
 			if (error instanceof ValidationError) {
 				throw new ServerError(error.message);
 			}

@@ -1,7 +1,7 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"ignore": ["build", "node_modules", "*.txt", "*.md"]
+		"ignore": ["build", "node_modules"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -9,23 +9,29 @@
 		"ignore": [],
 		"indentStyle": "tab",
 		"indentWidth": 2,
+		"lineEnding": "lf",
 		"lineWidth": 100
 	},
 	"javascript": {
-		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"],
 		"formatter": {
-			"arrowParentheses": "always",
-			"enabled": true,
+			"arrowParentheses": "asNeeded",
+			"bracketSameLine": true,
+			"bracketSpacing": true,
 			"jsxQuoteStyle": "single",
 			"quoteProperties": "asNeeded",
 			"quoteStyle": "single",
 			"semicolons": "always",
 			"trailingComma": "all"
-		}
+		},
+		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"]
 	},
 	"json": {
 		"formatter": {
-			"enabled": true
+			"enabled": true,
+			"indentStyle": "tab",
+			"indentWidth": 2,
+			"lineEnding": "lf",
+			"lineWidth": 100
 		}
 	},
 	"linter": {

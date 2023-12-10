@@ -84,7 +84,7 @@ suite('retryWithBackoff', (): void => {
 					return { retry: new Error(`Error no. ${count}`) };
 				});
 			})
-			.is.throwingAsync((error) => error instanceof CancelationError);
+			.is.throwingAsync(error => error instanceof CancelationError);
 
 		assert.that(count).is.equalTo(cancelingTry);
 	});
@@ -99,6 +99,6 @@ suite('retryWithBackoff', (): void => {
 					throw new Error('Abort the retries.');
 				});
 			})
-			.is.throwingAsync((error) => !(error instanceof RetryError));
+			.is.throwingAsync(error => !(error instanceof RetryError));
 	});
 });

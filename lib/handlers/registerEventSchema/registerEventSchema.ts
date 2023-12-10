@@ -8,14 +8,14 @@ import { ServerError } from '../../util/error/ServerError';
 import { ValidationError } from '../../util/error/ValidationError';
 import { wrapError } from '../../util/error/wrapError';
 
-const registerEventSchema = async function (
+const registerEventSchema = async (
 	client: Client,
 	eventType: string,
 	schema: object | string,
-): Promise<void> {
+): Promise<void> => {
 	wrapError(
 		() => validateType(eventType),
-		(ex) => {
+		ex => {
 			if (ex instanceof ValidationError) {
 				throw new InvalidParameterError('eventType', ex.message);
 			}
@@ -39,7 +39,7 @@ const registerEventSchema = async function (
 				requestBody,
 				responseType: 'text',
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

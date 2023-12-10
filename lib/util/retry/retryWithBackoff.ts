@@ -11,10 +11,10 @@ type RetryResult<TResult> =
 			retry: Error;
 	  };
 
-const getRandomizedDuration = function (
+const getRandomizedDuration = (
 	durationMilliseconds: number,
 	deviationMilliseconds: number,
-): number {
+): number => {
 	const milliseconds =
 		durationMilliseconds -
 		deviationMilliseconds +
@@ -24,11 +24,11 @@ const getRandomizedDuration = function (
 };
 
 // biome-ignore lint/style/useNamingConvention: We want to use this return type
-const retryWithBackoff = async function <TReturn = void>(
+const retryWithBackoff = async <TReturn = void>(
 	abortController: AbortController,
 	tries: number,
 	fn: () => Promise<RetryResult<TReturn>>,
-): Promise<TReturn> {
+): Promise<TReturn> => {
 	if (tries < 1) {
 		throw new RangeError('Tries must be greater than 0.');
 	}

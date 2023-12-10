@@ -4,7 +4,7 @@ interface ReadSubjectsOptions {
 	baseSubject: string;
 }
 
-const validateReadSubjectsOptions = function (options: ReadSubjectsOptions): void {
+const validateReadSubjectsOptions = (options: ReadSubjectsOptions): void => {
 	validateSubject(options.baseSubject);
 };
 

@@ -5,7 +5,7 @@ import { Database } from './Database';
 import { TestingDatabase } from './TestingDatabase';
 import { Image } from './docker/Image';
 
-const startDatabase = async function (): Promise<Database> {
+const startDatabase = async (): Promise<Database> => {
 	const image = new Image('eventsourcingdb', 'latest');
 
 	const accessToken = randomUUID();

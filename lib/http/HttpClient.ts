@@ -15,16 +15,16 @@ import { retryWithBackoff } from '../util/retry/retryWithBackoff';
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
 	: TResponseType extends 'blob'
-	? Blob
-	: TResponseType extends 'document'
-	? unknown
-	: TResponseType extends 'json'
-	? unknown
-	: TResponseType extends 'text'
-	? string
-	: TResponseType extends 'stream'
-	? Readable
-	: never;
+	  ? Blob
+	  : TResponseType extends 'document'
+		  ? unknown
+		  : TResponseType extends 'json'
+			  ? unknown
+			  : TResponseType extends 'text'
+				  ? string
+				  : TResponseType extends 'stream'
+					  ? Readable
+					  : never;
 // biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 type Response<TResponseType extends ResponseType> = AxiosResponse<
 	ResponseDataType<TResponseType>,
@@ -164,9 +164,8 @@ class HttpClient {
 			if (ex instanceof AxiosError) {
 				if (ex.request !== undefined) {
 					throw new ServerError('No response received.');
-				} else {
-					throw new InternalError('Failed to setup request.');
 				}
+				throw new InternalError('Failed to setup request.');
 			}
 
 			throw new InternalError(ex);
@@ -227,9 +226,8 @@ class HttpClient {
 			if (ex instanceof AxiosError) {
 				if (ex.request !== undefined) {
 					throw new ServerError('No response received.');
-				} else {
-					throw new InternalError('Failed to setup request.');
 				}
+				throw new InternalError('Failed to setup request.');
 			}
 
 			throw new InternalError(ex);

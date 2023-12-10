@@ -278,7 +278,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'subject' is invalid: Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
@@ -298,7 +298,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
@@ -318,7 +318,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
@@ -338,7 +338,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
@@ -358,7 +358,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
@@ -382,7 +382,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
@@ -406,7 +406,7 @@ suite('Client.readEvents()', function () {
 				}
 			})
 			.is.throwingAsync(
-				(error) =>
+				error =>
 					error instanceof InvalidParameterError &&
 					error.message ===
 						"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate type: 'invalid' must be a reverse domain name.",
@@ -422,7 +422,7 @@ suite('Client.readEvents()', function () {
 
 		test('throws a sever error if the server responds with HTTP 5xx on every try.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.status(StatusCodes.BAD_GATEWAY);
 					res.send(ReasonPhrases.BAD_GATEWAY);
@@ -445,7 +445,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							'Server error occurred: Failed operation with 2 errors:\n' +
@@ -456,7 +456,7 @@ suite('Client.readEvents()', function () {
 
 		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.setHeader('X-EventSourcingDB-Protocol-Version', '0.0.0');
 					res.status(StatusCodes.UNPROCESSABLE_ENTITY);
@@ -480,7 +480,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message ===
 							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
@@ -489,7 +489,7 @@ suite('Client.readEvents()', function () {
 
 		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.status(StatusCodes.IM_A_TEAPOT);
 					res.send(ReasonPhrases.IM_A_TEAPOT);
@@ -512,7 +512,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ClientError &&
 						error.message === "Client error occurred: Request failed with status code '418'.",
 				);
@@ -520,7 +520,7 @@ suite('Client.readEvents()', function () {
 
 		test('throws a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.status(StatusCodes.ACCEPTED);
 					res.send(ReasonPhrases.ACCEPTED);
@@ -543,7 +543,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
 				);
@@ -551,7 +551,7 @@ suite('Client.readEvents()', function () {
 
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.send('utter garbage\n');
 				});
@@ -573,7 +573,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message === 'Server error occurred: Failed to read response.',
 				);
@@ -581,7 +581,7 @@ suite('Client.readEvents()', function () {
 
 		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.send('{"type": ":clown:"}\n');
 				});
@@ -603,7 +603,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":":clown:"}\'.',
@@ -612,7 +612,7 @@ suite('Client.readEvents()', function () {
 
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.send('{"type": "error", "payload": { "error": "not enough JUICE 😩" }}\n');
 				});
@@ -634,7 +634,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message === 'Server error occurred: not enough JUICE 😩.',
 				);
@@ -642,7 +642,7 @@ suite('Client.readEvents()', function () {
 
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
 			let client: Client;
-			({ client, stopServer } = await startLocalHttpServer((app) => {
+			({ client, stopServer } = await startLocalHttpServer(app => {
 				app.post('/api/read-events', (_req, res) => {
 					res.send('{"type": "error", "payload": 42}\n');
 				});
@@ -664,7 +664,7 @@ suite('Client.readEvents()', function () {
 					}
 				})
 				.is.throwingAsync(
-					(error) =>
+					error =>
 						error instanceof ServerError &&
 						error.message ===
 							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',

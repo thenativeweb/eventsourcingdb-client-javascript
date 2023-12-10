@@ -23,7 +23,7 @@ const observeEvents = async function* (
 ): AsyncGenerator<StoreItem, void, void> {
 	await wrapError(
 		() => validateSubject(subject),
-		(ex) => {
+		ex => {
 			if (ex instanceof ValidationError) {
 				throw new InvalidParameterError('subject', ex.message);
 			}
@@ -33,7 +33,7 @@ const observeEvents = async function* (
 		() => {
 			validateObserveEventsOptions(options);
 		},
-		(ex) => {
+		ex => {
 			if (ex instanceof ValidationError) {
 				throw new InvalidParameterError('options', ex.message);
 			}
@@ -63,7 +63,7 @@ const observeEvents = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async (error) => {
+		async error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

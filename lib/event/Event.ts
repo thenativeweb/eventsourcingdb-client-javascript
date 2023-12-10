@@ -34,7 +34,7 @@ class Event extends EventContext {
 	}
 
 	public static parse(unknownObject: UnknownObject): Event {
-		const eventContext = super.parse(unknownObject);
+		const eventContext = EventContext.parse(unknownObject);
 		if (!isObject(unknownObject.data)) {
 			throw new Error(`Failed to parse data '${unknownObject.data}' to object.`);
 		}
