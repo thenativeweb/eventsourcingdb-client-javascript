@@ -24,7 +24,7 @@
   },
   "types": "build/index.d.ts",
   "dependencies": {
-    "axios": "1.6.5",
+    "axios": "1.6.7",
     "http-status-codes": "2.3.0",
     "stream-to-async-iterator": "1.0.0"
   },
