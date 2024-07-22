@@ -38,7 +38,7 @@
     "mocha": "10.6.0",
     "shelljs": "0.8.5",
     "ts-node": "10.9.2",
-    "tsup": "8.1.0",
+    "tsup": "8.2.1",
     "typescript": "5.5.3"
   },
   "scripts": {
