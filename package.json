@@ -39,7 +39,7 @@
     "shelljs": "0.8.5",
     "ts-node": "10.9.2",
     "tsup": "8.2.1",
-    "typescript": "5.5.3"
+    "typescript": "5.5.4"
   },
   "scripts": {
     "analyze": "npx biome ci ./**/*",
