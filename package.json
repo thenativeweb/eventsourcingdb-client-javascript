@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
-    "@types/express": "4.17.21",
+    "@types/express": "5.0.0",
     "@types/mocha": "10.0.8",
     "@types/shelljs": "0.8.15",
     "assertthat": "6.5.2",
