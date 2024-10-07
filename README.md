@@ -1,3 +1,11 @@
-# eventsourcingdb
+# eventsourcingdb-client-javascript
 
-eventsourcingdb is the JavaScript client for EventSourcingDB.
+The JavaScript client for EventSourcingDB.
+
+## Running quality assurance
+
+To run quality assurance for this package use the following command:
+
+```shell
+$ npm run qa
+```

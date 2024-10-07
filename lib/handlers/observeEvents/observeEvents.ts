@@ -80,9 +80,20 @@ const observeEvents = async function* (
 
 	const stream = response.data;
 
+	const heartbeatInterval = 1_000;
+	const heartbeatTimeout = 3 * heartbeatInterval;
+	let didTimerFire = false;
+	let timer = setTimeout(() => {
+		didTimerFire = true;
+	}, heartbeatTimeout);
+
 	for await (const message of readNdJsonStream(stream)) {
 		if (isHeartbeat(message)) {
-			continue;
+			if (didTimerFire) {
+				clearTimeout(timer);
+				throw new ServerError('Heartbeat timeout.');
+			}
+			timer = timer.refresh();
 		}
 		if (isStreamError(message)) {
 			throw new ServerError(`${message.payload.error}.`);

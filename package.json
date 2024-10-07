@@ -43,10 +43,11 @@
   },
   "scripts": {
     "analyze": "npx biome ci ./**/*",
-    "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./build/ lib/index.ts",
+    "build": "npm run typecheck && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./build/ lib/index.ts",
     "format": "npx biome format --write ./**/*",
-    "qa": "npm run analyze && npm run test",
+    "qa": "npm run typecheck && npm run analyze && npm run test",
     "test": "npm run test:unit && npm run test:integration",
+    "typecheck": "npx tsc --noEmit",
     "test:unit": "npx mocha --bail --require ts-node/register --recursive --ui tdd './test/unit/**/*.ts'",
     "test:integration": "npx mocha --bail --require ts-node/register --recursive --ui tdd './test/integration/**/*.ts'"
   },
