@@ -8,7 +8,7 @@ const ping = async (client: Client): Promise<void> => {
 	const response = await wrapError(
 		async () =>
 			client.httpClient.get({
-				path: '/ping',
+				path: '/api/ping',
 				responseType: 'text',
 				withAuthorization: false,
 			}),
