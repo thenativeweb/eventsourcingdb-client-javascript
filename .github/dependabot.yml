@@ -6,7 +6,7 @@ updates:
     interval: weekly
   open-pull-requests-limit: 10
   assignees:
-  - thenativeweb/internal_eventsourcingdb_dep
+  - thenativeweb/internal_dev
   labels:
   - Dependencies
   versioning-strategy: increase
@@ -22,7 +22,7 @@ updates:
     interval: weekly
   open-pull-requests-limit: 10
   assignees:
-    - thenativeweb/internal_eventsourcingdb_dep
+    - thenativeweb/internal_dev
   labels:
     - Dependencies
   commit-message:
@@ -34,7 +34,7 @@ updates:
     interval: "weekly"
   open-pull-requests-limit: 10
   assignees:
-  - thenativeweb/internal_eventsourcingdb_dep
+  - thenativeweb/internal_dev
   labels:
   - Dependencies
   commit-message:
