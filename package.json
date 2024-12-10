@@ -34,7 +34,7 @@
     "@types/mocha": "10.0.10",
     "@types/shelljs": "0.8.15",
     "assertthat": "6.5.2",
-    "express": "4.21.1",
+    "express": "4.21.2",
     "mocha": "11.0.1",
     "shelljs": "0.8.5",
     "ts-node": "10.9.2",
