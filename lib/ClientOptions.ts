@@ -5,4 +5,4 @@ interface ClientOptions {
 	maxTries?: number;
 }
 
-export { ClientOptions };
+export type { ClientOptions };

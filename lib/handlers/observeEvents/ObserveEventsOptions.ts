@@ -1,8 +1,8 @@
-import { validateSubject } from '../../event/validateSubject';
-import { validateType } from '../../event/validateType';
-import { ValidationError } from '../../util/error/ValidationError';
-import { wrapError } from '../../util/error/wrapError';
-import { IsNonNegativeInteger } from '../../util/isNonNegativeInteger';
+import { validateSubject } from '../../event/validateSubject.js';
+import { validateType } from '../../event/validateType.js';
+import { ValidationError } from '../../util/error/ValidationError.js';
+import { wrapError } from '../../util/error/wrapError.js';
+import { IsNonNegativeInteger } from '../../util/isNonNegativeInteger.js';
 
 interface ObserveEventsOptions {
 	recursive: boolean;
@@ -45,4 +45,5 @@ const validateObserveEventsOptions = (options: ObserveEventsOptions): void => {
 	}
 };
 
-export { ObserveEventsOptions, ObserveFromLatestEvent, validateObserveEventsOptions };
+export type { ObserveEventsOptions, ObserveFromLatestEvent };
+export { validateObserveEventsOptions };

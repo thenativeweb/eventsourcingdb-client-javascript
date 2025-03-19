@@ -31,4 +31,5 @@ const isSubjectOnEventId = (payload: IsSubjectOnEventIdPrecondition): Preconditi
 	};
 };
 
-export { Precondition, isSubjectPristine, isSubjectOnEventId };
+export type { Precondition };
+export { isSubjectPristine, isSubjectOnEventId };

@@ -1,5 +1,5 @@
 import { assert } from 'assertthat';
-import { isItem } from '../../../lib/handlers/isItem';
+import { isItem } from '../../../lib/handlers/isItem.js';
 
 suite('isItem()', () => {
 	test('returns true for a item object.', () => {

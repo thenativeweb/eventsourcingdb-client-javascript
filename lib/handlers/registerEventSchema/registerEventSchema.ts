@@ -1,12 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../../Client';
-import { validateType } from '../../event/validateType';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { ServerError } from '../../util/error/ServerError';
-import { ValidationError } from '../../util/error/ValidationError';
-import { wrapError } from '../../util/error/wrapError';
+import type { Client } from '../../Client.js';
+import { validateType } from '../../event/validateType.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { ValidationError } from '../../util/error/ValidationError.js';
+import { wrapError } from '../../util/error/wrapError.js';
 
 const registerEventSchema = async (
 	client: Client,
@@ -39,7 +39,7 @@ const registerEventSchema = async (
 				requestBody,
 				responseType: 'text',
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

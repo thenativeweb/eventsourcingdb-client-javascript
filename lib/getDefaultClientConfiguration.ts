@@ -1,4 +1,4 @@
-import { ClientConfiguration } from './ClientConfiguration';
+import type { ClientConfiguration } from './ClientConfiguration.js';
 
 const getDefaultClientConfiguration = (baseUrl: string): ClientConfiguration => {
 	return {

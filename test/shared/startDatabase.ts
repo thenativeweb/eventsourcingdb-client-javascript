@@ -1,9 +1,9 @@
-import { randomUUID } from 'crypto';
-import { Client } from '../../lib';
-import { ContainerizedTestingDatabase } from './ContainerizedTestingDatabase';
-import { Database } from './Database';
-import { TestingDatabase } from './TestingDatabase';
-import { Image } from './docker/Image';
+import { randomUUID } from 'node:crypto';
+import { Client } from '../../lib/index.js';
+import { ContainerizedTestingDatabase } from './ContainerizedTestingDatabase.js';
+import type { Database } from './Database.js';
+import { TestingDatabase } from './TestingDatabase.js';
+import { Image } from './docker/Image.js';
 
 const startDatabase = async (): Promise<Database> => {
 	const image = new Image('eventsourcingdb', 'latest');

@@ -1,22 +1,22 @@
-import { ClientConfiguration } from './ClientConfiguration';
-import { ClientOptions } from './ClientOptions';
-import { EventCandidate } from './event/EventCandidate';
-import { EventContext } from './event/EventContext';
-import { getDefaultClientConfiguration } from './getDefaultClientConfiguration';
-import { StoreItem } from './handlers/StoreItem';
-import { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions';
-import { observeEvents } from './handlers/observeEvents/observeEvents';
-import { ping } from './handlers/ping/ping';
-import { EventType } from './handlers/readEventTypes/EventType';
-import { readEventTypes } from './handlers/readEventTypes/readEventTypes';
-import { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions';
-import { readEvents } from './handlers/readEvents/readEvents';
-import { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions';
-import { readSubjects } from './handlers/readSubjects/readSubjects';
-import { registerEventSchema } from './handlers/registerEventSchema/registerEventSchema';
-import { Precondition } from './handlers/writeEvents/Precondition';
-import { writeEvents } from './handlers/writeEvents/writeEvents';
-import { HttpClient } from './http/HttpClient';
+import type { ClientConfiguration } from './ClientConfiguration.js';
+import type { ClientOptions } from './ClientOptions.js';
+import type { EventCandidate } from './event/EventCandidate.js';
+import type { EventContext } from './event/EventContext.js';
+import { getDefaultClientConfiguration } from './getDefaultClientConfiguration.js';
+import type { StoreItem } from './handlers/StoreItem.js';
+import type { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions.js';
+import { observeEvents } from './handlers/observeEvents/observeEvents.js';
+import { ping } from './handlers/ping/ping.js';
+import type { EventType } from './handlers/readEventTypes/EventType.js';
+import { readEventTypes } from './handlers/readEventTypes/readEventTypes.js';
+import type { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions.js';
+import { readEvents } from './handlers/readEvents/readEvents.js';
+import type { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions.js';
+import { readSubjects } from './handlers/readSubjects/readSubjects.js';
+import { registerEventSchema } from './handlers/registerEventSchema/registerEventSchema.js';
+import type { Precondition } from './handlers/writeEvents/Precondition.js';
+import { writeEvents } from './handlers/writeEvents/writeEvents.js';
+import { HttpClient } from './http/HttpClient.js';
 
 class Client {
 	public readonly configuration: ClientConfiguration;
@@ -62,14 +62,14 @@ class Client {
 	}
 
 	public async registerEventSchema(eventType: string, schema: string | object): Promise<void> {
-		return registerEventSchema(this, eventType, schema);
+		return await registerEventSchema(this, eventType, schema);
 	}
 
 	public async writeEvents(
 		eventCandidates: EventCandidate[],
 		preconditions: Precondition[] = [],
 	): Promise<EventContext[]> {
-		return writeEvents(this, eventCandidates, preconditions);
+		return await writeEvents(this, eventCandidates, preconditions);
 	}
 }
 

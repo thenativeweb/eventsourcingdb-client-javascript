@@ -1,22 +1,22 @@
 import { assert } from 'assertthat';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, EventCandidate } from '../../lib';
-import { CancelationError } from '../../lib';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import type { Client } from '../../lib/index.js';
+import { CancelationError, EventCandidate } from '../../lib/index.js';
+import { ClientError } from '../../lib/util/error/ClientError.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { events } from '../shared/events/events.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.readSubjects()', function () {
 	this.timeout(20_000);
 	let database: Database;
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -24,8 +24,8 @@ suite('Client.readSubjects()', function () {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error when trying to read from a non-reachable server.', async (): Promise<void> => {
@@ -126,10 +126,10 @@ suite('Client.readSubjects()', function () {
 	});
 
 	suite('with a mock server', () => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
 		teardown(async () => {
-			stopServer();
+			await stopServer();
 		});
 
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {

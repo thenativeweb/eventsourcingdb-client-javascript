@@ -1,6 +1,6 @@
 import { assert } from 'assertthat';
-import { validateObserveEventsOptions } from '../../../../lib/handlers/observeEvents/ObserveEventsOptions';
-import { ValidationError } from '../../../../lib/util/error/ValidationError';
+import { validateObserveEventsOptions } from '../../../../lib/handlers/observeEvents/ObserveEventsOptions.js';
+import { ValidationError } from '../../../../lib/util/error/ValidationError.js';
 
 suite('validateObserveEventOptions', () => {
 	test('returns for a valid options object.', () => {

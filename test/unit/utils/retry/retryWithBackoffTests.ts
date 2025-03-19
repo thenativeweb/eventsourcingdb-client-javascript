@@ -1,7 +1,7 @@
 import { assert } from 'assertthat';
-import { CancelationError } from '../../../../lib';
-import { RetryError } from '../../../../lib/util/retry/RetryError';
-import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff';
+import { CancelationError } from '../../../../lib/index.js';
+import { RetryError } from '../../../../lib/util/retry/RetryError.js';
+import { done, retryWithBackoff } from '../../../../lib/util/retry/retryWithBackoff.js';
 
 suite('retryWithBackoff', (): void => {
 	test('returns immediately if no error occurs.', async (): Promise<void> => {
@@ -10,7 +10,7 @@ suite('retryWithBackoff', (): void => {
 
 		await assert
 			.that(async () => {
-				await retryWithBackoff(new AbortController(), maxTries, async () => {
+				await retryWithBackoff(new AbortController(), maxTries, () => {
 					count += 1;
 
 					return done;
@@ -27,7 +27,7 @@ suite('retryWithBackoff', (): void => {
 
 		await assert
 			.that(async () => {
-				await retryWithBackoff(new AbortController(), maxTries, async () => {
+				await retryWithBackoff(new AbortController(), maxTries, () => {
 					count += 1;
 
 					return { retry: new Error(`Error no. ${count}`) };
@@ -50,7 +50,7 @@ suite('retryWithBackoff', (): void => {
 
 		await assert
 			.that(async () => {
-				await retryWithBackoff(new AbortController(), maxTries, async () => {
+				await retryWithBackoff(new AbortController(), maxTries, () => {
 					count += 1;
 
 					if (count !== successfulTry) {
@@ -74,7 +74,7 @@ suite('retryWithBackoff', (): void => {
 
 		await assert
 			.that(async () => {
-				await retryWithBackoff(abortController, maxTries, async () => {
+				await retryWithBackoff(abortController, maxTries, () => {
 					count += 1;
 
 					if (count === cancelingTry) {
@@ -95,7 +95,7 @@ suite('retryWithBackoff', (): void => {
 
 		await assert
 			.that(async () => {
-				await retryWithBackoff(abortController, maxTries, async () => {
+				await retryWithBackoff(abortController, maxTries, () => {
 					throw new Error('Abort the retries.');
 				});
 			})

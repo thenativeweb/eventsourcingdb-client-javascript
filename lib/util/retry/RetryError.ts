@@ -1,4 +1,4 @@
-import { CustomError } from '../error/CustomError';
+import { CustomError } from '../error/CustomError.js';
 
 class RetryError extends CustomError {
 	private readonly errors: Error[];

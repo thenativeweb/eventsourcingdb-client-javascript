@@ -1,17 +1,17 @@
 import { assert } from 'assertthat';
-import { EventCandidate } from '../../lib';
-import { EventType } from '../../lib/handlers/readEventTypes/EventType';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { stopDatabase } from '../shared/stopDatabase';
+import type { EventType } from '../../lib/handlers/readEventTypes/EventType.js';
+import { EventCandidate } from '../../lib/index.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.readEventTypes()', function () {
 	this.timeout(20_000);
 	let database: Database;
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -19,8 +19,8 @@ suite('Client.readEventTypes()', function () {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test('Reads all event types of existing events, as well as all event types with registered schemas.', async () => {

@@ -1,15 +1,16 @@
 import { StatusCodes, getReasonPhrase } from 'http-status-codes';
-import { Client } from '../../Client';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { ServerError } from '../../util/error/ServerError';
-import { ValidationError } from '../../util/error/ValidationError';
-import { wrapError } from '../../util/error/wrapError';
-import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
-import { isStreamError } from '../isStreamError';
-import { ReadSubjectsOptions, validateReadSubjectsOptions } from './ReadSubjectsOptions';
-import { isSubject } from './isSubject';
+import type { Client } from '../../Client.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { ValidationError } from '../../util/error/ValidationError.js';
+import { wrapError } from '../../util/error/wrapError.js';
+import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream.js';
+import { isStreamError } from '../isStreamError.js';
+import type { ReadSubjectsOptions } from './ReadSubjectsOptions.js';
+import { validateReadSubjectsOptions } from './ReadSubjectsOptions.js';
+import { isSubject } from './isSubject.js';
 
 const readSubjects = async function* (
 	client: Client,
@@ -47,7 +48,7 @@ const readSubjects = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

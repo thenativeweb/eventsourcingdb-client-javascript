@@ -6,4 +6,4 @@ interface ClientConfiguration {
 	maxTries: number;
 }
 
-export { ClientConfiguration };
+export type { ClientConfiguration };

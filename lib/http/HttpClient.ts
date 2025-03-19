@@ -1,30 +1,31 @@
-import { Readable } from 'stream';
-import { AxiosError, AxiosResponse, CanceledError, CreateAxiosDefaults, ResponseType } from 'axios';
+import type { Readable } from 'node:stream';
+import type { AxiosResponse, CreateAxiosDefaults, ResponseType } from 'axios';
+import { AxiosError, CanceledError } from 'axios';
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../Client';
-import { CancelationError } from '../util/error/CancelationError';
-import { ClientError } from '../util/error/ClientError';
-import { CustomError } from '../util/error/CustomError';
-import { InternalError } from '../util/error/InternalError';
-import { ServerError } from '../util/error/ServerError';
-import { RetryError } from '../util/retry/RetryError';
-import { retryWithBackoff } from '../util/retry/retryWithBackoff';
+import type { Client } from '../Client.js';
+import { CancelationError } from '../util/error/CancelationError.js';
+import { ClientError } from '../util/error/ClientError.js';
+import { CustomError } from '../util/error/CustomError.js';
+import { InternalError } from '../util/error/InternalError.js';
+import { ServerError } from '../util/error/ServerError.js';
+import { RetryError } from '../util/retry/RetryError.js';
+import { retryWithBackoff } from '../util/retry/retryWithBackoff.js';
 
 // biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 type ResponseDataType<TResponseType extends ResponseType> = TResponseType extends 'arraybuffer'
 	? ArrayBuffer
 	: TResponseType extends 'blob'
-	  ? Blob
-	  : TResponseType extends 'document'
-		  ? unknown
-		  : TResponseType extends 'json'
-			  ? unknown
-			  : TResponseType extends 'text'
-				  ? string
-				  : TResponseType extends 'stream'
-					  ? Readable
-					  : never;
+		? Blob
+		: TResponseType extends 'document'
+			? unknown
+			: TResponseType extends 'json'
+				? unknown
+				: TResponseType extends 'text'
+					? string
+					: TResponseType extends 'stream'
+						? Readable
+						: never;
 // biome-ignore lint/style/useNamingConvention: We want to use this naming convention
 type Response<TResponseType extends ResponseType> = AxiosResponse<
 	ResponseDataType<TResponseType>,

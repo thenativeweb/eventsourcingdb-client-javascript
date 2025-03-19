@@ -1,8 +1,8 @@
 import { assert } from 'assertthat';
-import { EventContext } from '../../../lib/event/EventContext';
-import { ValidationError } from '../../../lib/util/error/ValidationError';
-import { events } from '../../shared/events/events';
-import { testSource } from '../../shared/events/source';
+import { EventContext } from '../../../lib/event/EventContext.js';
+import { ValidationError } from '../../../lib/util/error/ValidationError.js';
+import { events } from '../../shared/events/events.js';
+import { testSource } from '../../shared/events/source.js';
 
 suite('EventContext', () => {
 	suite('.parse()', () => {

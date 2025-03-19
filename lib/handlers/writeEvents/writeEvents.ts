@@ -1,28 +1,28 @@
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../../Client';
-import { EventCandidate } from '../../event/EventCandidate';
-import { EventContext } from '../../event/EventContext';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { ServerError } from '../../util/error/ServerError';
-import { ValidationError } from '../../util/error/ValidationError';
-import { wrapError } from '../../util/error/wrapError';
-import { Precondition } from './Precondition';
+import type { Client } from '../../Client.js';
+import type { EventCandidate } from '../../event/EventCandidate.js';
+import { EventContext } from '../../event/EventContext.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { ValidationError } from '../../util/error/ValidationError.js';
+import { wrapError } from '../../util/error/wrapError.js';
+import type { Precondition } from './Precondition.js';
 
 const writeEvents = async (
 	client: Client,
 	eventCandidates: EventCandidate[],
 	preconditions: Precondition[],
 ): Promise<EventContext[]> => {
-	if (eventCandidates.length < 1) {
+	if (eventCandidates.length === 0) {
 		throw new InvalidParameterError(
 			'eventCandidates',
 			'eventCandidates must contain at least one EventCandidate.',
 		);
 	}
 	for (const eventCandidate of eventCandidates) {
-		await wrapError(
+		wrapError(
 			() => {
 				eventCandidate.validate();
 			},
@@ -46,7 +46,7 @@ const writeEvents = async (
 				requestBody,
 				responseType: 'json',
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}
@@ -63,7 +63,7 @@ const writeEvents = async (
 	}
 
 	const responseData = response.data;
-	return await wrapError(
+	return wrapError(
 		() => responseData.map((eventContext): EventContext => EventContext.parse(eventContext)),
 		error => {
 			if (error instanceof ValidationError) {

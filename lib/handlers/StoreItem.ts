@@ -1,8 +1,8 @@
-import { Event } from '../event/Event';
+import type { Event } from '../event/Event.js';
 
 interface StoreItem {
 	event: Event;
 	hash: string;
 }
 
-export { StoreItem };
+export type { StoreItem };

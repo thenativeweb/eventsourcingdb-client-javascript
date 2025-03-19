@@ -1,4 +1,4 @@
-import { ValidationError } from '../util/error/ValidationError';
+import { ValidationError } from '../util/error/ValidationError.js';
 
 const wordPattern = '[0-9A-Za-z_-]+';
 const subjectPattern = new RegExp(`^/(${wordPattern}/)*(${wordPattern}/?)?$`, 'u');

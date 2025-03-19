@@ -1,24 +1,25 @@
 import { assert } from 'assertthat';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, Source, StoreItem, isSubjectOnEventId, isSubjectPristine } from '../../lib';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
-import { prefixEventType } from '../shared/events/type';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import { Source, isSubjectOnEventId, isSubjectPristine } from '../../lib/index.js';
+import type { Client, StoreItem } from '../../lib/index.js';
+import { ClientError } from '../../lib/util/error/ClientError.js';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { events } from '../shared/events/events.js';
+import { testSource } from '../shared/events/source.js';
+import { prefixEventType } from '../shared/events/type.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.writeEvents()', function () {
 	this.timeout(20_000);
 	let database: Database;
 	const source = new Source(testSource);
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -26,8 +27,8 @@ suite('Client.writeEvents()', function () {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error when trying to write to a non-reachable server.', async (): Promise<void> => {
@@ -99,9 +100,7 @@ suite('Client.writeEvents()', function () {
 			);
 	});
 
-	test.skip('throws an error if a precondition uses an invalid source.', async (): Promise<void> => {
-		assert.that(true).is.false();
-	});
+	test('throws an error if a precondition uses an invalid source.');
 
 	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
@@ -365,10 +364,10 @@ suite('Client.writeEvents()', function () {
 	});
 
 	suite('using mocked HTTP server', (): void => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
 		teardown(async () => {
-			stopServer();
+			await stopServer();
 		});
 
 		const events = [source.newEvent('/', 'com.foobar.baz', {})];

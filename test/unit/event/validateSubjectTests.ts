@@ -1,6 +1,6 @@
 import { assert } from 'assertthat';
-import { validateSubject } from '../../../lib/event/validateSubject';
-import { ValidationError } from '../../../lib/util/error/ValidationError';
+import { validateSubject } from '../../../lib/event/validateSubject.js';
+import { ValidationError } from '../../../lib/util/error/ValidationError.js';
 
 suite('validateSubject()', () => {
 	test('returns without throwing on a valid subject.', () => {

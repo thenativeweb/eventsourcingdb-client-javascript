@@ -1,9 +1,9 @@
-import { Client } from '../../lib';
-import { ClientOptions } from '../../lib/ClientOptions';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
-import { Container } from './docker/Container';
-import { Image } from './docker/Image';
+import type { ClientOptions } from '../../lib/ClientOptions.js';
+import { Client } from '../../lib/index.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff.js';
+import type { Container } from './docker/Container.js';
+import type { Image } from './docker/Image.js';
 
 class ContainerizedTestingDatabase {
 	private readonly command: string;

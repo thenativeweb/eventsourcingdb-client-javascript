@@ -1,5 +1,5 @@
-import { UnknownObject } from '../util/UnknownObject';
-import { EventCandidate } from './EventCandidate';
+import type { UnknownObject } from '../util/UnknownObject.js';
+import { EventCandidate } from './EventCandidate.js';
 
 class Source {
 	public readonly source: string;

@@ -29,7 +29,7 @@
     "stream-to-async-iterator": "1.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.5.3",
+    "@biomejs/biome": "1.9.4",
     "@types/express": "5.0.0",
     "@types/mocha": "10.0.10",
     "@types/shelljs": "0.8.15",
@@ -42,7 +42,7 @@
     "typescript": "5.8.2"
   },
   "scripts": {
-    "analyze": "npx biome ci ./**/*",
+    "analyze": "npx biome check ./**/*",
     "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./build/ lib/index.ts",
     "format": "npx biome format --write ./**/*",
     "qa": "npm run analyze && npm run test",

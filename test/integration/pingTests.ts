@@ -1,18 +1,18 @@
 import { assert } from 'assertthat';
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../../lib';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import type { Client } from '../../lib/index.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.ping()', function () {
 	this.timeout(20_000);
 	let database: Database;
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -20,8 +20,8 @@ suite('Client.ping()', function () {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error if the server is not reachable.', async (): Promise<void> => {
@@ -49,10 +49,10 @@ suite('Client.ping()', function () {
 	});
 
 	suite('with a mock server', () => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
 		teardown(async () => {
-			stopServer();
+			await stopServer();
 		});
 
 		test('throws an error if the server responds with an unexpected status code.', async (): Promise<void> => {

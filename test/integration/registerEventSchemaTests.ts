@@ -1,16 +1,16 @@
 import { assert } from 'assertthat';
-import { EventCandidate } from '../../lib';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { stopDatabase } from '../shared/stopDatabase';
+import { EventCandidate } from '../../lib/index.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.registerEventSchema()', function () {
 	this.timeout(20_000);
 	let database: Database;
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -18,8 +18,8 @@ suite('Client.registerEventSchema()', function () {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test("Registers the new schema if it doesn't conflict with existing events.", async (): Promise<void> => {

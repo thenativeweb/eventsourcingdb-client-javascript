@@ -1,19 +1,18 @@
 import { assert } from 'assertthat';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, StoreItem } from '../../lib';
-import { CancelationError } from '../../lib';
-import { Source } from '../../lib';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline';
-import { buildDatabase } from '../shared/buildDatabase';
-import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import type { Client, StoreItem } from '../../lib/index.js';
+import { CancelationError, Source } from '../../lib/index.js';
+import { ClientError } from '../../lib/util/error/ClientError.js';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { newAbortControllerWithDeadline } from '../shared/abortController/newAbortControllerWithDeadline.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { events } from '../shared/events/events.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
 suite('Client.observeEvents()', function () {
 	this.timeout(20_000);
@@ -21,7 +20,7 @@ suite('Client.observeEvents()', function () {
 	const source = new Source(testSource);
 	const testDeadline = 10_000;
 
-	suiteSetup(async () => {
+	suiteSetup(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
@@ -56,8 +55,8 @@ suite('Client.observeEvents()', function () {
 		]);
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	teardown(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error when trying to read from a non-reachable server.', async (): Promise<void> => {
@@ -484,10 +483,10 @@ suite('Client.observeEvents()', function () {
 	});
 
 	suite('using a mock server', () => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
 		teardown(async () => {
-			stopServer();
+			await stopServer();
 		});
 
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {

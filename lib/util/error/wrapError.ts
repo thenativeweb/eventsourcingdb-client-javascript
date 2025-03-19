@@ -1,4 +1,4 @@
-import { InternalError } from './InternalError';
+import { InternalError } from './InternalError.js';
 
 const isPromise = (value: unknown): value is Promise<unknown> => {
 	return typeof value === 'object' && typeof (value as Record<string, unknown>).then === 'function';

@@ -1,6 +1,6 @@
-import { clearTimeout } from 'timers';
-import { CancelationError } from '../error/CancelationError';
-import { RetryError } from './RetryError';
+import { clearTimeout } from 'node:timers';
+import { CancelationError } from '../error/CancelationError.js';
+import { RetryError } from './RetryError.js';
 
 // biome-ignore lint/style/useNamingConvention: We want to use this return type
 type RetryResult<TResult> =
@@ -27,7 +27,7 @@ const getRandomizedDuration = (
 const retryWithBackoff = async <TReturn = void>(
 	abortController: AbortController,
 	tries: number,
-	fn: () => Promise<RetryResult<TReturn>>,
+	fn: () => Promise<RetryResult<TReturn>> | RetryResult<TReturn>,
 ): Promise<TReturn> => {
 	if (tries < 1) {
 		throw new RangeError('Tries must be greater than 0.');
