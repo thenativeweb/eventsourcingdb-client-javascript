@@ -1,11 +1,12 @@
-import { assert } from 'assertthat';
-import { EventContext } from '../../../lib/event/EventContext';
-import { ValidationError } from '../../../lib/util/error/ValidationError';
-import { events } from '../../shared/events/events';
-import { testSource } from '../../shared/events/source';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
+import { EventContext } from '../../../lib/event/EventContext.js';
+import { ValidationError } from '../../../lib/util/error/ValidationError.js';
+import { events } from '../../shared/events/events.js';
+import { testSource } from '../../shared/events/source.js';
 
 suite('EventContext', () => {
-	suite('.parse()', () => {
+	suite('parse', () => {
 		test('returns an EventContext for a valid object.', () => {
 			const toParse = {
 				source: testSource,
@@ -18,11 +19,8 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
-					EventContext.parse(toParse);
-				})
-				.is.not.throwing();
+			// Should not throw.
+			EventContext.parse(toParse);
 		});
 
 		test('throws an error for invalid source.', () => {
@@ -37,15 +35,16 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse source '42' to string." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse source '42' to string.");
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid subject.', () => {
@@ -60,16 +59,19 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message ===
-							"Failed to validate subject: 'this/is/invalid' must be an absolute, slash-separated path." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(
+						error.message,
+						"Failed to validate subject: 'this/is/invalid' must be an absolute, slash-separated path.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid type.', () => {
@@ -84,16 +86,19 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message ===
-							"Failed to validate type: 'a.this.is.invalid' must be a reverse domain name." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(
+						error.message,
+						"Failed to validate type: 'a.this.is.invalid' must be a reverse domain name.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid specversion.', () => {
@@ -108,15 +113,16 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse specVersion '1' to string." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse specVersion '1' to string.");
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid id.', () => {
@@ -131,15 +137,16 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse id '[object Object]' to string." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse id '[object Object]' to string.");
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid time.', () => {
@@ -154,15 +161,16 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse time 'not a date' to Date." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse time 'not a date' to Date.");
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid dataContentType.', () => {
@@ -177,15 +185,16 @@ suite('EventContext', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse dataContentType 'undefined' to string." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse dataContentType 'undefined' to string.");
+					return true;
+				},
+			);
 		});
 
 		test('throws an error for invalid dataContentType.', () => {
@@ -200,15 +209,16 @@ suite('EventContext', () => {
 				predecessorhash: null,
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					EventContext.parse(toParse);
-				})
-				.is.throwing(
-					error =>
-						error.message === "Failed to parse predecessorHash 'null' to string." &&
-						error instanceof ValidationError,
-				);
+				},
+				error => {
+					assert.ok(error instanceof ValidationError);
+					assert.equal(error.message, "Failed to parse predecessorHash 'null' to string.");
+					return true;
+				},
+			);
 		});
 	});
 });

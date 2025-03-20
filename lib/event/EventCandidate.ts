@@ -1,7 +1,7 @@
-import { UnknownObject } from '../util/UnknownObject';
-import { ValidationError } from '../util/error/ValidationError';
-import { validateSubject } from './validateSubject';
-import { validateType } from './validateType';
+import type { UnknownObject } from '../util/UnknownObject.js';
+import { ValidationError } from '../util/error/ValidationError.js';
+import { validateSubject } from './validateSubject.js';
+import { validateType } from './validateType.js';
 
 class EventCandidate {
 	public readonly data: Record<string, unknown>;

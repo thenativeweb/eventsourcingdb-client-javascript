@@ -5,4 +5,4 @@ interface StreamError {
 	};
 }
 
-export { StreamError };
+export type { StreamError };

@@ -1,4 +1,4 @@
-import { prefixEventType } from './type';
+import { prefixEventType } from './type.js';
 
 const registeredEventType = prefixEventType('registered');
 const loggedInEventType = prefixEventType('loggedIn');

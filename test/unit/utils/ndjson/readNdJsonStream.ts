@@ -1,7 +1,8 @@
-import { Readable } from 'stream';
-import { assert } from 'assertthat';
-import { UnknownObject } from '../../../../lib/util/UnknownObject';
-import { readNdJsonStream } from '../../../../lib/util/ndjson/readNdJsonStream';
+import assert from 'node:assert/strict';
+import { Readable } from 'node:stream';
+import { suite, test } from 'node:test';
+import type { UnknownObject } from '../../../../lib/util/UnknownObject.js';
+import { readNdJsonStream } from '../../../../lib/util/ndjson/readNdJsonStream.js';
 
 suite('readNdJsonStream', (): void => {
 	test('returns an async generator that yields parsed json objects.', async (): Promise<void> => {
@@ -14,6 +15,6 @@ suite('readNdJsonStream', (): void => {
 			actualMessages.push(message);
 		}
 
-		assert.that(actualMessages).is.equalTo([{ foo: 'bar' }, { bar: 'baz' }]);
+		assert.deepEqual(actualMessages, [{ foo: 'bar' }, { bar: 'baz' }]);
 	});
 });

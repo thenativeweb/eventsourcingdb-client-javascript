@@ -2,4 +2,4 @@ interface Heartbeat {
 	type: 'heartbeat';
 }
 
-export { Heartbeat };
+export type { Heartbeat };

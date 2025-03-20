@@ -1,9 +1,9 @@
-import { ContainerizedTestingDatabase } from './ContainerizedTestingDatabase';
-import { TestingDatabase } from './TestingDatabase';
+import type { ContainerizedTestingDatabase } from './ContainerizedTestingDatabase.js';
+import type { TestingDatabase } from './TestingDatabase.js';
 
 interface Database {
 	withAuthorization: ContainerizedTestingDatabase;
 	withInvalidUrl: TestingDatabase;
 }
 
-export { Database };
+export type { Database };

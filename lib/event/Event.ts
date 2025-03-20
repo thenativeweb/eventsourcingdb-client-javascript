@@ -1,6 +1,6 @@
-import { UnknownObject } from '../util/UnknownObject';
-import { isObject } from '../util/isObject';
-import { EventContext } from './EventContext';
+import type { UnknownObject } from '../util/UnknownObject.js';
+import { isObject } from '../util/isObject.js';
+import { EventContext } from './EventContext.js';
 
 class Event extends EventContext {
 	public readonly data: Record<string, unknown>;

@@ -1,19 +1,20 @@
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../../Client';
-import { Event } from '../../event/Event';
-import { validateSubject } from '../../event/validateSubject';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { InvalidParameterError } from '../../util/error/InvalidParameterError';
-import { ServerError } from '../../util/error/ServerError';
-import { ValidationError } from '../../util/error/ValidationError';
-import { wrapError } from '../../util/error/wrapError';
-import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
-import { StoreItem } from '../StoreItem';
-import { isHeartbeat } from '../isHeartbeat';
-import { isItem } from '../isItem';
-import { isStreamError } from '../isStreamError';
-import { ReadEventsOptions, validateReadEventsOptions } from './ReadEventsOptions';
+import type { Client } from '../../Client.js';
+import { Event } from '../../event/Event.js';
+import { validateSubject } from '../../event/validateSubject.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { InvalidParameterError } from '../../util/error/InvalidParameterError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { ValidationError } from '../../util/error/ValidationError.js';
+import { wrapError } from '../../util/error/wrapError.js';
+import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream.js';
+import type { StoreItem } from '../StoreItem.js';
+import { isHeartbeat } from '../isHeartbeat.js';
+import { isItem } from '../isItem.js';
+import { isStreamError } from '../isStreamError.js';
+import type { ReadEventsOptions } from './ReadEventsOptions.js';
+import { validateReadEventsOptions } from './ReadEventsOptions.js';
 
 const readEvents = async function* (
 	client: Client,
@@ -62,7 +63,7 @@ const readEvents = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

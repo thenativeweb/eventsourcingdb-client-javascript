@@ -1,68 +1,64 @@
-import { assert } from 'assertthat';
-import { isItem } from '../../../lib/handlers/isItem';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
+import { isItem } from '../../../lib/handlers/isItem.js';
 
-suite('isItem()', () => {
+suite('isItem', () => {
 	test('returns true for a item object.', () => {
-		assert
-			.that(
-				isItem({
-					type: 'item',
-					payload: {
-						event: {},
-						hash: 'some-hash',
-					},
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isItem({
+				type: 'item',
+				payload: {
+					event: {},
+					hash: 'some-hash',
+				},
+			}),
+		);
 	});
 
 	test('ignores additional attributes.', () => {
-		assert
-			.that(
-				isItem({
-					type: 'item',
-					payload: {
-						event: {},
-						hash: 'some-hash',
-					},
-					additional: 'attribute',
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isItem({
+				type: 'item',
+				payload: {
+					event: {},
+					hash: 'some-hash',
+				},
+				additional: 'attribute',
+			}),
+		);
 	});
 
 	test('returns false for a missing payload.', () => {
-		assert
-			.that(
-				isItem({
-					type: 'item',
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isItem({
+				type: 'item',
+			}),
+			false,
+		);
 	});
 
 	test('returns false for a invalid payload.', () => {
-		assert
-			.that(
-				isItem({
-					type: 'item',
-					payload: {},
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isItem({
+				type: 'item',
+				payload: {
+					event: {},
+				},
+			}),
+			false,
+		);
 	});
 
 	test('returns false for a non item object.', () => {
-		assert
-			.that(
-				isItem({
-					type: 'not-an-item',
-					payload: {
-						event: {},
-						hash: 'some-hash',
-					},
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isItem({
+				type: 'not-an-item',
+				payload: {
+					event: {},
+					hash: 'some-hash',
+				},
+			}),
+			false,
+		);
 	});
 });

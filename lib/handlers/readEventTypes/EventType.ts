@@ -1,4 +1,4 @@
-import { isObject } from '../../util/isObject';
+import { isObject } from '../../util/isObject.js';
 
 interface EventType {
 	eventType: string;

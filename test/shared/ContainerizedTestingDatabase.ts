@@ -1,9 +1,8 @@
-import { Client } from '../../lib';
-import { ClientOptions } from '../../lib/ClientOptions';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { done, retryWithBackoff } from '../../lib/util/retry/retryWithBackoff';
-import { Container } from './docker/Container';
-import { Image } from './docker/Image';
+import { setTimeout } from 'node:timers/promises';
+import type { ClientOptions } from '../../lib/ClientOptions.js';
+import { Client } from '../../lib/index.js';
+import type { Container } from './docker/Container.js';
+import type { Image } from './docker/Image.js';
 
 class ContainerizedTestingDatabase {
 	private readonly command: string;
@@ -46,19 +45,15 @@ class ContainerizedTestingDatabase {
 		const baseUrl = `http://127.0.0.1:${exposedPort}`;
 		const client = new Client(baseUrl, options);
 
-		await retryWithBackoff(new AbortController(), 10, async () => {
+		for (let i = 0; i < 10; i++) {
 			try {
 				await client.ping();
-			} catch (ex: unknown) {
-				if (ex instanceof ServerError) {
-					return { retry: ex };
-				}
-
-				throw ex;
+				break;
+			} catch {
+				// We intentionally ignore server error exceptions since this is expected to fail the first few times.
 			}
-
-			return done;
-		});
+			await setTimeout(1_000);
+		}
 
 		return {
 			container,

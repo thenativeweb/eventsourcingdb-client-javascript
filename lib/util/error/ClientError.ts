@@ -1,4 +1,4 @@
-import { CustomError } from './CustomError';
+import { CustomError } from './CustomError.js';
 
 class ClientError extends CustomError {
 	constructor(cause: string) {

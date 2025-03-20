@@ -5,4 +5,4 @@ interface Subject {
 	};
 }
 
-export { Subject };
+export type { Subject };

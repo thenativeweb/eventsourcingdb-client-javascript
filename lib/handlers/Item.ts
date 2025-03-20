@@ -1,4 +1,4 @@
-import { UnknownObject } from '../util/UnknownObject';
+import type { UnknownObject } from '../util/UnknownObject.js';
 
 interface Item {
 	type: 'item';
@@ -8,4 +8,4 @@ interface Item {
 	};
 }
 
-export { Item };
+export type { Item };

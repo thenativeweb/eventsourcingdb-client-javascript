@@ -21,9 +21,8 @@
 			"quoteProperties": "asNeeded",
 			"quoteStyle": "single",
 			"semicolons": "always",
-			"trailingComma": "all"
-		},
-		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"]
+			"trailingCommas": "all"
+		}
 	},
 	"json": {
 		"formatter": {
@@ -38,9 +37,15 @@
 		"enabled": true,
 		"rules": {
 			"all": true,
+            "correctness": {
+                "noNodejsModules": "off"
+            },
 			"nursery": {
 				"useImportRestrictions": "off"
-			}
+			},
+            "style": {
+                "useFilenamingConvention": "off"
+            }
 		}
 	},
 	"organizeImports": {

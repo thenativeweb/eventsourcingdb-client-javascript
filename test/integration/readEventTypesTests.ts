@@ -1,26 +1,26 @@
-import { assert } from 'assertthat';
-import { EventCandidate } from '../../lib';
-import { EventType } from '../../lib/handlers/readEventTypes/EventType';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { stopDatabase } from '../shared/stopDatabase';
+import assert from 'node:assert/strict';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
+import type { EventType } from '../../lib/handlers/readEventTypes/EventType.js';
+import { EventCandidate } from '../../lib/index.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
-suite('Client.readEventTypes()', function () {
-	this.timeout(20_000);
+suite('readEventTypes', { timeout: 20_000 }, () => {
 	let database: Database;
 
-	suiteSetup(async () => {
+	before(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
-	setup(async () => {
+	beforeEach(async () => {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	afterEach(() => {
+		stopDatabase(database);
 	});
 
 	test('Reads all event types of existing events, as well as all event types with registered schemas.', async () => {
@@ -38,15 +38,15 @@ suite('Client.readEventTypes()', function () {
 
 		const expectedEventTypes: EventType[] = [
 			{
-				eventType: 'com.foo.bar',
-				isPhantom: false,
-			},
-			{
 				eventType: 'com.bar.baz',
 				isPhantom: false,
 			},
 			{
 				eventType: 'com.baz.leml',
+				isPhantom: false,
+			},
+			{
+				eventType: 'com.foo.bar',
 				isPhantom: false,
 			},
 			{
@@ -70,7 +70,7 @@ suite('Client.readEventTypes()', function () {
 			observedEventTypes.push(observedEventType);
 		}
 
-		assert.that(observedEventTypes).is.containingAllOf(expectedEventTypes);
-		assert.that(observedEventTypes.length).is.equalTo(expectedEventTypes.length);
+		assert.deepEqual(observedEventTypes, expectedEventTypes);
+		assert.equal(observedEventTypes.length, expectedEventTypes.length);
 	});
 });

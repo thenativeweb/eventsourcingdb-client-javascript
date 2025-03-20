@@ -1,5 +1,5 @@
-import { isObject } from '../util/isObject';
-import { StreamError } from './StreamError';
+import { isObject } from '../util/isObject.js';
+import type { StreamError } from './StreamError.js';
 
 const isStreamError = (message: unknown): message is StreamError => {
 	if (!isObject(message) || message.type !== 'error') {

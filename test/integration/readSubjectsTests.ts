@@ -1,59 +1,53 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, EventCandidate } from '../../lib';
-import { CancelationError } from '../../lib';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import type { Client } from '../../lib/index.js';
+import { CancelationError, EventCandidate } from '../../lib/index.js';
+import { ClientError } from '../../lib/util/error/ClientError.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { events } from '../shared/events/events.js';
+import { testSource } from '../shared/events/source.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
-suite('Client.readSubjects()', function () {
-	this.timeout(20_000);
+suite('readSubjects', { timeout: 20_000 }, () => {
 	let database: Database;
 
-	suiteSetup(async () => {
+	before(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
-	setup(async () => {
+	beforeEach(async () => {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	afterEach(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error when trying to read from a non-reachable server.', async (): Promise<void> => {
 		const client = database.withInvalidUrl.client;
 
-		await assert
-			.that(async () => {
-				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
+		await assert.rejects(async () => {
+			const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-				for await (const _ of readSubjectsResult) {
-					// Intentionally left blank.
-				}
-			})
-			.is.throwingAsync();
+			for await (const _ of readSubjectsResult) {
+				// Intentionally left blank.
+			}
+		});
 	});
 
 	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
+		// Should not throw.
+		const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-		await assert
-			.that(async () => {
-				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '/' });
-
-				for await (const _ of readSubjectsResult) {
-					// Intentionally left blank.
-				}
-			})
-			.is.not.throwingAsync();
+		for await (const _ of readSubjectsResult) {
+			// Intentionally left blank.
+		}
 	});
 
 	test('reads all subjects starting from /.', async (): Promise<void> => {
@@ -71,7 +65,7 @@ suite('Client.readSubjects()', function () {
 			actualSubjects.push(subject);
 		}
 
-		assert.that(actualSubjects).is.equalTo(['/', '/foo']);
+		assert.deepEqual(actualSubjects, ['/', '/foo']);
 	});
 
 	test('reads all subjects starting from the given base subject.', async (): Promise<void> => {
@@ -89,7 +83,7 @@ suite('Client.readSubjects()', function () {
 			actualSubjects.push(subject);
 		}
 
-		assert.that(actualSubjects).is.equalTo(['/foo', '/foo/bar']);
+		assert.deepEqual(actualSubjects, ['/foo', '/foo/bar']);
 	});
 
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
@@ -97,39 +91,45 @@ suite('Client.readSubjects()', function () {
 
 		const abortController = new AbortController();
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				const readSubjectsResult = client.readSubjects(abortController, { baseSubject: '/' });
 				abortController.abort();
 
 				for await (const _ of readSubjectsResult) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync((error): boolean => error instanceof CancelationError);
+			},
+			error => {
+				assert.ok(error instanceof CancelationError);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if the base subject is malformed.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				const readSubjectsResult = client.readSubjects(new AbortController(), { baseSubject: '' });
 
 				for await (const _ of readSubjectsResult) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				"Parameter 'options' is invalid: Failed to validate subject: '' must be an absolute, slash-separated path.",
-			);
+			},
+			{
+				message:
+					"Parameter 'options' is invalid: Failed to validate subject: '' must be an absolute, slash-separated path.",
+			},
+		);
 	});
 
 	suite('with a mock server', () => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
-		teardown(async () => {
-			stopServer();
+		afterEach(async () => {
+			await stopServer();
 		});
 
 		test('throws a server error if the server responds with http 5xx on every try.', async () => {
@@ -143,20 +143,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed operation with 2 errors:\n' +
-								"Error: Server error occurred: Request failed with status code '502'.\n" +
-								"Error: Server error occurred: Request failed with status code '502'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						"Server error occurred: Request failed with status code '502'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
@@ -171,18 +172,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message ===
-							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
@@ -196,17 +200,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message === "Client error occurred: Request failed with status code '418'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Request failed with status code '418'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
@@ -220,17 +228,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Unexpected response status: 202 Accepted.',
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
@@ -243,17 +255,18 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Failed to read response.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(error.message, 'Server error occurred: Failed to read response.');
+					return true;
+				},
+			);
 		});
 
 		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
@@ -266,18 +279,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed to read subjects, an unexpected stream item was received: \'{"type":":clown:"}\'.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Failed to read subjects, an unexpected stream item was received: \'{"type":":clown:"}\'.',
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
@@ -290,17 +306,18 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: not enough JUICE 😩.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(error.message, 'Server error occurred: not enough JUICE 😩.');
+					return true;
+				},
+			);
 		});
 
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
@@ -313,18 +330,21 @@ suite('Client.readSubjects()', function () {
 
 			const result = client.readSubjects(new AbortController(), { baseSubject: '/' });
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed to read subjects, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Failed to read subjects, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
+					);
+					return true;
+				},
+			);
 		});
 	});
 });

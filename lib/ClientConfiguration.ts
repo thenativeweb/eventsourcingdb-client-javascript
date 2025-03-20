@@ -3,7 +3,6 @@ interface ClientConfiguration {
 	timeoutMilliseconds: number;
 	accessToken: string;
 	protocolVersion: string;
-	maxTries: number;
 }
 
-export { ClientConfiguration };
+export type { ClientConfiguration };

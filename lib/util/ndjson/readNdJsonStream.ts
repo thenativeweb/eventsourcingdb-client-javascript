@@ -1,10 +1,10 @@
-import { Readable } from 'stream';
+import type { Readable } from 'node:stream';
 import { CanceledError } from 'axios';
 import StreamToAsyncIterator from 'stream-to-async-iterator';
-import { UnknownObject } from '../UnknownObject';
-import { CancelationError } from '../error/CancelationError';
-import { ServerError } from '../error/ServerError';
-import { LinesDecoder } from './LinesDecoder';
+import type { UnknownObject } from '../UnknownObject.js';
+import { CancelationError } from '../error/CancelationError.js';
+import { ServerError } from '../error/ServerError.js';
+import { LinesDecoder } from './LinesDecoder.js';
 
 const readNdJsonStream = async function* (
 	stream: Readable,

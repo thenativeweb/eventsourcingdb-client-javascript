@@ -1,40 +1,41 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import { Client, Source, StoreItem, isSubjectOnEventId, isSubjectPristine } from '../../lib';
-import { ClientError } from '../../lib/util/error/ClientError';
-import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError';
-import { ServerError } from '../../lib/util/error/ServerError';
-import { Database } from '../shared/Database';
-import { buildDatabase } from '../shared/buildDatabase';
-import { events } from '../shared/events/events';
-import { testSource } from '../shared/events/source';
-import { prefixEventType } from '../shared/events/type';
-import { startDatabase } from '../shared/startDatabase';
-import { startLocalHttpServer } from '../shared/startLocalHttpServer';
-import { stopDatabase } from '../shared/stopDatabase';
+import { Source, isSubjectOnEventId, isSubjectPristine } from '../../lib/index.js';
+import type { Client, StoreItem } from '../../lib/index.js';
+import { ClientError } from '../../lib/util/error/ClientError.js';
+import { InvalidParameterError } from '../../lib/util/error/InvalidParameterError.js';
+import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Database } from '../shared/Database.js';
+import { buildDatabase } from '../shared/buildDatabase.js';
+import { events } from '../shared/events/events.js';
+import { testSource } from '../shared/events/source.js';
+import { prefixEventType } from '../shared/events/type.js';
+import { startDatabase } from '../shared/startDatabase.js';
+import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
+import { stopDatabase } from '../shared/stopDatabase.js';
 
-suite('Client.writeEvents()', function () {
-	this.timeout(20_000);
+suite('writeEvents', { timeout: 20_000 }, () => {
 	let database: Database;
 	const source = new Source(testSource);
 
-	suiteSetup(async () => {
+	before(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
-	setup(async () => {
+	beforeEach(async () => {
 		database = await startDatabase();
 	});
 
-	teardown(async () => {
-		await stopDatabase(database);
+	afterEach(() => {
+		stopDatabase(database);
 	});
 
 	test('throws an error when trying to write to a non-reachable server.', async (): Promise<void> => {
 		const client = database.withInvalidUrl.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.writeEvents([
 					source.newEvent(
 						'/foobar',
@@ -42,114 +43,109 @@ suite('Client.writeEvents()', function () {
 						events.registered.janeDoe.data,
 					),
 				]);
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof ServerError &&
-					error.message === 'Server error occurred: No response received.',
-			);
+			},
+			error => {
+				assert.ok(error instanceof ServerError);
+				assert.equal(error.message, 'Server error occurred: No response received.');
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if no candidates are passed.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.writeEvents([]);
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'eventCandidates' is invalid: eventCandidates must contain at least one EventCandidate.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'eventCandidates' is invalid: eventCandidates must contain at least one EventCandidate.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if a candidate subject is malformed.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.writeEvents([
 					source.newEvent('foobar', events.registered.janeDoe.type, events.registered.janeDoe.data),
 				]);
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'eventCandidates' is invalid: Failed to validate subject: 'foobar' must be an absolute, slash-separated path.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'eventCandidates' is invalid: Failed to validate subject: 'foobar' must be an absolute, slash-separated path.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if a candidate type is malformed.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.writeEvents([
 					source.newEvent('/foobar', 'haram', events.registered.janeDoe.data),
 				]);
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'eventCandidates' is invalid: Failed to validate type: 'haram' must be a reverse domain name.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'eventCandidates' is invalid: Failed to validate type: 'haram' must be a reverse domain name.",
+				);
+				return true;
+			},
+		);
 	});
 
-	test.skip('throws an error if a precondition uses an invalid source.', async (): Promise<void> => {
-		assert.that(true).is.false();
-	});
+	test('throws an error if a precondition uses an invalid source.');
 
 	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent(
-						'/foobar',
-						events.registered.janeDoe.type,
-						events.registered.janeDoe.data,
-					),
-				]);
-			})
-			.is.not.throwingAsync();
+		// Should not throw.
+		await client.writeEvents([
+			source.newEvent('/foobar', events.registered.janeDoe.type, events.registered.janeDoe.data),
+		]);
 	});
 
 	test('writes a single event.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent(
-						'/foobar',
-						events.registered.janeDoe.type,
-						events.registered.janeDoe.data,
-						'00-eb0e08452e7ee4b0d3b8b30987c37951-c31bc0a7013beab8-00',
-					),
-				]);
-			})
-			.is.not.throwingAsync();
+		// Should not throw.
+		await client.writeEvents([
+			source.newEvent(
+				'/foobar',
+				events.registered.janeDoe.type,
+				events.registered.janeDoe.data,
+				'00-eb0e08452e7ee4b0d3b8b30987c37951-c31bc0a7013beab8-00',
+			),
+		]);
 	});
 
 	test('returns the written event metadata.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent(
-						'/users/registered',
-						events.registered.janeDoe.type,
-						events.registered.janeDoe.data,
-					),
-				]);
-			})
-			.is.not.throwingAsync();
+		// Should not throw.
+		await client.writeEvents([
+			source.newEvent(
+				'/users/registered',
+				events.registered.janeDoe.type,
+				events.registered.janeDoe.data,
+			),
+		]);
 
 		const writtenEventsMetadata = await client.writeEvents([
 			source.newEvent(
@@ -164,36 +160,33 @@ suite('Client.writeEvents()', function () {
 			),
 		]);
 
-		assert.that(writtenEventsMetadata.length).is.equalTo(2);
-		assert.that(writtenEventsMetadata[0].source).is.equalTo(testSource);
-		assert.that(writtenEventsMetadata[0].type).is.equalTo(prefixEventType('registered'));
-		assert.that(writtenEventsMetadata[0].subject).is.equalTo('/users/registered');
-		assert.that(writtenEventsMetadata[0].id).is.equalTo('1');
-		assert.that(writtenEventsMetadata[1].source).is.equalTo(testSource);
-		assert.that(writtenEventsMetadata[1].type).is.equalTo(prefixEventType('loggedIn'));
-		assert.that(writtenEventsMetadata[1].subject).is.equalTo('/users/loggedIn');
-		assert.that(writtenEventsMetadata[1].id).is.equalTo('2');
+		assert.equal(writtenEventsMetadata.length, 2);
+		assert.equal(writtenEventsMetadata[0].source, testSource);
+		assert.equal(writtenEventsMetadata[0].type, prefixEventType('registered'));
+		assert.equal(writtenEventsMetadata[0].subject, '/users/registered');
+		assert.equal(writtenEventsMetadata[0].id, '1');
+		assert.equal(writtenEventsMetadata[1].source, testSource);
+		assert.equal(writtenEventsMetadata[1].type, prefixEventType('loggedIn'));
+		assert.equal(writtenEventsMetadata[1].subject, '/users/loggedIn');
+		assert.equal(writtenEventsMetadata[1].id, '2');
 	});
 
 	test('writes multiple events.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				await client.writeEvents([
-					source.newEvent(
-						'/users/registered',
-						events.registered.janeDoe.type,
-						events.registered.janeDoe.data,
-					),
-					source.newEvent(
-						'/users/registered',
-						events.registered.johnDoe.type,
-						events.registered.johnDoe.data,
-					),
-				]);
-			})
-			.is.not.throwingAsync();
+		// Should not throw.
+		await client.writeEvents([
+			source.newEvent(
+				'/users/registered',
+				events.registered.janeDoe.type,
+				events.registered.janeDoe.data,
+			),
+			source.newEvent(
+				'/users/registered',
+				events.registered.johnDoe.type,
+				events.registered.johnDoe.data,
+			),
+		]);
 	});
 
 	test('throws an error if any of the given events does not validate against the schema.', async (): Promise<void> => {
@@ -204,55 +197,52 @@ suite('Client.writeEvents()', function () {
 			additionalProperties: false,
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.writeEvents([
 					source.newEvent('/users/registered', 'com.knackige.wuerstchen', { oh: 'no' }),
 				]);
-			})
-			.is.throwingAsync("Client error occurred: Request failed with status code '409'.");
+			},
+			{
+				message: "Client error occurred: Request failed with status code '409'.",
+			},
+		);
 	});
 
 	suite('when using the isSubjectPristine precondition', (): void => {
 		test('writes the events if the subject is pristine.', async (): Promise<void> => {
 			const client = database.withAuthorization.client;
 
-			await assert
-				.that(async () => {
-					await client.writeEvents(
-						[
-							source.newEvent(
-								'/users/registered',
-								events.registered.janeDoe.type,
-								events.registered.janeDoe.data,
-							),
-						],
-						[isSubjectPristine({ subject: '/users/registered' })],
-					);
-				})
-				.is.not.throwingAsync();
+			// Should not throw.
+			await client.writeEvents(
+				[
+					source.newEvent(
+						'/users/registered',
+						events.registered.janeDoe.type,
+						events.registered.janeDoe.data,
+					),
+				],
+				[isSubjectPristine({ subject: '/users/registered' })],
+			);
 		});
 
 		test('throws an error if the subject is not pristine.', async (): Promise<void> => {
 			const client = database.withAuthorization.client;
 
-			await assert
-				.that(async () => {
-					await client.writeEvents(
-						[
-							source.newEvent(
-								'/users/registered',
-								events.registered.janeDoe.type,
-								events.registered.janeDoe.data,
-							),
-						],
-						[isSubjectPristine({ subject: '/users/registered' })],
-					);
-				})
-				.is.not.throwingAsync();
+			// Should not throw.
+			await client.writeEvents(
+				[
+					source.newEvent(
+						'/users/registered',
+						events.registered.janeDoe.type,
+						events.registered.janeDoe.data,
+					),
+				],
+				[isSubjectPristine({ subject: '/users/registered' })],
+			);
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(
 						[
 							source.newEvent(
@@ -263,12 +253,16 @@ suite('Client.writeEvents()', function () {
 						],
 						[isSubjectPristine({ subject: '/users/registered' })],
 					);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message === "Client error occurred: Request failed with status code '409'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Request failed with status code '409'.",
+					);
+					return true;
+				},
+			);
 		});
 	});
 
@@ -276,22 +270,19 @@ suite('Client.writeEvents()', function () {
 		test('writes the events if the last event of the subject has the given event ID.', async (): Promise<void> => {
 			const client = database.withAuthorization.client;
 
-			await assert
-				.that(async () => {
-					await client.writeEvents([
-						source.newEvent(
-							'/users/registered',
-							events.registered.janeDoe.type,
-							events.registered.janeDoe.data,
-						),
-						source.newEvent(
-							'/users/registered',
-							events.registered.johnDoe.type,
-							events.registered.johnDoe.data,
-						),
-					]);
-				})
-				.is.not.throwingAsync();
+			// Should not throw.
+			await client.writeEvents([
+				source.newEvent(
+					'/users/registered',
+					events.registered.janeDoe.type,
+					events.registered.janeDoe.data,
+				),
+				source.newEvent(
+					'/users/registered',
+					events.registered.johnDoe.type,
+					events.registered.johnDoe.data,
+				),
+			]);
 
 			const readEventsResult = database.withAuthorization.client.readEvents(
 				new AbortController(),
@@ -305,46 +296,40 @@ suite('Client.writeEvents()', function () {
 			}
 			const lastEventId = readItems[readItems.length - 1].event.id;
 
-			await assert
-				.that(async () => {
-					await client.writeEvents(
-						[
-							source.newEvent(
-								'/users/registered',
-								events.registered.apfelFred.type,
-								events.registered.apfelFred.data,
-							),
-						],
-						[isSubjectOnEventId({ subject: '/users/registered', eventId: lastEventId })],
-					);
-				})
-				.is.not.throwingAsync();
+			// Should not throw.
+			await client.writeEvents(
+				[
+					source.newEvent(
+						'/users/registered',
+						events.registered.apfelFred.type,
+						events.registered.apfelFred.data,
+					),
+				],
+				[isSubjectOnEventId({ subject: '/users/registered', eventId: lastEventId })],
+			);
 		});
 
 		test('throws an error if the last event of the subject does not have the given event ID.', async (): Promise<void> => {
 			const client = database.withAuthorization.client;
 
-			await assert
-				.that(async () => {
-					await client.writeEvents([
-						source.newEvent(
-							'/users/registered',
-							events.registered.janeDoe.type,
-							events.registered.janeDoe.data,
-						),
-						source.newEvent(
-							'/users/registered',
-							events.registered.johnDoe.type,
-							events.registered.johnDoe.data,
-						),
-					]);
-				})
-				.is.not.throwingAsync();
+			// Should not throw.
+			await client.writeEvents([
+				source.newEvent(
+					'/users/registered',
+					events.registered.janeDoe.type,
+					events.registered.janeDoe.data,
+				),
+				source.newEvent(
+					'/users/registered',
+					events.registered.johnDoe.type,
+					events.registered.johnDoe.data,
+				),
+			]);
 
 			const lastEventId = '1337';
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(
 						[
 							source.newEvent(
@@ -355,20 +340,24 @@ suite('Client.writeEvents()', function () {
 						],
 						[isSubjectOnEventId({ subject: '/users/registered', eventId: lastEventId })],
 					);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message === "Client error occurred: Request failed with status code '409'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Request failed with status code '409'.",
+					);
+					return true;
+				},
+			);
 		});
 	});
 
 	suite('using mocked HTTP server', (): void => {
-		let stopServer: () => void;
+		let stopServer: () => Promise<void>;
 
-		teardown(async () => {
-			stopServer();
+		afterEach(async () => {
+			await stopServer();
 		});
 
 		const events = [source.newEvent('/', 'com.foobar.baz', {})];
@@ -382,18 +371,19 @@ suite('Client.writeEvents()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(events);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed operation with 2 errors:\n' +
-								"Error: Server error occurred: Request failed with status code '502'.\n" +
-								"Error: Server error occurred: Request failed with status code '502'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						"Server error occurred: Request failed with status code '502'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws an error if the server's protocol version does not match.", async () => {
@@ -406,16 +396,19 @@ suite('Client.writeEvents()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(events);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message ===
-							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a client error if the server returns a 4xx status code.', async () => {
@@ -427,15 +420,19 @@ suite('Client.writeEvents()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(events);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message === "Client error occurred: Request failed with status code '418'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Request failed with status code '418'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('returns a server error if the server returns a non 200, 5xx or 4xx status code.', async () => {
@@ -447,15 +444,19 @@ suite('Client.writeEvents()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(events);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Unexpected response status: 202 Accepted.',
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws a server error if the server's response can't be parsed.", async () => {
@@ -466,16 +467,19 @@ suite('Client.writeEvents()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.writeEvents(events);
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							"Server error occurred: Failed to parse response 'utter garbage' to array.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						"Server error occurred: Failed to parse response 'utter garbage' to array.",
+					);
+					return true;
+				},
+			);
 		});
 	});
 });

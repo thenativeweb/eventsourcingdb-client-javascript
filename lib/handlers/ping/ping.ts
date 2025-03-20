@@ -1,8 +1,8 @@
-import { Client } from '../../Client';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { ServerError } from '../../util/error/ServerError';
-import { wrapError } from '../../util/error/wrapError';
+import type { Client } from '../../Client.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { wrapError } from '../../util/error/wrapError.js';
 
 const ping = async (client: Client): Promise<void> => {
 	const response = await wrapError(
@@ -12,7 +12,7 @@ const ping = async (client: Client): Promise<void> => {
 				responseType: 'text',
 				withAuthorization: false,
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

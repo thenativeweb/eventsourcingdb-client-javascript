@@ -1,9 +1,10 @@
-import { StringDecoder } from 'string_decoder';
+import { StringDecoder } from 'node:string_decoder';
 
 class LinesDecoder {
 	private textBuffer: string;
 	private readonly decoder: StringDecoder;
 
+	// biome-ignore lint/correctness/noUndeclaredVariables: This is a global variable defined by Node.js.
 	public constructor(encoding?: BufferEncoding) {
 		this.textBuffer = '';
 		this.decoder = new StringDecoder(encoding);

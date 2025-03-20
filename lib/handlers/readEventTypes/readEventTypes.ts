@@ -1,13 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
-import { Client } from '../../Client';
-import { CustomError } from '../../util/error/CustomError';
-import { InternalError } from '../../util/error/InternalError';
-import { ServerError } from '../../util/error/ServerError';
-import { wrapError } from '../../util/error/wrapError';
-import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream';
-import { isHeartbeat } from '../isHeartbeat';
-import { isStreamError } from '../isStreamError';
-import { EventType, isEventType } from './EventType';
+import type { Client } from '../../Client.js';
+import { CustomError } from '../../util/error/CustomError.js';
+import { InternalError } from '../../util/error/InternalError.js';
+import { ServerError } from '../../util/error/ServerError.js';
+import { wrapError } from '../../util/error/wrapError.js';
+import { readNdJsonStream } from '../../util/ndjson/readNdJsonStream.js';
+import { isHeartbeat } from '../isHeartbeat.js';
+import { isStreamError } from '../isStreamError.js';
+import type { EventType } from './EventType.js';
+import { isEventType } from './EventType.js';
 
 const readEventTypes = async function* (
 	client: Client,
@@ -21,7 +22,7 @@ const readEventTypes = async function* (
 				responseType: 'stream',
 				abortController,
 			}),
-		async error => {
+		error => {
 			if (error instanceof CustomError) {
 				throw error;
 			}

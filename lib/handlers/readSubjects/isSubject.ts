@@ -1,5 +1,5 @@
-import { isObject } from '../../util/isObject';
-import { Subject } from './Subject';
+import { isObject } from '../../util/isObject.js';
+import type { Subject } from './Subject.js';
 
 const isSubject = (message: unknown): message is Subject => {
 	if (!isObject(message) || message.type !== 'subject') {
