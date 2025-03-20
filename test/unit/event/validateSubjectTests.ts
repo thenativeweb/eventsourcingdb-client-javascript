@@ -1,48 +1,75 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
 import { validateSubject } from '../../../lib/event/validateSubject.js';
 import { ValidationError } from '../../../lib/util/error/ValidationError.js';
 
-suite('validateSubject()', () => {
+suite('validateSubject', () => {
 	test('returns without throwing on a valid subject.', () => {
-		assert
-			.that(() => {
-				validateSubject('/this/is/valid');
-			})
-			.is.not.throwing();
+		// Should not throw.
+		validateSubject('/this/is/valid');
 	});
 
 	test('contains the invalid subject in the error message in case of throwing.', () => {
-		assert
-			.that(() => {
+		assert.throws(
+			() => {
 				validateSubject('invalidExampleSubject');
-			})
-			.is.throwing(
-				error =>
-					error.message.includes('invalidExampleSubject') && error instanceof ValidationError,
-			);
+			},
+			error => {
+				assert.ok(error instanceof ValidationError);
+				assert.ok(error.message.includes('invalidExampleSubject'));
+				return true;
+			},
+		);
 	});
 
-	test('is throwing if the subject is not an absolute slash separated path.', () => {
-		assert
-			.that(() => {
-				validateSubject('invalidExampleSubject');
-			})
-			.is.throwing(error => error instanceof ValidationError);
+	test('throws if the subject is not an absolute slash separated path.', () => {
+		const subject = 'invalidExampleSubject';
+		assert.throws(
+			() => {
+				validateSubject(subject);
+			},
+			error => {
+				assert.ok(error instanceof ValidationError);
+				assert.equal(
+					`Failed to validate subject: '${subject}' must be an absolute, slash-separated path.`,
+					error.message,
+				);
+				return true;
+			},
+		);
 	});
 
-	test('is throwing if the subject is a relative path.', () => {
-		assert
-			.that(() => {
-				validateSubject('this/is/invalid');
-			})
-			.is.throwing(error => error instanceof ValidationError);
+	test('throws if the subject is a relative path.', () => {
+		const subject = 'this/is/invalid';
+		assert.throws(
+			() => {
+				validateSubject(subject);
+			},
+			error => {
+				assert.ok(error instanceof ValidationError);
+				assert.equal(
+					`Failed to validate subject: '${subject}' must be an absolute, slash-separated path.`,
+					error.message,
+				);
+				return true;
+			},
+		);
 	});
 
-	test('is throwing if the subject has invalid characters.', () => {
-		assert
-			.that(() => {
-				validateSubject('/user/günter/registered');
-			})
-			.is.throwing(error => error instanceof ValidationError);
+	test('throws if the subject has invalid characters.', () => {
+		const subject = '/user/günter/registered';
+		assert.throws(
+			() => {
+				validateSubject(subject);
+			},
+			error => {
+				assert.ok(error instanceof ValidationError);
+				assert.equal(
+					`Failed to validate subject: '${subject}' must be an absolute, slash-separated path.`,
+					error.message,
+				);
+				return true;
+			},
+		);
 	});
 });

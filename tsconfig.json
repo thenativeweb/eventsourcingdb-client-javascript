@@ -1,19 +1,15 @@
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "declaration": true,
-    "esModuleInterop": true,
-    "lib": [ "ES2022" ],
-    "module": "CommonJS",
-    "outDir": "build",
-    "resolveJsonModule": true,
-    "strict": true,
-    "target": "ES2022"
-  },
-  "include": [
-    "./**/*.ts"
-  ],
-  "exclude": [
-    "./build"
-  ]
+	"compilerOptions": {
+		"baseUrl": ".",
+		"declaration": true,
+		"esModuleInterop": true,
+		"lib": ["ES2022"],
+		"module": "CommonJS",
+		"outDir": "build",
+		"resolveJsonModule": true,
+		"strict": true,
+		"target": "ES2022"
+	},
+	"include": ["./**/*.ts"],
+	"exclude": ["./build"]
 }

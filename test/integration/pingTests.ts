@@ -1,4 +1,5 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { StatusCodes } from 'http-status-codes';
 import type { Client } from '../../lib/index.js';
 import { ServerError } from '../../lib/util/error/ServerError.js';
@@ -8,50 +9,47 @@ import { startDatabase } from '../shared/startDatabase.js';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
 import { stopDatabase } from '../shared/stopDatabase.js';
 
-suite('Client.ping()', function () {
-	this.timeout(20_000);
+suite('ping', { timeout: 20_000 }, () => {
 	let database: Database;
 
-	suiteSetup(() => {
+	before(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
-	setup(async () => {
+	beforeEach(async () => {
 		database = await startDatabase();
 	});
 
-	teardown(() => {
+	afterEach(() => {
 		stopDatabase(database);
 	});
 
 	test('throws an error if the server is not reachable.', async (): Promise<void> => {
 		const client = database.withInvalidUrl.client;
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				await client.ping();
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof ServerError &&
-					error.message === 'Server error occurred: No response received.',
-			);
+			},
+			error => {
+				assert.ok(error instanceof ServerError);
+				assert.equal(error.message, 'Server error occurred: No response received.');
+				return true;
+			},
+		);
 	});
 
 	test('does not throw an error if EventSourcingDB is reachable.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				await client.ping();
-			})
-			.is.not.throwingAsync();
+		// Should not throw.
+		await client.ping();
 	});
 
 	suite('with a mock server', () => {
 		let stopServer: () => Promise<void>;
 
-		teardown(async () => {
+		afterEach(async () => {
 			await stopServer();
 		});
 
@@ -64,18 +62,19 @@ suite('Client.ping()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.ping();
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed operation with 2 errors:\n' +
-								"Error: Server error occurred: Request failed with status code '502'.\n" +
-								"Error: Server error occurred: Request failed with status code '502'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						"Server error occurred: Request failed with status code '502'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws an error if the server's response body is not 'OK'.", async (): Promise<void> => {
@@ -87,15 +86,16 @@ suite('Client.ping()', function () {
 				});
 			}));
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					await client.ping();
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Received unexpected response.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(error.message, 'Server error occurred: Received unexpected response.');
+					return true;
+				},
+			);
 		});
 	});
 });

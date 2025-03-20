@@ -1,35 +1,31 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
 import { isHeartbeat } from '../../../lib/handlers/isHeartbeat.js';
 
-suite('isHeartbeat()', () => {
+suite('isHeartbeat', () => {
 	test('returns true for a heartbeat object.', () => {
-		assert
-			.that(
-				isHeartbeat({
-					type: 'heartbeat',
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isHeartbeat({
+				type: 'heartbeat',
+			}),
+		);
 	});
 
 	test('ignores additional attributes.', () => {
-		assert
-			.that(
-				isHeartbeat({
-					type: 'heartbeat',
-					additional: 'attribute',
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isHeartbeat({
+				type: 'heartbeat',
+				additional: 'attribute',
+			}),
+		);
 	});
 
 	test('returns false for a non heartbeat object.', () => {
-		assert
-			.that(
-				isHeartbeat({
-					type: 'not-a-heartbeat',
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isHeartbeat({
+				type: 'not-a-heartbeat',
+			}),
+			false,
+		);
 	});
 });

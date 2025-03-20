@@ -6,7 +6,6 @@ const getDefaultClientConfiguration = (baseUrl: string): ClientConfiguration => 
 		timeoutMilliseconds: 10_000,
 		accessToken: '',
 		protocolVersion: '1.0.0',
-		maxTries: 10,
 	};
 };
 

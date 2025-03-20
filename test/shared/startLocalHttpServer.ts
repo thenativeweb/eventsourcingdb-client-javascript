@@ -25,7 +25,6 @@ const startLocalHttpServer = async (
 	}
 
 	const client = new Client(`http://localhost:${address.port}`, {
-		maxTries: 2,
 		accessToken: 'irrelevant',
 	});
 	const stopServer = async () => {

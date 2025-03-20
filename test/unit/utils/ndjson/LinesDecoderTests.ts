@@ -1,4 +1,5 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
 import { LinesDecoder } from '../../../../lib/util/ndjson/LinesDecoder.js';
 
 suite('LinesDecoder', (): void => {
@@ -7,7 +8,7 @@ suite('LinesDecoder', (): void => {
 
 		const actualLines = decoder.write(Buffer.from('hello\nworld\nfoobar'));
 
-		assert.that(actualLines).is.equalTo(['hello', 'world']);
+		assert.deepEqual(actualLines, ['hello', 'world']);
 	});
 
 	test('buffers incomplete lines and returns them on write() as soon as they are completed.', (): void => {
@@ -15,10 +16,10 @@ suite('LinesDecoder', (): void => {
 
 		let actualLines = decoder.write(Buffer.from('incomplete'));
 
-		assert.that(actualLines).is.equalTo([]);
+		assert.deepEqual(actualLines, []);
 
 		actualLines = decoder.write(Buffer.from(' line\n'));
 
-		assert.that(actualLines).is.equalTo(['incomplete line']);
+		assert.deepEqual(actualLines, ['incomplete line']);
 	});
 });

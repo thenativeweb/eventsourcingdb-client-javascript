@@ -1,65 +1,59 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
 import { isStreamError } from '../../../lib/handlers/isStreamError.js';
 
-suite('isStreamError()', () => {
+suite('isStreamError', () => {
 	test('returns true for a error object.', () => {
-		assert
-			.that(
-				isStreamError({
-					type: 'error',
-					payload: {
-						error: 'some-error',
-					},
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isStreamError({
+				type: 'error',
+				payload: {
+					error: 'some-error',
+				},
+			}),
+		);
 	});
 
 	test('ignores additional attributes.', () => {
-		assert
-			.that(
-				isStreamError({
-					type: 'error',
-					payload: {
-						error: 'some-error',
-					},
-					additional: 'attribute',
-				}),
-			)
-			.is.true();
+		assert.ok(
+			isStreamError({
+				type: 'error',
+				payload: {
+					error: 'some-error',
+				},
+				additional: 'attribute',
+			}),
+		);
 	});
 
 	test('returns false for a missing payload', () => {
-		assert
-			.that(
-				isStreamError({
-					type: 'error',
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isStreamError({
+				type: 'error',
+			}),
+			false,
+		);
 	});
 
 	test('returns false for a invalid payload', () => {
-		assert
-			.that(
-				isStreamError({
-					type: 'error',
-					payload: {},
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isStreamError({
+				type: 'error',
+				payload: {},
+			}),
+			false,
+		);
 	});
 
 	test('returns false for a non error object', () => {
-		assert
-			.that(
-				isStreamError({
-					type: 'not-an-error',
-					payload: {
-						error: 'some-error',
-					},
-				}),
-			)
-			.is.false();
+		assert.equal(
+			isStreamError({
+				type: 'not-an-error',
+				payload: {
+					error: 'some-error',
+				},
+			}),
+			false,
+		);
 	});
 });

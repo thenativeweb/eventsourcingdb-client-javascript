@@ -1,4 +1,5 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import type { Client, StoreItem } from '../../lib/index.js';
 import { CancelationError, Source } from '../../lib/index.js';
@@ -13,16 +14,15 @@ import { startDatabase } from '../shared/startDatabase.js';
 import { startLocalHttpServer } from '../shared/startLocalHttpServer.js';
 import { stopDatabase } from '../shared/stopDatabase.js';
 
-suite('Client.readEvents()', function () {
-	this.timeout(20_000);
+suite('readEvents', { timeout: 20_000 }, () => {
 	let database: Database;
 	const source = new Source(testSource);
 
-	suiteSetup(() => {
+	before(() => {
 		buildDatabase('test/shared/docker/eventsourcingdb');
 	});
 
-	setup(async () => {
+	beforeEach(async () => {
 		database = await startDatabase();
 
 		await database.withAuthorization.client.writeEvents([
@@ -53,36 +53,31 @@ suite('Client.readEvents()', function () {
 		]);
 	});
 
-	teardown(() => {
+	afterEach(() => {
 		stopDatabase(database);
 	});
 
 	test('throws an error when trying to read from a non-reachable server.', async (): Promise<void> => {
 		const client = database.withInvalidUrl.client;
 
-		await assert
-			.that(async () => {
-				const result = client.readEvents(new AbortController(), '/', { recursive: false });
+		await assert.rejects(async () => {
+			const result = client.readEvents(new AbortController(), '/', { recursive: false });
 
-				for await (const _ of result) {
-					// Do nothing.
-				}
-			})
-			.is.throwingAsync();
+			for await (const _ of result) {
+				// Do nothing.
+			}
+		});
 	});
 
 	test('supports authorization.', async (): Promise<void> => {
 		const client = database.withAuthorization.client;
 
-		await assert
-			.that(async () => {
-				const result = client.readEvents(new AbortController(), '/', { recursive: false });
+		// Should not throw.
+		const result = client.readEvents(new AbortController(), '/', { recursive: false });
 
-				for await (const _ of result) {
-					// Do nothing.
-				}
-			})
-			.is.not.throwingAsync();
+		for await (const _ of result) {
+			// Do nothing.
+		}
 	});
 
 	test('reads events from a single subject.', async (): Promise<void> => {
@@ -97,17 +92,19 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(2);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
-		assert.that(readItems[0].event.traceParent).is.equalTo(events.registered.janeDoe.traceParent);
-		assert.that(readItems[1].event.source).is.equalTo(testSource);
-		assert.that(readItems[1].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[1].event.type).is.equalTo(events.registered.johnDoe.type);
-		assert.that(readItems[1].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert.that(readItems[1].event.traceParent).is.equalTo(events.registered.johnDoe.traceParent);
+		assert.equal(readItems.length, 2);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/registered');
+		assert.equal(readItems[0].event.type, events.registered.janeDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.registered.janeDoe.data);
+		assert.equal(readItems[0].event.traceParent, events.registered.janeDoe.traceParent);
+
+		assert.equal(readItems[1].event.source, testSource);
+		assert.equal(readItems[1].event.subject, '/users/registered');
+		assert.equal(readItems[1].event.type, events.registered.johnDoe.type);
+		assert.deepEqual(readItems[1].event.data, events.registered.johnDoe.data);
+		assert.equal(readItems[1].event.traceParent, events.registered.johnDoe.traceParent);
 	});
 
 	test('reads events from a subject including child subjects.', async (): Promise<void> => {
@@ -120,23 +117,27 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(4);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
-		assert.that(readItems[1].event.source).is.equalTo(testSource);
-		assert.that(readItems[1].event.subject).is.equalTo('/users/loggedIn');
-		assert.that(readItems[1].event.type).is.equalTo(events.loggedIn.janeDoe.type);
-		assert.that(readItems[1].event.data).is.equalTo(events.loggedIn.janeDoe.data);
-		assert.that(readItems[2].event.source).is.equalTo(testSource);
-		assert.that(readItems[2].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[2].event.type).is.equalTo(events.registered.johnDoe.type);
-		assert.that(readItems[2].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert.that(readItems[3].event.source).is.equalTo(testSource);
-		assert.that(readItems[3].event.subject).is.equalTo('/users/loggedIn');
-		assert.that(readItems[3].event.type).is.equalTo(events.loggedIn.johnDoe.type);
-		assert.that(readItems[3].event.data).is.equalTo(events.loggedIn.johnDoe.data);
+		assert.equal(readItems.length, 4);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/registered');
+		assert.equal(readItems[0].event.type, events.registered.janeDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.registered.janeDoe.data);
+
+		assert.equal(readItems[1].event.source, testSource);
+		assert.equal(readItems[1].event.subject, '/users/loggedIn');
+		assert.equal(readItems[1].event.type, events.loggedIn.janeDoe.type);
+		assert.deepEqual(readItems[1].event.data, events.loggedIn.janeDoe.data);
+
+		assert.equal(readItems[2].event.source, testSource);
+		assert.equal(readItems[2].event.subject, '/users/registered');
+		assert.equal(readItems[2].event.type, events.registered.johnDoe.type);
+		assert.deepEqual(readItems[2].event.data, events.registered.johnDoe.data);
+
+		assert.equal(readItems[3].event.source, testSource);
+		assert.equal(readItems[3].event.subject, '/users/loggedIn');
+		assert.equal(readItems[3].event.type, events.loggedIn.johnDoe.type);
+		assert.deepEqual(readItems[3].event.data, events.loggedIn.johnDoe.data);
 	});
 
 	test('reads the events in antichronological order.', async (): Promise<void> => {
@@ -151,15 +152,17 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(2);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[0].event.type).is.equalTo(events.registered.johnDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert.that(readItems[1].event.source).is.equalTo(testSource);
-		assert.that(readItems[1].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[1].event.type).is.equalTo(events.registered.janeDoe.type);
-		assert.that(readItems[1].event.data).is.equalTo(events.registered.janeDoe.data);
+		assert.equal(readItems.length, 2);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/registered');
+		assert.equal(readItems[0].event.type, events.registered.johnDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.registered.johnDoe.data);
+
+		assert.equal(readItems[1].event.source, testSource);
+		assert.equal(readItems[1].event.subject, '/users/registered');
+		assert.equal(readItems[1].event.type, events.registered.janeDoe.type);
+		assert.deepEqual(readItems[1].event.data, events.registered.janeDoe.data);
 	});
 
 	test('reads events starting from the latest event matching the given event name.', async (): Promise<void> => {
@@ -177,11 +180,12 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(1);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/loggedIn');
-		assert.that(readItems[0].event.type).is.equalTo(events.loggedIn.johnDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.loggedIn.johnDoe.data);
+		assert.equal(readItems.length, 1);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/loggedIn');
+		assert.equal(readItems[0].event.type, events.loggedIn.johnDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.loggedIn.johnDoe.data);
 	});
 
 	test('reads events starting from the lower bound ID.', async (): Promise<void> => {
@@ -195,15 +199,17 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(2);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[0].event.type).is.equalTo(events.registered.johnDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.registered.johnDoe.data);
-		assert.that(readItems[1].event.source).is.equalTo(testSource);
-		assert.that(readItems[1].event.subject).is.equalTo('/users/loggedIn');
-		assert.that(readItems[1].event.type).is.equalTo(events.loggedIn.johnDoe.type);
-		assert.that(readItems[1].event.data).is.equalTo(events.loggedIn.johnDoe.data);
+		assert.equal(readItems.length, 2);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/registered');
+		assert.equal(readItems[0].event.type, events.registered.johnDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.registered.johnDoe.data);
+
+		assert.equal(readItems[1].event.source, testSource);
+		assert.equal(readItems[1].event.subject, '/users/loggedIn');
+		assert.equal(readItems[1].event.type, events.loggedIn.johnDoe.type);
+		assert.deepEqual(readItems[1].event.data, events.loggedIn.johnDoe.data);
 	});
 
 	test('reads events up to the upper bound ID.', async (): Promise<void> => {
@@ -217,15 +223,17 @@ suite('Client.readEvents()', function () {
 			readItems.push(item);
 		}
 
-		assert.that(readItems.length).is.equalTo(2);
-		assert.that(readItems[0].event.source).is.equalTo(testSource);
-		assert.that(readItems[0].event.subject).is.equalTo('/users/registered');
-		assert.that(readItems[0].event.type).is.equalTo(events.registered.janeDoe.type);
-		assert.that(readItems[0].event.data).is.equalTo(events.registered.janeDoe.data);
-		assert.that(readItems[1].event.source).is.equalTo(testSource);
-		assert.that(readItems[1].event.subject).is.equalTo('/users/loggedIn');
-		assert.that(readItems[1].event.type).is.equalTo(events.loggedIn.janeDoe.type);
-		assert.that(readItems[1].event.data).is.equalTo(events.loggedIn.janeDoe.data);
+		assert.equal(readItems.length, 2);
+
+		assert.equal(readItems[0].event.source, testSource);
+		assert.equal(readItems[0].event.subject, '/users/registered');
+		assert.equal(readItems[0].event.type, events.registered.janeDoe.type);
+		assert.deepEqual(readItems[0].event.data, events.registered.janeDoe.data);
+
+		assert.equal(readItems[1].event.source, testSource);
+		assert.equal(readItems[1].event.subject, '/users/loggedIn');
+		assert.equal(readItems[1].event.type, events.loggedIn.janeDoe.type);
+		assert.deepEqual(readItems[1].event.data, events.loggedIn.janeDoe.data);
 	});
 
 	test('throws an error when the AbortController is aborted.', async (): Promise<void> => {
@@ -234,13 +242,17 @@ suite('Client.readEvents()', function () {
 			recursive: true,
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					abortController.abort();
 				}
-			})
-			.is.throwingAsync((error): boolean => error instanceof CancelationError);
+			},
+			error => {
+				assert.ok(error instanceof CancelationError);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if mutually exclusive options are used.', async (): Promise<void> => {
@@ -254,15 +266,17 @@ suite('Client.readEvents()', function () {
 			lowerBoundId: '2',
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
-			);
+			},
+			{
+				message:
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId and fromLatestEvent are mutually exclusive.",
+			},
+		);
 	});
 
 	test('throws an error if the subject is invalid.', async (): Promise<void> => {
@@ -270,18 +284,21 @@ suite('Client.readEvents()', function () {
 			recursive: true,
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'subject' is invalid: Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'subject' is invalid: Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if the given lowerBoundID does not contain an integer.', async (): Promise<void> => {
@@ -290,18 +307,21 @@ suite('Client.readEvents()', function () {
 			lowerBoundId: 'invalid',
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if the given lowerBoundID contains an integer that is negative.', async (): Promise<void> => {
@@ -310,18 +330,21 @@ suite('Client.readEvents()', function () {
 			lowerBoundId: '-1',
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: lowerBoundId must be 0 or greater.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if the given upperBoundID does not contain an integer.', async (): Promise<void> => {
@@ -330,18 +353,21 @@ suite('Client.readEvents()', function () {
 			upperBoundId: 'invalid',
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if the given upperBoundID contains an integer that is negative.', async (): Promise<void> => {
@@ -350,18 +376,21 @@ suite('Client.readEvents()', function () {
 			upperBoundId: '-1',
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: upperBoundId must be 0 or greater.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if an incorrect subject is used in ReadFromLatestEvent.', async (): Promise<void> => {
@@ -374,18 +403,21 @@ suite('Client.readEvents()', function () {
 			},
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate subject: 'invalid' must be an absolute, slash-separated path.",
+				);
+				return true;
+			},
+		);
 	});
 
 	test('throws an error if an incorrect type is used in ReadFromLatestEvent.', async (): Promise<void> => {
@@ -398,24 +430,27 @@ suite('Client.readEvents()', function () {
 			},
 		});
 
-		await assert
-			.that(async () => {
+		await assert.rejects(
+			async () => {
 				for await (const _item of result) {
 					// Intentionally left blank.
 				}
-			})
-			.is.throwingAsync(
-				error =>
-					error instanceof InvalidParameterError &&
-					error.message ===
-						"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate type: 'invalid' must be a reverse domain name.",
-			);
+			},
+			error => {
+				assert.ok(error instanceof InvalidParameterError);
+				assert.equal(
+					error.message,
+					"Parameter 'options' is invalid: ReadEventsOptions are invalid: Failed to validate 'fromLatestEvent': Failed to validate type: 'invalid' must be a reverse domain name.",
+				);
+				return true;
+			},
+		);
 	});
 
 	suite('using a mock server', () => {
 		let stopServer: () => Promise<void>;
 
-		teardown(async () => {
+		afterEach(async () => {
 			await stopServer();
 		});
 
@@ -437,20 +472,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed operation with 2 errors:\n' +
-								"Error: Server error occurred: Request failed with status code '502'.\n" +
-								"Error: Server error occurred: Request failed with status code '502'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						"Server error occurred: Request failed with status code '502'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws an error if the server's protocol version does not match.", async (): Promise<void> => {
@@ -472,18 +508,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message ===
-							"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Protocol version mismatch, server '0.0.0', client '1.0.0.'",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a client error if the server returns a 4xx status code.', async (): Promise<void> => {
@@ -504,17 +543,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ClientError &&
-						error.message === "Client error occurred: Request failed with status code '418'.",
-				);
+				},
+				error => {
+					assert.ok(error instanceof ClientError);
+					assert.equal(
+						error.message,
+						"Client error occurred: Request failed with status code '418'.",
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a server error if the server returns a non 200, 5xx or 4xx status code.', async (): Promise<void> => {
@@ -535,17 +578,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Unexpected response status: 202 Accepted.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Unexpected response status: 202 Accepted.',
+					);
+					return true;
+				},
+			);
 		});
 
 		test("throws a server error if the server sends a stream item that can't be unmarshalled.", async (): Promise<void> => {
@@ -565,17 +612,18 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: Failed to read response.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(error.message, 'Server error occurred: Failed to read response.');
+					return true;
+				},
+			);
 		});
 
 		test('throws a server error if the server sends a stream item with unsupported type.', async (): Promise<void> => {
@@ -595,18 +643,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":":clown:"}\'.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":":clown:"}\'.',
+					);
+					return true;
+				},
+			);
 		});
 
 		test('throws a server error if the server sends a an error item through the ndjson stream.', async (): Promise<void> => {
@@ -626,17 +677,18 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message === 'Server error occurred: not enough JUICE 😩.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(error.message, 'Server error occurred: not enough JUICE 😩.');
+					return true;
+				},
+			);
 		});
 
 		test("throws a server error if the server sends a an error item through the ndjson stream, but the error can't be unmarshalled.", async (): Promise<void> => {
@@ -656,18 +708,21 @@ suite('Client.readEvents()', function () {
 				},
 			});
 
-			await assert
-				.that(async () => {
+			await assert.rejects(
+				async () => {
 					for await (const _item of result) {
 						// Intentionally left blank.
 					}
-				})
-				.is.throwingAsync(
-					error =>
-						error instanceof ServerError &&
-						error.message ===
-							'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
-				);
+				},
+				error => {
+					assert.ok(error instanceof ServerError);
+					assert.equal(
+						error.message,
+						'Server error occurred: Failed to read events, an unexpected stream item was received: \'{"type":"error","payload":42}\'.',
+					);
+					return true;
+				},
+			);
 		});
 	});
 });

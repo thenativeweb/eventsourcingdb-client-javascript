@@ -1,10 +1,11 @@
-import { assert } from 'assertthat';
+import assert from 'node:assert/strict';
+import { suite, test } from 'node:test';
 import { Event } from '../../../lib/index.js';
 import { events } from '../../shared/events/events.js';
 import { testSource } from '../../shared/events/source.js';
 
 suite('Event', () => {
-	suite('.parse()', () => {
+	suite('parse', () => {
 		test('returns an Event for a valid object.', () => {
 			const toParse = {
 				source: testSource,
@@ -18,11 +19,8 @@ suite('Event', () => {
 				data: { someKey: 'some-data' },
 			};
 
-			assert
-				.that(() => {
-					Event.parse(toParse);
-				})
-				.is.not.throwing();
+			// Should not throw.
+			Event.parse(toParse);
 		});
 
 		test('throws an error for missing data.', () => {
@@ -37,11 +35,14 @@ suite('Event', () => {
 				predecessorhash: 'some-predecessor-hash',
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					Event.parse(toParse);
-				})
-				.is.throwing("Failed to parse data 'undefined' to object.");
+				},
+				{
+					message: "Failed to parse data 'undefined' to object.",
+				},
+			);
 		});
 
 		test('throws an error for invalid data.', () => {
@@ -57,11 +58,14 @@ suite('Event', () => {
 				data: 42,
 			};
 
-			assert
-				.that(() => {
+			assert.throws(
+				() => {
 					Event.parse(toParse);
-				})
-				.is.throwing("Failed to parse data '42' to object.");
+				},
+				{
+					message: "Failed to parse data '42' to object.",
+				},
+			);
 		});
 	});
 });
