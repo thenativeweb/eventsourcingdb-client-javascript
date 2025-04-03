@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { validateSubject } from '../../../lib/event/validateSubject.js';
-import { ValidationError } from '../../../lib/util/error/ValidationError.js';
+import { validateSubject } from '../../../src/event/validateSubject.js';
+import { ValidationError } from '../../../src/util/error/ValidationError.js';
 
 suite('validateSubject', () => {
 	test('returns without throwing on a valid subject.', () => {

@@ -1,5 +1,5 @@
 .github/
-lib/
+src/
 test/
 .gitignore
 .npmignore

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { StatusCodes } from 'http-status-codes';
-import type { Client } from '../../lib/index.js';
-import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Client } from '../../src/index.js';
+import { ServerError } from '../../src/util/error/ServerError.js';
 import type { Database } from '../shared/Database.js';
 import { buildDatabase } from '../shared/buildDatabase.js';
 import { startDatabase } from '../shared/startDatabase.js';

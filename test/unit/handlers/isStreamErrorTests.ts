@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { isStreamError } from '../../../lib/handlers/isStreamError.js';
+import { isStreamError } from '../../../src/handlers/isStreamError.js';
 
 suite('isStreamError', () => {
 	test('returns true for a error object.', () => {

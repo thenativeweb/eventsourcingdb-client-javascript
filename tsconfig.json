@@ -5,11 +5,11 @@
 		"esModuleInterop": true,
 		"lib": ["ES2022"],
 		"module": "CommonJS",
-		"outDir": "build",
+		"outDir": "dist",
 		"resolveJsonModule": true,
 		"strict": true,
 		"target": "ES2022"
 	},
-	"include": ["./**/*.ts"],
-	"exclude": ["./build"]
+	"include": ["./src/**/*.ts"],
+	"exclude": ["./dist"]
 }

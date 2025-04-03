@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { isObject } from '../../../lib/util/isObject.js';
+import { isObject } from '../../../src/util/isObject.js';
 
 suite('isObject', (): void => {
 	test('returns false if the given value is not an object.', (): void => {

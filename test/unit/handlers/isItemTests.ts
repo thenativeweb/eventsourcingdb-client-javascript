@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { isItem } from '../../../lib/handlers/isItem.js';
+import { isItem } from '../../../src/handlers/isItem.js';
 
 suite('isItem', () => {
 	test('returns true for a item object.', () => {

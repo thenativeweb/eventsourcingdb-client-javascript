@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import type { EventType } from '../../lib/handlers/readEventTypes/EventType.js';
-import { EventCandidate } from '../../lib/index.js';
+import type { EventType } from '../../src/handlers/readEventTypes/EventType.js';
+import { EventCandidate } from '../../src/index.js';
 import type { Database } from '../shared/Database.js';
 import { buildDatabase } from '../shared/buildDatabase.js';
 import { testSource } from '../shared/events/source.js';

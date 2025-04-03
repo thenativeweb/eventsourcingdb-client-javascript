@@ -3,7 +3,7 @@ coverage/
 node_modules/
 
 # Build artefacts
-build/
+dist/
 
 # OS generated files and folders
 .DS_Store

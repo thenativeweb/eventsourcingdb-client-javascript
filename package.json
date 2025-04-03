@@ -1,58 +1,48 @@
 {
-  "name": "@thenativeweb/eventsourcingdb",
-  "version": "0.8.0",
-  "description": "eventsourcingdb is the JavaScript client for EventSourcingDB.",
-  "contributors": [
-    {
-      "name": "Golo Roden",
-      "email": "golo.roden@thenativeweb.io"
-    },
-    {
-      "name": "Noah Hummel",
-      "email": "noah.hummel@thenativeweb.io"
-    },
-    {
-      "name": "Alexander Kampf",
-      "email": "alexander.kampf@thenativeweb.io"
-    }
-  ],
-  "exports": {
-    ".": {
-      "import": "./build/index.mjs",
-      "require": "./build/index.js"
-    }
-  },
-  "types": "build/index.d.ts",
-  "dependencies": {
-    "axios": "1.8.4",
-    "http-status-codes": "2.3.0",
-    "stream-to-async-iterator": "1.0.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/express": "5.0.1",
-    "@types/node": "22.13.14",
-    "@types/shelljs": "0.8.15",
-    "express": "4.21.2",
-    "shelljs": "0.9.2",
-    "tsup": "8.4.0",
-    "tsx": "4.19.3",
-    "typescript": "5.8.2"
-  },
-  "scripts": {
-    "analyze": "npx biome check ./**/*",
-    "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./build/ lib/index.ts",
-    "format": "npx biome format --write ./**/*",
-    "qa": "npm run analyze && npm run test",
-    "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "node --test --import tsx \"./test/unit/**/*.ts\"",
-    "test:integration": "node --test --import tsx \"./test/integration/**/*.ts\""
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/thenativeweb/eventsourcingdb-client-javascript.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/thenativeweb"
-  }
+	"name": "eventsourcingdb",
+	"version": "0.8.0",
+	"description": "eventsourcingdb is the official client for EventSourcingDB.",
+	"contributors": [
+		{
+			"name": "the native web GmbH",
+			"email": "hello@thenativeweb.io"
+		}
+	],
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		}
+	},
+	"types": "./dist/index.d.ts",
+	"dependencies": {
+		"axios": "1.8.4",
+		"http-status-codes": "2.3.0",
+		"stream-to-async-iterator": "1.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/express": "5.0.1",
+		"@types/node": "22.14.0",
+		"@types/shelljs": "0.8.15",
+		"express": "5.1.0",
+		"shelljs": "0.9.2",
+		"tsup": "8.4.0",
+		"tsx": "4.19.3",
+		"typescript": "5.8.2"
+	},
+	"scripts": {
+		"analyze": "npx biome check .",
+		"build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
+		"format": "npx biome format --write .",
+		"qa": "npm run analyze && npm run test",
+		"test": "npm run test:unit && npm run test:integration",
+		"test:unit": "node --test --import tsx \"./test/unit/**/*.ts\"",
+		"test:integration": "node --test --import tsx \"./test/integration/**/*.ts\""
+	},
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/thenativeweb/eventsourcingdb-client-javascript.git"
+	},
+	"license": "MIT"
 }

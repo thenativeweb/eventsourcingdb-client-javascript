@@ -1,4 +1,4 @@
-import type { Client } from '../../lib/index.js';
+import type { Client } from '../../src/index.js';
 
 class TestingDatabase {
 	public readonly client: Client;

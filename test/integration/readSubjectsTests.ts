@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
-import type { Client } from '../../lib/index.js';
-import { CancelationError, EventCandidate } from '../../lib/index.js';
-import { ClientError } from '../../lib/util/error/ClientError.js';
-import { ServerError } from '../../lib/util/error/ServerError.js';
+import type { Client } from '../../src/index.js';
+import { CancelationError, EventCandidate } from '../../src/index.js';
+import { ClientError } from '../../src/util/error/ClientError.js';
+import { ServerError } from '../../src/util/error/ServerError.js';
 import type { Database } from '../shared/Database.js';
 import { buildDatabase } from '../shared/buildDatabase.js';
 import { events } from '../shared/events/events.js';
