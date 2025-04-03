@@ -1,75 +1,279 @@
-import type { ClientConfiguration } from './ClientConfiguration.js';
-import type { ClientOptions } from './ClientOptions.js';
-import type { EventCandidate } from './event/EventCandidate.js';
-import type { EventContext } from './event/EventContext.js';
-import { getDefaultClientConfiguration } from './getDefaultClientConfiguration.js';
-import type { StoreItem } from './handlers/StoreItem.js';
-import type { ObserveEventsOptions } from './handlers/observeEvents/ObserveEventsOptions.js';
-import { observeEvents } from './handlers/observeEvents/observeEvents.js';
-import { ping } from './handlers/ping/ping.js';
-import type { EventType } from './handlers/readEventTypes/EventType.js';
-import { readEventTypes } from './handlers/readEventTypes/readEventTypes.js';
-import type { ReadEventsOptions } from './handlers/readEvents/ReadEventsOptions.js';
-import { readEvents } from './handlers/readEvents/readEvents.js';
-import type { ReadSubjectsOptions } from './handlers/readSubjects/ReadSubjectsOptions.js';
-import { readSubjects } from './handlers/readSubjects/readSubjects.js';
-import { registerEventSchema } from './handlers/registerEventSchema/registerEventSchema.js';
-import type { Precondition } from './handlers/writeEvents/Precondition.js';
-import { writeEvents } from './handlers/writeEvents/writeEvents.js';
-import { HttpClient } from './http/HttpClient.js';
+import axios from 'axios';
+import type { Event } from './Event.js';
+import type { EventCandidate } from './EventCandidate.js';
+import type { EventType } from './EventType.js';
+import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
+import type { Precondition } from './Precondition.js';
+import type { ReadEventsOptions } from './ReadEventsOptions.js';
+import { convertCloudEventToEvent } from './convertCloudEventToEvent.js';
+import { isCloudEvent } from './isCloudEvent.js';
+import { readNdJsonStream } from './ndjson/readNdJsonStream.js';
+import { isStreamCloudEvent } from './stream/isStreamCloudEvent.js';
+import { isStreamError } from './stream/isStreamError.js';
+import { isStreamEventType } from './stream/isStreamEventType.js';
+import { isStreamHeartbeat } from './stream/isStreamHeartbeat.js';
+import { isStreamSubject } from './stream/isStreamSubject.js';
 
 class Client {
-	public readonly configuration: ClientConfiguration;
-	public readonly httpClient: HttpClient;
+	#url: URL;
+	#apiToken: string;
 
-	public constructor(baseUrl: string, options: ClientOptions) {
-		this.configuration = {
-			...getDefaultClientConfiguration(baseUrl),
-			...options,
-		};
-		this.httpClient = new HttpClient(this);
+	#getUrl(path: string): string {
+		return new URL(path, this.#url).toString();
 	}
 
-	public observeEvents(
-		abortController: AbortController,
-		subject: string,
-		options: ObserveEventsOptions,
-	): AsyncGenerator<StoreItem, void, void> {
-		return observeEvents(this, abortController, subject, options);
+	public constructor(url: URL, apiToken: string) {
+		this.#url = url;
+		this.#apiToken = apiToken;
 	}
 
 	public async ping(): Promise<void> {
-		await ping(this);
+		const url = this.#getUrl('/api/v1/ping');
+
+		const response = await axios({
+			url,
+			method: 'get',
+			responseType: 'json',
+		});
+
+		const eventType = 'io.eventsourcingdb.ping-received';
+
+		if (response.data.type !== eventType) {
+			throw new Error('Failed to ping.');
+		}
 	}
 
-	public readEvents(
-		abortController: AbortController,
-		subject: string,
-		options: ReadEventsOptions,
-	): AsyncGenerator<StoreItem, void, void> {
-		return readEvents(this, abortController, subject, options);
-	}
+	public async verifyApiToken(): Promise<void> {
+		const url = this.#getUrl('/api/v1/verify-api-token');
 
-	public readEventTypes(abortController: AbortController): AsyncGenerator<EventType, void, void> {
-		return readEventTypes(this, abortController);
-	}
+		const response = await axios({
+			url,
+			method: 'post',
+			headers: {
+				authorization: `Bearer ${this.#apiToken}`,
+			},
+			responseType: 'json',
+		});
 
-	public readSubjects(
-		abortController: AbortController,
-		options: ReadSubjectsOptions,
-	): AsyncGenerator<string, void, void> {
-		return readSubjects(this, abortController, options);
-	}
+		const eventType = 'io.eventsourcingdb.api-token-verified';
 
-	public async registerEventSchema(eventType: string, schema: string | object): Promise<void> {
-		return await registerEventSchema(this, eventType, schema);
+		if (response.data.type !== eventType) {
+			throw new Error('Failed to verify API token.');
+		}
 	}
 
 	public async writeEvents(
-		eventCandidates: EventCandidate[],
+		events: EventCandidate[],
 		preconditions: Precondition[] = [],
-	): Promise<EventContext[]> {
-		return await writeEvents(this, eventCandidates, preconditions);
+	): Promise<Event[]> {
+		const url = this.#getUrl('/api/v1/write-events');
+
+		const response = await axios({
+			url,
+			method: 'post',
+			headers: {
+				authorization: `Bearer ${this.#apiToken}`,
+				'content-type': 'application/json',
+			},
+			data: {
+				events,
+				preconditions,
+			},
+			responseType: 'json',
+		});
+
+		const responseBody = response.data;
+
+		if (!Array.isArray(responseBody)) {
+			throw new Error('Failed to parse response.');
+		}
+
+		const writtenEvents = responseBody.map(item => {
+			if (!isCloudEvent(item)) {
+				throw new Error('Failed to parse response item.');
+			}
+
+			const event = convertCloudEventToEvent(item);
+			return event;
+		});
+
+		return writtenEvents;
+	}
+
+	public readEvents(
+		subject: string,
+		options: ReadEventsOptions,
+		abortController: AbortController,
+	): AsyncGenerator<Event, void, void> {
+		const url = this.#getUrl('/api/v1/read-events');
+		const apiToken = this.#apiToken;
+
+		return (async function* () {
+			const response = await axios({
+				url,
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${apiToken}`,
+					'content-type': 'application/json',
+				},
+				data: {
+					subject,
+					options,
+				},
+				responseType: 'stream',
+				signal: abortController.signal,
+			});
+
+			for await (const line of readNdJsonStream(response.data)) {
+				if (isStreamHeartbeat(line)) {
+					continue;
+				}
+				if (isStreamError(line)) {
+					throw new Error(`${line.payload.error}.`);
+				}
+				if (isStreamCloudEvent(line)) {
+					const event = convertCloudEventToEvent(line.payload);
+					yield event;
+					continue;
+				}
+
+				throw new Error('Failed to read events.');
+			}
+		})();
+	}
+
+	public observeEvents(
+		subject: string,
+		options: ObserveEventsOptions,
+		abortController: AbortController,
+	): AsyncGenerator<Event, void, void> {
+		const url = this.#getUrl('/api/v1/observe-events');
+		const apiToken = this.#apiToken;
+
+		return (async function* () {
+			const response = await axios({
+				url,
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${apiToken}`,
+					'content-type': 'application/json',
+				},
+				data: {
+					subject,
+					options,
+				},
+				responseType: 'stream',
+				signal: abortController.signal,
+			});
+
+			for await (const line of readNdJsonStream(response.data)) {
+				if (isStreamHeartbeat(line)) {
+					continue;
+				}
+				if (isStreamError(line)) {
+					throw new Error(`${line.payload.error}.`);
+				}
+				if (isStreamCloudEvent(line)) {
+					const event = convertCloudEventToEvent(line.payload);
+					yield event;
+					continue;
+				}
+
+				throw new Error('Failed to observe events.');
+			}
+		})();
+	}
+
+	public async registerEventSchema(
+		eventType: string,
+		schema: Record<string, unknown>,
+	): Promise<void> {
+		const url = this.#getUrl('/api/v1/register-event-schema');
+
+		await axios({
+			url,
+			method: 'post',
+			headers: {
+				authorization: `Bearer ${this.#apiToken}`,
+				'content-type': 'application/json',
+			},
+			data: {
+				eventType,
+				schema: JSON.stringify(schema),
+			},
+			responseType: 'text',
+		});
+	}
+
+	public readSubjects(
+		baseSubject: string,
+		abortController: AbortController,
+	): AsyncGenerator<string, void, void> {
+		const url = this.#getUrl('/api/v1/read-subjects');
+		const apiToken = this.#apiToken;
+
+		return (async function* () {
+			const response = await axios({
+				url,
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${apiToken}`,
+					'content-type': 'application/json',
+				},
+				data: {
+					baseSubject,
+				},
+				responseType: 'stream',
+				signal: abortController.signal,
+			});
+
+			for await (const line of readNdJsonStream(response.data)) {
+				if (isStreamHeartbeat(line)) {
+					continue;
+				}
+				if (isStreamError(line)) {
+					throw new Error(`${line.payload.error}.`);
+				}
+				if (isStreamSubject(line)) {
+					yield line.payload.subject;
+					continue;
+				}
+
+				throw new Error('Failed to read subjects.');
+			}
+		})();
+	}
+
+	public readEventTypes(abortController: AbortController): AsyncGenerator<EventType, void, void> {
+		const url = this.#getUrl('/api/v1/read-event-types');
+		const apiToken = this.#apiToken;
+
+		return (async function* () {
+			const response = await axios({
+				url,
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${apiToken}`,
+				},
+				responseType: 'stream',
+				signal: abortController.signal,
+			});
+
+			for await (const line of readNdJsonStream(response.data)) {
+				if (isStreamHeartbeat(line)) {
+					continue;
+				}
+				if (isStreamError(line)) {
+					throw new Error(`${line.payload.error}.`);
+				}
+				if (isStreamEventType(line)) {
+					yield line.payload;
+					continue;
+				}
+
+				throw new Error('Failed to read event types.');
+			}
+		})();
 	}
 }
 
