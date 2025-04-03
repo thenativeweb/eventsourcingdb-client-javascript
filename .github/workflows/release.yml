@@ -53,4 +53,4 @@ jobs:
       if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.TOKEN_GITHUB_TO_NPM_RW }}" >> .npmrc
-        npm publish --dry-run
+        npm publish
