@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { EventContext } from '../../../lib/event/EventContext.js';
-import { ValidationError } from '../../../lib/util/error/ValidationError.js';
+import { EventContext } from '../../../src/event/EventContext.js';
+import { ValidationError } from '../../../src/util/error/ValidationError.js';
 import { events } from '../../shared/events/events.js';
 import { testSource } from '../../shared/events/source.js';
 

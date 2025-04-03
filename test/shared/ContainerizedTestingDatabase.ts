@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
-import type { ClientOptions } from '../../lib/ClientOptions.js';
-import { Client } from '../../lib/index.js';
+import type { ClientOptions } from '../../src/ClientOptions.js';
+import { Client } from '../../src/index.js';
 import type { Container } from './docker/Container.js';
 import type { Image } from './docker/Image.js';
 

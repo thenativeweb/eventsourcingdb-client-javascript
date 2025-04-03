@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { isHeartbeat } from '../../../lib/handlers/isHeartbeat.js';
+import { isHeartbeat } from '../../../src/handlers/isHeartbeat.js';
 
 suite('isHeartbeat', () => {
 	test('returns true for a heartbeat object.', () => {

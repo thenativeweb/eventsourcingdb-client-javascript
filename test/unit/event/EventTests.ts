@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { Event } from '../../../lib/index.js';
+import { Event } from '../../../src/index.js';
 import { events } from '../../shared/events/events.js';
 import { testSource } from '../../shared/events/source.js';
 

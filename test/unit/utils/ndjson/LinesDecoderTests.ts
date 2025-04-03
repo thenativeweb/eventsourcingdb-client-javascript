@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { LinesDecoder } from '../../../../lib/util/ndjson/LinesDecoder.js';
+import { LinesDecoder } from '../../../../src/util/ndjson/LinesDecoder.js';
 
 suite('LinesDecoder', (): void => {
 	test('returns all completed lines on write().', (): void => {

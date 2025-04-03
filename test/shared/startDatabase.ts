@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Client } from '../../lib/index.js';
+import { Client } from '../../src/index.js';
 import { ContainerizedTestingDatabase } from './ContainerizedTestingDatabase.js';
 import type { Database } from './Database.js';
 import { TestingDatabase } from './TestingDatabase.js';

@@ -1,6 +1,6 @@
 import type http from 'node:http';
 import express from 'express';
-import { Client } from '../../lib/index.js';
+import { Client } from '../../src/index.js';
 
 const startLocalHttpServer = async (
 	attachHandlers: (app: express.Express) => void,

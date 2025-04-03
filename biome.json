@@ -1,7 +1,7 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"ignore": ["build", "node_modules"]
+		"ignore": ["dist", "node_modules"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -37,15 +37,15 @@
 		"enabled": true,
 		"rules": {
 			"all": true,
-            "correctness": {
-                "noNodejsModules": "off"
-            },
+			"correctness": {
+				"noNodejsModules": "off"
+			},
 			"nursery": {
 				"useImportRestrictions": "off"
 			},
-            "style": {
-                "useFilenamingConvention": "off"
-            }
+			"style": {
+				"useFilenamingConvention": "off"
+			}
 		}
 	},
 	"organizeImports": {

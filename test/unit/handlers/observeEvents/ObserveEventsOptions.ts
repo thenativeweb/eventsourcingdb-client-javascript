@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
-import { validateObserveEventsOptions } from '../../../../lib/handlers/observeEvents/ObserveEventsOptions.js';
-import { ValidationError } from '../../../../lib/util/error/ValidationError.js';
+import { validateObserveEventsOptions } from '../../../../src/handlers/observeEvents/ObserveEventsOptions.js';
+import { ValidationError } from '../../../../src/util/error/ValidationError.js';
 
 suite('validateObserveEventOptions', () => {
 	test('returns for a valid options object.', () => {
