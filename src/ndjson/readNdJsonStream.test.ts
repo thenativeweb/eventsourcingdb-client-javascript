@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { suite, test } from 'node:test';
-import { readNdJsonStream } from '../../../src/ndjson/readNdJsonStream.js';
+import { readNdJsonStream } from './readNdJsonStream.js';
 
 suite('readNdJsonStream', (): void => {
 	test('returns an async generator that yields parsed json objects.', async (): Promise<void> => {

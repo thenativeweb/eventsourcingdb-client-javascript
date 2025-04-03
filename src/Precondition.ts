@@ -17,19 +17,4 @@ type Precondition =
 			payload: IsSubjectOnEventIdPrecondition;
 	  };
 
-const isSubjectPristine = (subject: string): Precondition => {
-	return {
-		type: 'isSubjectPristine',
-		payload: { subject },
-	};
-};
-
-const isSubjectOnEventId = (subject: string, eventId: string): Precondition => {
-	return {
-		type: 'isSubjectOnEventId',
-		payload: { subject, eventId },
-	};
-};
-
 export type { Precondition };
-export { isSubjectPristine, isSubjectOnEventId };
