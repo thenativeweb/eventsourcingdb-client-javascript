@@ -44,5 +44,14 @@
 		"type": "git",
 		"url": "git://github.com/thenativeweb/eventsourcingdb-client-javascript.git"
 	},
-	"license": "MIT"
+	"license": "MIT",
+  "keywords": [
+    "eventsourcingdb",
+    "esdb",
+    "event",
+    "events",
+    "event sourcing",
+    "event store",
+    "cqrs"
+  ]
 }
