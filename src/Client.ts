@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
@@ -174,22 +173,29 @@ class Client {
 		const apiToken = this.#apiToken;
 
 		return (async function* () {
-			const response = await axios({
-				url,
+			const response = await fetch(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${apiToken}`,
 					'content-type': 'application/json',
 				},
-				data: {
+				body: JSON.stringify({
 					subject,
 					options,
-				},
-				responseType: 'stream',
+				}),
 				signal: abortController.signal,
 			});
 
-			for await (const line of readNdJsonStream(response.data)) {
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to observe events, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+			if (!response.body) {
+				throw new Error('Failed to observe events.');
+			}
+
+			for await (const line of readNdJsonStream(response.body)) {
 				if (isStreamHeartbeat(line)) {
 					continue;
 				}
@@ -212,20 +218,23 @@ class Client {
 		schema: Record<string, unknown>,
 	): Promise<void> {
 		const url = this.#getUrl('/api/v1/register-event-schema');
-
-		await axios({
-			url,
+		const response = await fetch(url, {
 			method: 'post',
 			headers: {
 				authorization: `Bearer ${this.#apiToken}`,
 				'content-type': 'application/json',
 			},
-			data: {
+			body: JSON.stringify({
 				eventType,
-				schema: JSON.stringify(schema),
-			},
-			responseType: 'text',
+				schema,
+			}),
 		});
+
+		if (response.status !== 200) {
+			throw new Error(
+				`Failed to register event schema, got HTTP status code '${response.status}', expected '200'.`,
+			);
+		}
 	}
 
 	public readSubjects(
@@ -236,21 +245,28 @@ class Client {
 		const apiToken = this.#apiToken;
 
 		return (async function* () {
-			const response = await axios({
-				url,
+			const response = await fetch(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${apiToken}`,
 					'content-type': 'application/json',
 				},
-				data: {
+				body: JSON.stringify({
 					baseSubject,
-				},
-				responseType: 'stream',
+				}),
 				signal: abortController.signal,
 			});
 
-			for await (const line of readNdJsonStream(response.data)) {
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to read subjects, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+			if (!response.body) {
+				throw new Error('Failed to read subjects.');
+			}
+
+			for await (const line of readNdJsonStream(response.body)) {
 				if (isStreamHeartbeat(line)) {
 					continue;
 				}
@@ -272,17 +288,24 @@ class Client {
 		const apiToken = this.#apiToken;
 
 		return (async function* () {
-			const response = await axios({
-				url,
+			const response = await fetch(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${apiToken}`,
 				},
-				responseType: 'stream',
 				signal: abortController.signal,
 			});
 
-			for await (const line of readNdJsonStream(response.data)) {
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to read event types, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+			if (!response.body) {
+				throw new Error('Failed to read event types.');
+			}
+
+			for await (const line of readNdJsonStream(response.body)) {
 				if (isStreamHeartbeat(line)) {
 					continue;
 				}

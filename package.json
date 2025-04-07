@@ -13,9 +13,6 @@
 		}
 	},
 	"types": "./dist/index.d.ts",
-	"dependencies": {
-		"axios": "1.8.4"
-	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/node": "22.14.0",
