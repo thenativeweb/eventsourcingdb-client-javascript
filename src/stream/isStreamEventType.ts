@@ -1,5 +1,6 @@
 import type { StreamEventType } from './StreamEventType.js';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This function is long, but the complexity is unfortunately needed.
 const isStreamEventType = (line: unknown): line is StreamEventType => {
 	if (typeof line !== 'object') {
 		return false;

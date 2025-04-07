@@ -20,15 +20,13 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/node": "22.14.0",
-		"@types/shelljs": "0.8.15",
 		"get-port": "7.1.0",
-		"shelljs": "0.9.2",
 		"tsup": "8.4.0",
 		"tsx": "4.19.3",
 		"typescript": "5.8.3"
 	},
 	"scripts": {
-		"analyze": "npx biome check .",
+		"analyze": "npx biome check --error-on-warnings .",
 		"build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
 		"format": "npx biome format --write .",
 		"qa": "npm run analyze && npm run test",

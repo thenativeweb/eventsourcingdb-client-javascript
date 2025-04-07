@@ -1,6 +1,6 @@
+import { execSync } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 import getPort from 'get-port';
-import { exec } from 'shelljs';
 import { Client } from '../../src/Client.js';
 
 const imageName = 'thenativeweb/eventsourcingdb-test:latest';
@@ -27,16 +27,7 @@ class EventSourcingDb {
 	public static build(): void {
 		const cmd = `docker build -t ${imageName} .`;
 
-		const result = exec(cmd, {
-			cwd: __dirname,
-			async: false,
-		});
-
-		if (result.code !== 0) {
-			throw new Error(
-				`Failed to build Docker image, code: ${result.code}, stdout: ${result.stdout}, stderr: ${result.stderr}`,
-			);
-		}
+		execSync(cmd, { cwd: __dirname });
 	}
 
 	public static async run(): Promise<EventSourcingDb> {
@@ -45,18 +36,8 @@ class EventSourcingDb {
 
 		const cmd = `docker run --detach --init --publish ${port}:3000 ${imageName} run --api-token ${apiToken} --data-directory-temporary --http-enabled --https-enabled=false`;
 
-		const result = exec(cmd, {
-			cwd: __dirname,
-			async: false,
-		});
-
-		if (result.code !== 0) {
-			throw new Error(
-				`Failed to run Docker container, code: ${result.code}, stdout: ${result.stdout}, stderr: ${result.stderr}`,
-			);
-		}
-
-		const id = result.stdout.trim();
+		const stdout = execSync(cmd, { cwd: __dirname });
+		const id = stdout.toString('utf8').trim();
 
 		const client = new Client(new URL(`http://localhost:${port}`), apiToken);
 
@@ -81,16 +62,7 @@ class EventSourcingDb {
 	public kill(): void {
 		const cmd = `docker kill ${this.#id}`;
 
-		const result = exec(cmd, {
-			cwd: __dirname,
-			async: false,
-		});
-
-		if (result.code !== 0) {
-			throw new Error(
-				`Failed to kill Docker container, code: ${result.code}, stdout: ${result.stdout}, stderr: ${result.stderr}`,
-			);
-		}
+		execSync(cmd, { cwd: __dirname });
 	}
 }
 

@@ -1,5 +1,6 @@
 import type { CloudEvent } from './CloudEvent.js';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This function is long, but the complexity is unfortunately needed.
 const isCloudEvent = (value: unknown): value is CloudEvent => {
 	if (typeof value !== 'object') {
 		return false;
