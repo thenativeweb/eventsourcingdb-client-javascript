@@ -118,48 +118,54 @@ class Client {
 	public readEvents(
 		subject: string,
 		options: ReadEventsOptions,
-		abortController: AbortController,
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/read-events');
 		const apiToken = this.#apiToken;
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const response = await fetch(url, {
-				method: 'post',
-				headers: {
-					authorization: `Bearer ${apiToken}`,
-					'content-type': 'application/json',
-				},
-				body: JSON.stringify({
-					subject,
-					options,
-				}),
-				signal: abortController.signal,
-			});
+			const abortController = new AbortController();
 
-			if (response.status !== 200) {
-				throw new Error(
-					`Failed to read events, got HTTP status code '${response.status}', expected '200'.`,
-				);
-			}
-			if (!response.body) {
-				throw new Error('Failed to read events.');
-			}
+			try {
+				const response = await fetch(url, {
+					method: 'post',
+					headers: {
+						authorization: `Bearer ${apiToken}`,
+						'content-type': 'application/json',
+					},
+					body: JSON.stringify({
+						subject,
+						options,
+					}),
+					signal: abortController.signal,
+				});
 
-			for await (const line of readNdJsonStream(response.body)) {
-				if (isStreamHeartbeat(line)) {
-					continue;
+				if (response.status !== 200) {
+					throw new Error(
+						`Failed to read events, got HTTP status code '${response.status}', expected '200'.`,
+					);
 				}
-				if (isStreamError(line)) {
-					throw new Error(`${line.payload.error}.`);
-				}
-				if (isStreamCloudEvent(line)) {
-					const event = convertCloudEventToEvent(line.payload);
-					yield event;
-					continue;
+				if (!response.body) {
+					throw new Error('Failed to read events.');
 				}
 
-				throw new Error('Failed to read events.');
+				for await (const line of readNdJsonStream(response.body)) {
+					if (isStreamHeartbeat(line)) {
+						continue;
+					}
+					if (isStreamError(line)) {
+						throw new Error(`${line.payload.error}.`);
+					}
+					if (isStreamCloudEvent(line)) {
+						const event = convertCloudEventToEvent(line.payload);
+						yield event;
+						continue;
+					}
+
+					throw new Error('Failed to read events.');
+				}
+			} finally {
+				abortController.abort();
 			}
 		})();
 	}
@@ -167,48 +173,54 @@ class Client {
 	public observeEvents(
 		subject: string,
 		options: ObserveEventsOptions,
-		abortController: AbortController,
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/observe-events');
 		const apiToken = this.#apiToken;
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const response = await fetch(url, {
-				method: 'post',
-				headers: {
-					authorization: `Bearer ${apiToken}`,
-					'content-type': 'application/json',
-				},
-				body: JSON.stringify({
-					subject,
-					options,
-				}),
-				signal: abortController.signal,
-			});
+			const abortController = new AbortController();
 
-			if (response.status !== 200) {
-				throw new Error(
-					`Failed to observe events, got HTTP status code '${response.status}', expected '200'.`,
-				);
-			}
-			if (!response.body) {
-				throw new Error('Failed to observe events.');
-			}
+			try {
+				const response = await fetch(url, {
+					method: 'post',
+					headers: {
+						authorization: `Bearer ${apiToken}`,
+						'content-type': 'application/json',
+					},
+					body: JSON.stringify({
+						subject,
+						options,
+					}),
+					signal: abortController.signal,
+				});
 
-			for await (const line of readNdJsonStream(response.body)) {
-				if (isStreamHeartbeat(line)) {
-					continue;
+				if (response.status !== 200) {
+					throw new Error(
+						`Failed to observe events, got HTTP status code '${response.status}', expected '200'.`,
+					);
 				}
-				if (isStreamError(line)) {
-					throw new Error(`${line.payload.error}.`);
-				}
-				if (isStreamCloudEvent(line)) {
-					const event = convertCloudEventToEvent(line.payload);
-					yield event;
-					continue;
+				if (!response.body) {
+					throw new Error('Failed to observe events.');
 				}
 
-				throw new Error('Failed to observe events.');
+				for await (const line of readNdJsonStream(response.body)) {
+					if (isStreamHeartbeat(line)) {
+						continue;
+					}
+					if (isStreamError(line)) {
+						throw new Error(`${line.payload.error}.`);
+					}
+					if (isStreamCloudEvent(line)) {
+						const event = convertCloudEventToEvent(line.payload);
+						yield event;
+						continue;
+					}
+
+					throw new Error('Failed to observe events.');
+				}
+			} finally {
+				abortController.abort();
 			}
 		})();
 	}
@@ -237,87 +249,98 @@ class Client {
 		}
 	}
 
-	public readSubjects(
-		baseSubject: string,
-		abortController: AbortController,
-	): AsyncGenerator<string, void, void> {
+	public readSubjects(baseSubject: string): AsyncGenerator<string, void, void> {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const response = await fetch(url, {
-				method: 'post',
-				headers: {
-					authorization: `Bearer ${apiToken}`,
-					'content-type': 'application/json',
-				},
-				body: JSON.stringify({
-					baseSubject,
-				}),
-				signal: abortController.signal,
-			});
+			const abortController = new AbortController();
 
-			if (response.status !== 200) {
-				throw new Error(
-					`Failed to read subjects, got HTTP status code '${response.status}', expected '200'.`,
-				);
-			}
-			if (!response.body) {
-				throw new Error('Failed to read subjects.');
-			}
+			try {
+				const response = await fetch(url, {
+					method: 'post',
+					headers: {
+						authorization: `Bearer ${apiToken}`,
+						'content-type': 'application/json',
+					},
+					body: JSON.stringify({
+						baseSubject,
+					}),
+					signal: abortController.signal,
+				});
 
-			for await (const line of readNdJsonStream(response.body)) {
-				if (isStreamHeartbeat(line)) {
-					continue;
+				if (response.status !== 200) {
+					throw new Error(
+						`Failed to read subjects, got HTTP status code '${response.status}', expected '200'.`,
+					);
 				}
-				if (isStreamError(line)) {
-					throw new Error(`${line.payload.error}.`);
-				}
-				if (isStreamSubject(line)) {
-					yield line.payload.subject;
-					continue;
+				if (!response.body) {
+					throw new Error('Failed to read subjects.');
 				}
 
-				throw new Error('Failed to read subjects.');
+				for await (const line of readNdJsonStream(response.body)) {
+					if (isStreamHeartbeat(line)) {
+						continue;
+					}
+					if (isStreamError(line)) {
+						throw new Error(`${line.payload.error}.`);
+					}
+					if (isStreamSubject(line)) {
+						yield line.payload.subject;
+						continue;
+					}
+
+					throw new Error('Failed to read subjects.');
+				}
+			} finally {
+				abortController.abort();
 			}
 		})();
 	}
 
-	public readEventTypes(abortController: AbortController): AsyncGenerator<EventType, void, void> {
+	public readEventTypes(): AsyncGenerator<EventType, void, void> {
 		const url = this.#getUrl('/api/v1/read-event-types');
 		const apiToken = this.#apiToken;
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const response = await fetch(url, {
-				method: 'post',
-				headers: {
-					authorization: `Bearer ${apiToken}`,
-				},
-				signal: abortController.signal,
-			});
+			const abortController = new AbortController();
 
-			if (response.status !== 200) {
-				throw new Error(
-					`Failed to read event types, got HTTP status code '${response.status}', expected '200'.`,
-				);
-			}
-			if (!response.body) {
-				throw new Error('Failed to read event types.');
-			}
+			try {
+				const response = await fetch(url, {
+					method: 'post',
+					headers: {
+						authorization: `Bearer ${apiToken}`,
+					},
+					signal: abortController.signal,
+				});
 
-			for await (const line of readNdJsonStream(response.body)) {
-				if (isStreamHeartbeat(line)) {
-					continue;
+				if (response.status !== 200) {
+					throw new Error(
+						`Failed to read event types, got HTTP status code '${response.status}', expected '200'.`,
+					);
 				}
-				if (isStreamError(line)) {
-					throw new Error(`${line.payload.error}.`);
-				}
-				if (isStreamEventType(line)) {
-					yield line.payload;
-					continue;
+				if (!response.body) {
+					throw new Error('Failed to read event types.');
 				}
 
-				throw new Error('Failed to read event types.');
+				for await (const line of readNdJsonStream(response.body)) {
+					if (isStreamHeartbeat(line)) {
+						continue;
+					}
+					if (isStreamError(line)) {
+						throw new Error(`${line.payload.error}.`);
+					}
+					if (isStreamEventType(line)) {
+						yield line.payload;
+						continue;
+					}
+
+					throw new Error('Failed to read event types.');
+				}
+			} finally {
+				abortController.abort();
 			}
 		})();
 	}

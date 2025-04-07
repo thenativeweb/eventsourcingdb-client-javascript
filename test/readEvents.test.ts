@@ -26,16 +26,10 @@ suite('readEvents', { timeout: 20_000 }, () => {
 			eventSourcingDb.apiToken,
 		);
 
-		const abortController = new AbortController();
-
 		let didReadEvents = false;
-		for await (const _event of client.readEvents(
-			'/',
-			{
-				recursive: true,
-			},
-			abortController,
-		)) {
+		for await (const _event of client.readEvents('/', {
+			recursive: true,
+		})) {
 			didReadEvents = true;
 		}
 
@@ -68,16 +62,10 @@ suite('readEvents', { timeout: 20_000 }, () => {
 
 		await client.writeEvents([firstEvent, secondEvent]);
 
-		const abortController = new AbortController();
-
 		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents(
-			'/test',
-			{
-				recursive: false,
-			},
-			abortController,
-		)) {
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+		})) {
 			eventsRead.push(event);
 		}
 
@@ -110,16 +98,10 @@ suite('readEvents', { timeout: 20_000 }, () => {
 
 		await client.writeEvents([firstEvent, secondEvent]);
 
-		const abortController = new AbortController();
-
 		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents(
-			'/',
-			{
-				recursive: true,
-			},
-			abortController,
-		)) {
+		for await (const event of client.readEvents('/', {
+			recursive: true,
+		})) {
 			eventsRead.push(event);
 		}
 
@@ -152,17 +134,11 @@ suite('readEvents', { timeout: 20_000 }, () => {
 
 		await client.writeEvents([firstEvent, secondEvent]);
 
-		const abortController = new AbortController();
-
 		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents(
-			'/test',
-			{
-				recursive: false,
-				lowerBound: { id: '1', type: 'inclusive' },
-			},
-			abortController,
-		)) {
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+			lowerBound: { id: '1', type: 'inclusive' },
+		})) {
 			eventsRead.push(event);
 		}
 
@@ -196,17 +172,11 @@ suite('readEvents', { timeout: 20_000 }, () => {
 
 		await client.writeEvents([firstEvent, secondEvent]);
 
-		const abortController = new AbortController();
-
 		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents(
-			'/test',
-			{
-				recursive: false,
-				upperBound: { id: '0', type: 'inclusive' },
-			},
-			abortController,
-		)) {
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+			upperBound: { id: '0', type: 'inclusive' },
+		})) {
 			eventsRead.push(event);
 		}
 
@@ -240,25 +210,57 @@ suite('readEvents', { timeout: 20_000 }, () => {
 
 		await client.writeEvents([firstEvent, secondEvent]);
 
-		const abortController = new AbortController();
-
 		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents(
-			'/test',
-			{
-				recursive: false,
-				fromLatestEvent: {
-					subject: '/test',
-					type: 'io.eventsourcingdb.test.bar',
-					ifEventIsMissing: 'read-everything',
-				},
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+			fromLatestEvent: {
+				subject: '/test',
+				type: 'io.eventsourcingdb.test.bar',
+				ifEventIsMissing: 'read-everything',
 			},
-			abortController,
-		)) {
+		})) {
 			eventsRead.push(event);
 		}
 
 		assert.equal(eventsRead.length, 1);
 		assert.equal(eventsRead[0].data.value, 42);
+	});
+
+	test('supports aborting reading.', async (): Promise<void> => {
+		const client = new Client(
+			new URL(`http://localhost:${eventSourcingDb.port}/`),
+			eventSourcingDb.apiToken,
+		);
+
+		const firstEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test.foo',
+			data: {
+				value: 23,
+			},
+		};
+
+		const secondEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test.bar',
+			data: {
+				value: 42,
+			},
+		};
+
+		await client.writeEvents([firstEvent, secondEvent]);
+
+		const eventsRead: Event[] = [];
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+		})) {
+			eventsRead.push(event);
+			break;
+		}
+
+		assert.equal(eventsRead.length, 1);
+		assert.equal(eventsRead[0].data.value, 23);
 	});
 });

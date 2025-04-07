@@ -16,7 +16,7 @@ const readNdJsonStream = async function* (
 		let index: number;
 		while (true) {
 			index = buffer.indexOf('\n');
-			if (index < 0) {
+			if (index === -1) {
 				break;
 			}
 
