@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { setTimeout } from 'node:timers/promises';
 import { Client } from '../src/Client.js';
 import type { Event } from '../src/Event.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
