@@ -1,7 +1,7 @@
 {
 	"name": "eventsourcingdb",
 	"version": "0.9.1",
-	"description": "eventsourcingdb is the official client for EventSourcingDB.",
+	"description": "The official JavaScript client for EventSourcingDB.",
 	"author": {
 		"name": "the native web GmbH",
 		"email": "hello@thenativeweb.io"
