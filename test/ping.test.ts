@@ -30,6 +30,7 @@ suite('ping', { timeout: 20_000 }, () => {
 			},
 			error => {
 				assert.ok(error instanceof Error);
+				assert.ok('code' in error);
 				assert.equal(error.code, 'ECONNREFUSED');
 				return true;
 			},

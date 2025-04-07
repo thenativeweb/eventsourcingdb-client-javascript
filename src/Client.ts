@@ -36,7 +36,7 @@ class Client {
 			responseType: 'json',
 		});
 
-		const eventType = 'io.eventsourcingdb.ping-received';
+		const eventType = 'io.eventsourcingdb.api.ping-received';
 
 		if (response.data.type !== eventType) {
 			throw new Error('Failed to ping.');
@@ -55,7 +55,7 @@ class Client {
 			responseType: 'json',
 		});
 
-		const eventType = 'io.eventsourcingdb.api-token-verified';
+		const eventType = 'io.eventsourcingdb.api.api-token-verified';
 
 		if (response.data.type !== eventType) {
 			throw new Error('Failed to verify API token.');
