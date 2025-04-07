@@ -1,24 +1,12 @@
+import { hasShapeOf } from '../types/hasShapeOf.js';
 import type { StreamHeartbeat } from './StreamHeartbeat.js';
 
+const blueprint: StreamHeartbeat = {
+	type: 'heartbeat',
+};
+
 const isStreamHeartbeat = (line: unknown): line is StreamHeartbeat => {
-	if (typeof line !== 'object') {
-		return false;
-	}
-	if (line === null) {
-		return false;
-	}
-	if (Array.isArray(line)) {
-		return false;
-	}
-
-	if (!('type' in line)) {
-		return false;
-	}
-	if (line.type !== 'heartbeat') {
-		return false;
-	}
-
-	return true;
+	return hasShapeOf(line, blueprint);
 };
 
 export { isStreamHeartbeat };

@@ -17,7 +17,7 @@ updates:
     prefix-development: chore
 
 - package-ecosystem: docker
-  directory: "/test/eventsourcingdb"
+  directory: "/test/docker"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10

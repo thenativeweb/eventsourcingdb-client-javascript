@@ -13,6 +13,7 @@ import { isStreamError } from './stream/isStreamError.js';
 import { isStreamEventType } from './stream/isStreamEventType.js';
 import { isStreamHeartbeat } from './stream/isStreamHeartbeat.js';
 import { isStreamSubject } from './stream/isStreamSubject.js';
+import { hasShapeOf } from './types/hasShapeOf.js';
 
 class Client {
 	#url: URL;
@@ -29,35 +30,47 @@ class Client {
 
 	public async ping(): Promise<void> {
 		const url = this.#getUrl('/api/v1/ping');
-
-		const response = await axios({
-			url,
+		const response = await fetch(url, {
 			method: 'get',
-			responseType: 'json',
 		});
 
-		const eventType = 'io.eventsourcingdb.api.ping-received';
+		if (response.status !== 200) {
+			throw new Error(`Failed to ping, got HTTP status code '${response.status}', expected '200'.`);
+		}
 
-		if (response.data.type !== eventType) {
+		const responseBody = await response.json();
+		if (!hasShapeOf(responseBody, { type: 'string' })) {
+			throw new Error('Failed to parse response.');
+		}
+
+		const eventType = 'io.eventsourcingdb.api.ping-received';
+		if (responseBody.type !== eventType) {
 			throw new Error('Failed to ping.');
 		}
 	}
 
 	public async verifyApiToken(): Promise<void> {
 		const url = this.#getUrl('/api/v1/verify-api-token');
-
-		const response = await axios({
-			url,
+		const response = await fetch(url, {
 			method: 'post',
 			headers: {
 				authorization: `Bearer ${this.#apiToken}`,
 			},
-			responseType: 'json',
 		});
 
-		const eventType = 'io.eventsourcingdb.api.api-token-verified';
+		if (response.status !== 200) {
+			throw new Error(
+				`Failed to verify API token, got HTTP status code '${response.status}', expected '200'.`,
+			);
+		}
 
-		if (response.data.type !== eventType) {
+		const responseBody = await response.json();
+		if (!hasShapeOf(responseBody, { type: 'string' })) {
+			throw new Error('Failed to parse response.');
+		}
+
+		const eventType = 'io.eventsourcingdb.api.api-token-verified';
+		if (responseBody.type !== eventType) {
 			throw new Error('Failed to verify API token.');
 		}
 	}
@@ -67,22 +80,25 @@ class Client {
 		preconditions: Precondition[] = [],
 	): Promise<Event[]> {
 		const url = this.#getUrl('/api/v1/write-events');
-
-		const response = await axios({
-			url,
+		const response = await fetch(url, {
 			method: 'post',
 			headers: {
 				authorization: `Bearer ${this.#apiToken}`,
 				'content-type': 'application/json',
 			},
-			data: {
+			body: JSON.stringify({
 				events,
 				preconditions,
-			},
-			responseType: 'json',
+			}),
 		});
 
-		const responseBody = response.data;
+		if (response.status !== 200) {
+			throw new Error(
+				`Failed to write events, got HTTP status code '${response.status}', expected '200'.`,
+			);
+		}
+
+		const responseBody = await response.json();
 
 		if (!Array.isArray(responseBody)) {
 			throw new Error('Failed to parse response.');

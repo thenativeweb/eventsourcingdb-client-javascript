@@ -3,7 +3,7 @@ interface StreamEventType {
 	payload: {
 		eventType: string;
 		isPhantom: boolean;
-		schema?: string;
+		schema?: Record<string, unknown>;
 	};
 }
 
