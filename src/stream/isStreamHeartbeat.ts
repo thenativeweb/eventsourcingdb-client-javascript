@@ -6,7 +6,14 @@ const blueprint: StreamHeartbeat = {
 };
 
 const isStreamHeartbeat = (line: unknown): line is StreamHeartbeat => {
-	return hasShapeOf(line, blueprint);
+	if (!hasShapeOf(line, blueprint)) {
+		return false;
+	}
+	if (line.type !== 'heartbeat') {
+		return false;
+	}
+
+	return true;
 };
 
 export { isStreamHeartbeat };

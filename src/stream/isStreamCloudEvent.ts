@@ -18,7 +18,14 @@ const blueprint: StreamCloudEvent = {
 };
 
 const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent => {
-	return hasShapeOf(line, blueprint);
+	if (!hasShapeOf(line, blueprint)) {
+		return false;
+	}
+	if (line.type !== 'event') {
+		return false;
+	}
+
+	return true;
 };
 
 export { isStreamCloudEvent };

@@ -9,7 +9,14 @@ const blueprint: StreamError = {
 };
 
 const isStreamError = (line: unknown): line is StreamError => {
-	return hasShapeOf(line, blueprint);
+	if (!hasShapeOf(line, blueprint)) {
+		return false;
+	}
+	if (line.type !== 'error') {
+		return false;
+	}
+
+	return true;
 };
 
 export { isStreamError };

@@ -29,8 +29,10 @@ suite('ping', { timeout: 20_000 }, () => {
 	});
 
 	test('throws an error if the server is not reachable.', async (): Promise<void> => {
-		const wrongPort = eventSourcingDb.port + 1;
-		const client = new Client(new URL(`http://localhost:${wrongPort}/`), eventSourcingDb.apiToken);
+		const client = new Client(
+			new URL(`http://non-existent-host:${eventSourcingDb.port}/`),
+			eventSourcingDb.apiToken,
+		);
 
 		await assert.rejects(
 			async () => {

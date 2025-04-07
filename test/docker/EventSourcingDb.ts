@@ -26,7 +26,6 @@ class EventSourcingDb {
 
 	public static build(): void {
 		const cmd = `docker build -t ${imageName} .`;
-
 		execSync(cmd, { cwd: __dirname });
 	}
 
@@ -61,7 +60,6 @@ class EventSourcingDb {
 
 	public kill(): void {
 		const cmd = `docker kill ${this.#id}`;
-
 		execSync(cmd, { cwd: __dirname });
 	}
 }

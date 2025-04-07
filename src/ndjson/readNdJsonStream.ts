@@ -1,19 +1,31 @@
-import type { Readable } from 'node:stream';
-import StreamToAsyncIterator from 'stream-to-async-iterator';
-import { LinesDecoder } from './LinesDecoder.js';
-
 const readNdJsonStream = async function* (
-	stream: Readable,
+	stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<Record<string, unknown>, void, void> {
-	const decoder = new LinesDecoder('utf-8');
+	const reader = stream.getReader();
+	const decoder = new TextDecoder('utf-8');
+	let buffer = '';
 
-	for await (const chunk of new StreamToAsyncIterator<Buffer>(stream)) {
-		const lines = decoder.write(chunk);
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) {
+			break;
+		}
 
-		for (const line of lines) {
-			const parsedLine = JSON.parse(line);
+		buffer += decoder.decode(value, { stream: true });
 
-			yield parsedLine;
+		let index: number;
+		while (true) {
+			index = buffer.indexOf('\n');
+			if (index < 0) {
+				break;
+			}
+
+			const line = buffer.slice(0, index).trim();
+			buffer = buffer.slice(index + 1);
+
+			if (line) {
+				yield JSON.parse(line);
+			}
 		}
 	}
 };

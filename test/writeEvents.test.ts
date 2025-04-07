@@ -38,8 +38,8 @@ suite('writeEvents', { timeout: 20_000 }, () => {
 
 		const writtenEvents = await client.writeEvents([event]);
 
-		assert.strictEqual(writtenEvents.length, 1);
-		assert.strictEqual(writtenEvents[0].id, '0');
+		assert.equal(writtenEvents.length, 1);
+		assert.equal(writtenEvents[0].id, '0');
 	});
 
 	test('writes multiple events.', async (): Promise<void> => {
@@ -67,13 +67,13 @@ suite('writeEvents', { timeout: 20_000 }, () => {
 		};
 
 		const writtenEvents = await client.writeEvents([firstEvent, secondEvent]);
-		assert.strictEqual(writtenEvents.length, 2);
+		assert.equal(writtenEvents.length, 2);
 
-		assert.strictEqual(writtenEvents[0].id, '0');
-		assert.strictEqual(writtenEvents[0].data.value, 23);
+		assert.equal(writtenEvents[0].id, '0');
+		assert.equal(writtenEvents[0].data.value, 23);
 
-		assert.strictEqual(writtenEvents[1].id, '1');
-		assert.strictEqual(writtenEvents[1].data.value, 42);
+		assert.equal(writtenEvents[1].id, '1');
+		assert.equal(writtenEvents[1].data.value, 42);
 	});
 
 	test('supports the isSubjectPristine precondition.', async (): Promise<void> => {

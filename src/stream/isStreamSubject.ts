@@ -9,7 +9,14 @@ const blueprint: StreamSubject = {
 };
 
 const isStreamSubject = (line: unknown): line is StreamSubject => {
-	return hasShapeOf(line, blueprint);
+	if (!hasShapeOf(line, blueprint)) {
+		return false;
+	}
+	if (line.type !== 'subject') {
+		return false;
+	}
+
+	return true;
 };
 
 export { isStreamSubject };

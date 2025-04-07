@@ -125,22 +125,29 @@ class Client {
 		const apiToken = this.#apiToken;
 
 		return (async function* () {
-			const response = await axios({
-				url,
+			const response = await fetch(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${apiToken}`,
 					'content-type': 'application/json',
 				},
-				data: {
+				body: JSON.stringify({
 					subject,
 					options,
-				},
-				responseType: 'stream',
+				}),
 				signal: abortController.signal,
 			});
 
-			for await (const line of readNdJsonStream(response.data)) {
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to read events, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+			if (!response.body) {
+				throw new Error('Failed to read events.');
+			}
+
+			for await (const line of readNdJsonStream(response.body)) {
 				if (isStreamHeartbeat(line)) {
 					continue;
 				}

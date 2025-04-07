@@ -10,7 +10,14 @@ const blueprint: StreamEventType = {
 };
 
 const isStreamEventType = (line: unknown): line is StreamEventType => {
-	return hasShapeOf(line, blueprint);
+	if (!hasShapeOf(line, blueprint)) {
+		return false;
+	}
+	if (line.type !== 'eventType') {
+		return false;
+	}
+
+	return true;
 };
 
 export { isStreamEventType };
