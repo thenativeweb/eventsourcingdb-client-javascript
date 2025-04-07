@@ -1,3 +1,3 @@
 # eventsourcingdb
 
-The official JavaScript client for EventSourcingDB.
+The official JavaScript client SDK for EventSourcingDB.
