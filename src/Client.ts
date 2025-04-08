@@ -118,13 +118,23 @@ class Client {
 	public readEvents(
 		subject: string,
 		options: ReadEventsOptions,
+		signal?: AbortSignal,
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/read-events');
 		const apiToken = this.#apiToken;
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const abortController = new AbortController();
+			const internalAbortController = new AbortController();
+			const combinedSignal = signal ?? internalAbortController.signal;
+			const shouldAbortInternally = !signal;
+
+			let removeAbortListener: (() => void) | undefined;
+
+			if (signal && !signal.aborted) {
+				const onAbort = () => internalAbortController.abort();
+				signal.addEventListener('abort', onAbort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+			}
 
 			try {
 				const response = await fetch(url, {
@@ -137,7 +147,7 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: abortController.signal,
+					signal: combinedSignal,
 				});
 
 				if (response.status !== 200) {
@@ -165,7 +175,12 @@ class Client {
 					throw new Error('Failed to read events.');
 				}
 			} finally {
-				abortController.abort();
+				if (removeAbortListener) {
+					removeAbortListener();
+				}
+				if (shouldAbortInternally) {
+					internalAbortController.abort();
+				}
 			}
 		})();
 	}
@@ -173,13 +188,23 @@ class Client {
 	public observeEvents(
 		subject: string,
 		options: ObserveEventsOptions,
+		signal?: AbortSignal,
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/observe-events');
 		const apiToken = this.#apiToken;
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const abortController = new AbortController();
+			const internalAbortController = new AbortController();
+			const combinedSignal = signal ?? internalAbortController.signal;
+			const shouldAbortInternally = !signal;
+
+			let removeAbortListener: (() => void) | undefined;
+
+			if (signal && !signal.aborted) {
+				const onAbort = () => internalAbortController.abort();
+				signal.addEventListener('abort', onAbort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+			}
 
 			try {
 				const response = await fetch(url, {
@@ -192,7 +217,7 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: abortController.signal,
+					signal: combinedSignal,
 				});
 
 				if (response.status !== 200) {
@@ -220,7 +245,12 @@ class Client {
 					throw new Error('Failed to observe events.');
 				}
 			} finally {
-				abortController.abort();
+				if (removeAbortListener) {
+					removeAbortListener();
+				}
+				if (shouldAbortInternally) {
+					internalAbortController.abort();
+				}
 			}
 		})();
 	}
@@ -249,13 +279,25 @@ class Client {
 		}
 	}
 
-	public readSubjects(baseSubject: string): AsyncGenerator<string, void, void> {
+	public readSubjects(
+		baseSubject: string,
+		signal?: AbortSignal,
+	): AsyncGenerator<string, void, void> {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const abortController = new AbortController();
+			const internalAbortController = new AbortController();
+			const combinedSignal = signal ?? internalAbortController.signal;
+			const shouldAbortInternally = !signal;
+
+			let removeAbortListener: (() => void) | undefined;
+
+			if (signal && !signal.aborted) {
+				const onAbort = () => internalAbortController.abort();
+				signal.addEventListener('abort', onAbort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+			}
 
 			try {
 				const response = await fetch(url, {
@@ -267,7 +309,7 @@ class Client {
 					body: JSON.stringify({
 						baseSubject,
 					}),
-					signal: abortController.signal,
+					signal: combinedSignal,
 				});
 
 				if (response.status !== 200) {
@@ -294,18 +336,32 @@ class Client {
 					throw new Error('Failed to read subjects.');
 				}
 			} finally {
-				abortController.abort();
+				if (removeAbortListener) {
+					removeAbortListener();
+				}
+				if (shouldAbortInternally) {
+					internalAbortController.abort();
+				}
 			}
 		})();
 	}
 
-	public readEventTypes(): AsyncGenerator<EventType, void, void> {
+	public readEventTypes(signal?: AbortSignal): AsyncGenerator<EventType, void, void> {
 		const url = this.#getUrl('/api/v1/read-event-types');
 		const apiToken = this.#apiToken;
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The complexity is fine here.
 		return (async function* () {
-			const abortController = new AbortController();
+			const internalAbortController = new AbortController();
+			const combinedSignal = signal ?? internalAbortController.signal;
+			const shouldAbortInternally = !signal;
+
+			let removeAbortListener: (() => void) | undefined;
+
+			if (signal && !signal.aborted) {
+				const onAbort = () => internalAbortController.abort();
+				signal.addEventListener('abort', onAbort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+			}
 
 			try {
 				const response = await fetch(url, {
@@ -313,7 +369,7 @@ class Client {
 					headers: {
 						authorization: `Bearer ${apiToken}`,
 					},
-					signal: abortController.signal,
+					signal: combinedSignal,
 				});
 
 				if (response.status !== 200) {
@@ -340,7 +396,12 @@ class Client {
 					throw new Error('Failed to read event types.');
 				}
 			} finally {
-				abortController.abort();
+				if (removeAbortListener) {
+					removeAbortListener();
+				}
+				if (shouldAbortInternally) {
+					internalAbortController.abort();
+				}
 			}
 		})();
 	}

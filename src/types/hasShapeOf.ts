@@ -1,4 +1,3 @@
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This function has a high complecity, but it is not possible to reduce it without changing the logic.
 const hasShapeOf = <T>(value: unknown, blueprint: T): value is T => {
 	if (typeof blueprint !== typeof value) {
 		return false;

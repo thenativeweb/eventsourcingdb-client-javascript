@@ -37,6 +37,9 @@
 		"enabled": true,
 		"rules": {
 			"all": true,
+			"complexity": {
+				"noExcessiveCognitiveComplexity": "off"
+			},
 			"correctness": {
 				"noNodejsModules": "off"
 			},
