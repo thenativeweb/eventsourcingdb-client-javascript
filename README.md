@@ -32,3 +32,26 @@ If you want to verify the API token, call `verifyApiToken`. If the token is inva
 ```typescript
 await client.verifyApiToken();
 ```
+
+### Writing Events
+
+Call the `writeEvents` function and hand over an array with one or more events. You do not have to provide all event fields – some are automatically added by the server.
+
+Specify `source`, `subject`, `type`, and `data` according to the [CloudEvents](https://docs.eventsourcingdb.io/fundamentals/cloud-events/) format.
+
+The function returns the written events, including the fields added by the server:
+
+```typescript
+const writtenEvents = await client.writeEvents([
+  {
+    source: 'https://library.eventsourcingdb.io',
+    subject: '/books/42',
+    type: 'io.eventsourcingdb.library.book-acquired',
+    data: {
+      title: '2001 – A Space Odyssey',
+      author: 'Arthur C. Clarke',
+      isbn: '978-0756906788'
+    }
+  }
+]);
+```
