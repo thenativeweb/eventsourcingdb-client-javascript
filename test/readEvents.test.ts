@@ -5,7 +5,7 @@ import type { Event } from '../src/Event.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
 import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
-suite('readEvents', { timeout: 20_000 }, () => {
+suite('readEvents', { timeout: 5_000 }, () => {
 	let eventSourcingDb: EventSourcingDb;
 
 	before(() => {

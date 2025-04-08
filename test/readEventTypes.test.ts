@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { setTimeout } from 'node:timers/promises';
 import { Client } from '../src/Client.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
 import type { EventType } from '../src/EventType.js';
@@ -66,17 +65,50 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 			eventTypesRead.push(eventType);
 		}
 
-		assert.equal(eventTypesRead.length, 2);
-		assert.equal(eventTypesRead[0], {
-			eventType: 'io.eventsourcingdb.test.bar',
-			isPhantom: false,
-			schema: undefined,
-		});
-		assert.equal(eventTypesRead[1], {
-			eventType: 'io.eventsourcingdb.test.foo',
-			isPhantom: false,
-			schema: undefined,
-		});
+		assert.deepEqual(eventTypesRead, [
+			{
+				eventType: 'io.eventsourcingdb.test.bar',
+				isPhantom: false,
+			},
+			{
+				eventType: 'io.eventsourcingdb.test.foo',
+				isPhantom: false,
+			},
+		]);
+	});
+
+	test('supports reading event schemas.', async (): Promise<void> => {
+		const client = new Client(
+			new URL(`http://localhost:${eventSourcingDb.port}/`),
+			eventSourcingDb.apiToken,
+		);
+
+		const eventType = 'io.eventsourcingdb.test';
+		const schema = {
+			type: 'object',
+			properties: {
+				value: {
+					type: 'number',
+				},
+			},
+			required: ['value'],
+			additionalProperties: false,
+		};
+
+		await client.registerEventSchema(eventType, schema);
+
+		const eventTypesRead: EventType[] = [];
+		for await (const eventType of client.readEventTypes()) {
+			eventTypesRead.push(eventType);
+		}
+
+		assert.deepEqual(eventTypesRead, [
+			{
+				eventType: 'io.eventsourcingdb.test',
+				isPhantom: true,
+				schema,
+			},
+		]);
 	});
 
 	test('supports aborting reading.', async (): Promise<void> => {
@@ -111,11 +143,11 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 			break;
 		}
 
-		assert.equal(eventTypesRead.length, 1);
-		assert.deepEqual(eventTypesRead[0], {
-			eventType: 'io.eventsourcingdb.test.bar',
-			isPhantom: false,
-			schema: undefined,
-		});
+		assert.deepEqual(eventTypesRead, [
+			{
+				eventType: 'io.eventsourcingdb.test.bar',
+				isPhantom: false,
+			},
+		]);
 	});
 });

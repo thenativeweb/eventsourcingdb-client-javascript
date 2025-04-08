@@ -4,7 +4,7 @@ import { Client } from '../src/Client.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
 import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
-suite('readSubjects', { timeout: 20_000 }, () => {
+suite('readSubjects', { timeout: 5_000 }, () => {
 	let eventSourcingDb: EventSourcingDb;
 
 	before(() => {

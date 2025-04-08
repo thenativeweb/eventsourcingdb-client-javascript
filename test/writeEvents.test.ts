@@ -6,7 +6,7 @@ import { isSubjectOnEventId } from '../src/isSubjectOnEventId.js';
 import { isSubjectPristine } from '../src/isSubjectPristine.js';
 import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
-suite('writeEvents', { timeout: 20_000 }, () => {
+suite('writeEvents', { timeout: 5_000 }, () => {
 	let eventSourcingDb: EventSourcingDb;
 
 	before(() => {

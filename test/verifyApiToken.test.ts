@@ -3,7 +3,7 @@ import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { Client } from '../src/Client.js';
 import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
-suite('verifyApiToken', { timeout: 20_000 }, () => {
+suite('verifyApiToken', { timeout: 5_000 }, () => {
 	let eventSourcingDb: EventSourcingDb;
 
 	before(() => {
