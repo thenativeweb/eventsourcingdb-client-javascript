@@ -3,12 +3,12 @@
 		"baseUrl": ".",
 		"declaration": true,
 		"esModuleInterop": true,
-		"lib": ["ES2022"],
+		"lib": ["ES2023"],
 		"module": "CommonJS",
 		"outDir": "dist",
 		"resolveJsonModule": true,
 		"strict": true,
-		"target": "ES2022"
+		"target": "ES2023"
 	},
 	"include": ["./src/**/*.ts"],
 	"exclude": ["./dist"]
