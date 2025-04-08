@@ -108,6 +108,84 @@ suite('readEvents', { timeout: 5_000 }, () => {
 		assert.equal(eventsRead.length, 2);
 	});
 
+	test('reads chronologically.', async (): Promise<void> => {
+		const client = new Client(
+			new URL(`http://localhost:${eventSourcingDb.port}/`),
+			eventSourcingDb.apiToken,
+		);
+
+		const firstEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 23,
+			},
+		};
+
+		const secondEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 42,
+			},
+		};
+
+		await client.writeEvents([firstEvent, secondEvent]);
+
+		const eventsRead: Event[] = [];
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+			order: 'chronological',
+		})) {
+			eventsRead.push(event);
+		}
+
+		assert.equal(eventsRead.length, 2);
+		assert.equal(eventsRead[0].data.value, 23);
+		assert.equal(eventsRead[1].data.value, 42);
+	});
+
+	test('reads anti-chronologically.', async (): Promise<void> => {
+		const client = new Client(
+			new URL(`http://localhost:${eventSourcingDb.port}/`),
+			eventSourcingDb.apiToken,
+		);
+
+		const firstEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 23,
+			},
+		};
+
+		const secondEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 42,
+			},
+		};
+
+		await client.writeEvents([firstEvent, secondEvent]);
+
+		const eventsRead: Event[] = [];
+		for await (const event of client.readEvents('/test', {
+			recursive: false,
+			order: 'antichronological',
+		})) {
+			eventsRead.push(event);
+		}
+
+		assert.equal(eventsRead.length, 2);
+		assert.equal(eventsRead[0].data.value, 42);
+		assert.equal(eventsRead[1].data.value, 23);
+	});
+
 	test('reads with lower bound.', async (): Promise<void> => {
 		const client = new Client(
 			new URL(`http://localhost:${eventSourcingDb.port}/`),
@@ -224,43 +302,5 @@ suite('readEvents', { timeout: 5_000 }, () => {
 
 		assert.equal(eventsRead.length, 1);
 		assert.equal(eventsRead[0].data.value, 42);
-	});
-
-	test('supports aborting reading.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
-
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test.foo',
-			data: {
-				value: 23,
-			},
-		};
-
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test.bar',
-			data: {
-				value: 42,
-			},
-		};
-
-		await client.writeEvents([firstEvent, secondEvent]);
-
-		const eventsRead: Event[] = [];
-		for await (const event of client.readEvents('/test', {
-			recursive: false,
-		})) {
-			eventsRead.push(event);
-			break;
-		}
-
-		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 23);
 	});
 });

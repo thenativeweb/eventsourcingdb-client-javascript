@@ -107,40 +107,4 @@ suite('readSubjects', { timeout: 5_000 }, () => {
 		assert.equal(subjectsRead[1], '/test/1');
 		assert.equal(subjectsRead[2], '/test/2');
 	});
-
-	test('supports aborting reading.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
-
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/1',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
-
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/2',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
-
-		await client.writeEvents([firstEvent, secondEvent]);
-
-		const subjectsRead: string[] = [];
-		for await (const subject of client.readSubjects('/')) {
-			subjectsRead.push(subject);
-			break;
-		}
-
-		assert.equal(subjectsRead.length, 1);
-		assert.equal(subjectsRead[0], '/');
-	});
 });

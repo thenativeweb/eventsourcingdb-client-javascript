@@ -159,7 +159,7 @@ class Client {
 					throw new Error('Failed to read events.');
 				}
 
-				for await (const line of readNdJsonStream(response.body)) {
+				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -174,6 +174,11 @@ class Client {
 
 					throw new Error('Failed to read events.');
 				}
+			} catch (error) {
+				if (error instanceof DOMException && error.name === 'AbortError') {
+					return;
+				}
+				throw error;
 			} finally {
 				if (removeAbortListener) {
 					removeAbortListener();
@@ -229,7 +234,7 @@ class Client {
 					throw new Error('Failed to observe events.');
 				}
 
-				for await (const line of readNdJsonStream(response.body)) {
+				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -244,6 +249,11 @@ class Client {
 
 					throw new Error('Failed to observe events.');
 				}
+			} catch (error) {
+				if (error instanceof DOMException && error.name === 'AbortError') {
+					return;
+				}
+				throw error;
 			} finally {
 				if (removeAbortListener) {
 					removeAbortListener();
@@ -321,7 +331,7 @@ class Client {
 					throw new Error('Failed to read subjects.');
 				}
 
-				for await (const line of readNdJsonStream(response.body)) {
+				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -335,6 +345,11 @@ class Client {
 
 					throw new Error('Failed to read subjects.');
 				}
+			} catch (error) {
+				if (error instanceof DOMException && error.name === 'AbortError') {
+					return;
+				}
+				throw error;
 			} finally {
 				if (removeAbortListener) {
 					removeAbortListener();
@@ -381,7 +396,7 @@ class Client {
 					throw new Error('Failed to read event types.');
 				}
 
-				for await (const line of readNdJsonStream(response.body)) {
+				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -395,6 +410,11 @@ class Client {
 
 					throw new Error('Failed to read event types.');
 				}
+			} catch (error) {
+				if (error instanceof DOMException && error.name === 'AbortError') {
+					return;
+				}
+				throw error;
 			} finally {
 				if (removeAbortListener) {
 					removeAbortListener();

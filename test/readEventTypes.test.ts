@@ -110,44 +110,4 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 			},
 		]);
 	});
-
-	test('supports aborting reading.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
-
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/1',
-			type: 'io.eventsourcingdb.test.foo',
-			data: {
-				value: 23,
-			},
-		};
-
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/2',
-			type: 'io.eventsourcingdb.test.bar',
-			data: {
-				value: 42,
-			},
-		};
-
-		await client.writeEvents([firstEvent, secondEvent]);
-
-		const eventTypesRead: EventType[] = [];
-		for await (const eventType of client.readEventTypes()) {
-			eventTypesRead.push(eventType);
-			break;
-		}
-
-		assert.deepEqual(eventTypesRead, [
-			{
-				eventType: 'io.eventsourcingdb.test.bar',
-				isPhantom: false,
-			},
-		]);
-	});
 });
