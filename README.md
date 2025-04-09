@@ -165,3 +165,107 @@ for await (const event of client.readEvents('/books/42', {
 ```
 
 *Note that `fromLatestEvent` and `lowerBound` can not be provided at the same time.*
+
+#### Aborting Reading
+
+If you need to abort reading use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+
+To abort reading independently of that, hand over an abort signal as third parameter when calling `readEvents`, and abort the appropriate `AbortController`:
+
+```typescript
+const controller = new AbortController();
+
+for await (const event of client.readEvents('/books/42', {
+  recursive: false
+}, controller.signal)) {
+  // ...
+}
+
+// Somewhere else, abort the controller, which will cause
+// reading to end.
+controller.abort();
+```
+
+### Observing Events
+
+To observe all events of a subject, call the `observeEvents` function with the subject as the first argument and an options object as the second argument. Set the `recursive` option to `false`. This ensures that only events of the given subject are returned, not events of nested subjects.
+
+The function returns an asynchronous iterator, which you can use e.g. inside a `for await` loop:
+
+```typescript
+for await (const event of client.observeEvents('/books/42', {
+  recursive: false
+})) {
+  // ...
+}
+```
+
+#### Observing From Subjects Recursively
+
+If you want to observe not only all the events of a subject, but also the events of all nested subjects, set the `recursive` option to `true`:
+
+```typescript
+for await (const event of client.observeEvents('/books/42', {
+  recursive: true
+})) {
+  // ...
+}
+```
+
+This also allows you to observe *all* events ever written. To do so, provide `/` as the subject and set `recursive` to `true`, since all subjects are nested under the root subject.
+
+#### Specifying Bounds
+
+Sometimes you do not want to observe all events, but only a range of events. For that, you can specify the `lowerBound` option.
+
+Specify the ID and whether to include or exclude it:
+
+```typescript
+for await (const event of client.observeEvents('/books/42', {
+  recursive: false,
+  lowerBound: { id: '100', type: 'inclusive' }
+})) {
+  // ...
+}
+```
+
+#### Starting From the Latest Event of a Given Type
+
+To observe starting from the latest event of a given type, provide the `fromLatestEvent` option and specify the subject, the type, and how to proceed if no such event exists.
+
+Possible options are `wait-for-event`, which waits for an event of the given type to happen, or `read-everything`, which effectively behaves as if `fromLatestEvent` was not specified:
+
+```typescript
+for await (const event of client.observeEvents('/books/42', {
+  recursive: false,
+  fromLatestEvent: {
+    subject: '/books/42',
+    type: 'io.eventsourcingdb.library.book-borrowed',
+    ifEventIsMissing: 'read-everything'
+  }
+})) {
+  // ...
+}
+```
+
+*Note that `fromLatestEvent` and `lowerBound` can not be provided at the same time.*
+
+#### Aborting Observing
+
+If you need to abort observing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+
+To abort observing independently of that, hand over an abort signal as third parameter when calling `observeEvents`, and abort the appropriate `AbortController`:
+
+```typescript
+const controller = new AbortController();
+
+for await (const event of client.observeEvents('/books/42', {
+  recursive: false
+}, controller.signal)) {
+  // ...
+}
+
+// Somewhere else, abort the controller, which will cause
+// observing to end.
+controller.abort();
+```
