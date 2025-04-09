@@ -55,3 +55,30 @@ const writtenEvents = await client.writeEvents([
   }
 ]);
 ```
+
+#### Using the `isSubjectPristine` precondition
+
+If you only want to write events in case a subject (such as `/books/42`) does not yet have any events, import the `isSubjectPristine` function and pass it as the second argument as an array of preconditions:
+
+```typescript
+import { isSubjectPristine } from 'eventsourcingdb';
+
+const writtenEvents = await client.writeEvents([
+  // events
+], [
+  isSubjectPristine('/books/42')
+]);
+```
+
+#### Using the `isSubjectOnEventId` precondition
+
+If you only want to write events in case the last event of a subject (such as `/books/42`) has a specific ID (e.g., `0`), import the `isSubjectOnEventId` function and pass it as an array of preconditions in the second argument:
+
+```typescript
+import { isSubjectOnEventId } from 'eventsourcingdb';
+
+const writtenEvents = await client.writeEvents([
+  // events
+], [
+  isSubjectOnEventId('/books/42', '0')
+]);
