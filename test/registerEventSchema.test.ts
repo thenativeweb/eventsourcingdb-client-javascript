@@ -1,28 +1,21 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 
-suite('registerEventSchema', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('registerEventSchema', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('registers an event schema.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const eventType = 'io.eventsourcingdb.test';
 		const schema = {
@@ -41,10 +34,7 @@ suite('registerEventSchema', { timeout: 5_000 }, () => {
 	});
 
 	test('throws an error if an event schema is already registered.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const eventType = 'io.eventsourcingdb.test';
 		const schema = {

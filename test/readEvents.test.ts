@@ -1,30 +1,23 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { Event } from '../src/Event.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 
-suite('readEvents', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('readEvents', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('reads no events if the database is empty.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		let didReadEvents = false;
 		for await (const _event of client.readEvents('/', {
@@ -37,10 +30,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads all events from the given subject.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -73,10 +63,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads recursively.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -109,10 +96,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads chronologically.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -148,10 +132,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads anti-chronologically.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -187,10 +168,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads with lower bound.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -225,10 +203,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads with upper bound.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -263,10 +238,7 @@ suite('readEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('reads from latest event.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
