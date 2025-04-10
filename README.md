@@ -170,7 +170,7 @@ for await (const event of client.readEvents('/books/42', {
 
 If you need to abort reading use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
 
-To abort reading independently of that, hand over an abort signal as third parameter when calling `readEvents`, and abort the appropriate `AbortController`:
+To abort reading independently of that, hand over an abort signal as third argument when calling `readEvents`, and abort the appropriate `AbortController`:
 
 ```typescript
 const controller = new AbortController();
@@ -254,7 +254,7 @@ for await (const event of client.observeEvents('/books/42', {
 
 If you need to abort observing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
 
-To abort observing independently of that, hand over an abort signal as third parameter when calling `observeEvents`, and abort the appropriate `AbortController`:
+To abort observing independently of that, hand over an abort signal as third argument when calling `observeEvents`, and abort the appropriate `AbortController`:
 
 ```typescript
 const controller = new AbortController();
@@ -267,5 +267,92 @@ for await (const event of client.observeEvents('/books/42', {
 
 // Somewhere else, abort the controller, which will cause
 // observing to end.
+controller.abort();
+```
+
+### Registering an Event Schema
+
+To register an event schema, call the `registerEventSchema` function and hand over an event type and the desired schema:
+
+```typescript
+await client.registerEventSchema('io.eventsourcingdb.library.book-acquired', {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    author: { type: 'string' },
+    isbn: { type: 'string' }
+  },
+  required: [
+    'title',
+    'author',
+    'isbn'
+  ],
+  additionalProperties: false
+});
+```
+
+### Listing Subjects
+
+To list all subjects, call the `readSubjects` function with `/` as the base subject. The function returns an asynchronous iterator, which you can use e.g. inside a `for await` loop:
+
+```typescript
+for await (const subject of client.readSubjects('/')) {
+  // ...
+}
+```
+
+If you only want to list subjects within a specific branch, provide the desired base subject instead:
+
+```typescript
+for await (const subject of client.readSubjects('/books')) {
+  // ...
+}
+```
+
+#### Aborting Listing
+
+If you need to abort listing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+
+To abort listing independently of that, hand over an abort signal as second argument when calling `readSubjects`, and abort the appropriate `AbortController`:
+
+```typescript
+const controller = new AbortController();
+
+for await (const subject of client.readSubjects(
+  '/', controller.signal)
+) {
+  // ...
+}
+
+// Somewhere else, abort the controller, which will cause
+// reading to end.
+controller.abort();
+```
+
+### Listing Event Types
+
+To list all event types, call the `readEventTypes` function. The function returns an asynchronous iterator, which you can use e.g. inside a `for await` loop:
+
+```typescript
+for await (const eventType of client.readEventTypes()) {
+  // ...
+}
+```
+
+#### Aborting Listing
+
+If you need to abort listing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+
+To abort listing independently of that, hand over an abort signal as argument when calling `readEventTypes`, and abort the appropriate `AbortController`:
+
+```typescript
+const controller = new AbortController();
+
+for await (const eventType of client.readEventTypes()) {
+  // ...
+}
+
+// Somewhere else, abort the controller, which will cause
+// reading to end.
 controller.abort();
 ```
