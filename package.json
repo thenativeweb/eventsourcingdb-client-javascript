@@ -1,6 +1,6 @@
 {
 	"name": "eventsourcingdb",
-	"version": "0.10.6",
+	"version": "0.11.0",
 	"description": "The official JavaScript client SDK for EventSourcingDB.",
 	"author": {
 		"name": "the native web GmbH",
