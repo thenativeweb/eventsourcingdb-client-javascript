@@ -1,29 +1,22 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 
-suite('readSubjects', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('readSubjects', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('reads no subjects if the database is empty.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		let didReadSubjects = false;
 		for await (const _event of client.readSubjects('/')) {
@@ -34,10 +27,7 @@ suite('readSubjects', { timeout: 5_000 }, () => {
 	});
 
 	test('reads all subjects.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -72,10 +62,7 @@ suite('readSubjects', { timeout: 5_000 }, () => {
 	});
 
 	test('reads all subjects from the base subject.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',

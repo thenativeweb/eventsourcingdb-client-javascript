@@ -1,31 +1,24 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { EventCandidate } from '../src/EventCandidate.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 import { isSubjectOnEventId } from '../src/isSubjectOnEventId.js';
 import { isSubjectPristine } from '../src/isSubjectPristine.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
-suite('writeEvents', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('writeEvents', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('writes a single event.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const event: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -43,10 +36,7 @@ suite('writeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('writes multiple events.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -77,10 +67,7 @@ suite('writeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('supports the isSubjectPristine precondition.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -118,10 +105,7 @@ suite('writeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('supports the isSubjectOnEventId precondition.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',

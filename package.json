@@ -43,5 +43,8 @@
 		"event sourcing",
 		"event store",
 		"cqrs"
-	]
+	],
+	"dependencies": {
+		"testcontainers": "10.24.2"
+	}
 }

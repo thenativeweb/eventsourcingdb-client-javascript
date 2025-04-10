@@ -1,38 +1,32 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from '../src/Client.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 
-suite('ping', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('ping', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('does not throw an error if the server is reachable.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		// Should not throw.
 		await client.ping();
 	});
 
 	test('throws an error if the server is not reachable.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://non-existent-host:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const port = container.getMappedPort();
+		const apiToken = container.getApiToken();
+
+		const client = new Client(new URL(`http://non-existent-host:${port}/`), apiToken);
 
 		await assert.rejects(
 			async () => {

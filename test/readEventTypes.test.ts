@@ -1,30 +1,23 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { EventCandidate } from '../src/EventCandidate.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 import type { EventType } from '../src/EventType.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
 
 suite('readEventTypes', { timeout: 20_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('reads no event types if the database is empty.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		let didReadEventTypes = false;
 		for await (const _event of client.readEventTypes()) {
@@ -35,10 +28,7 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 	});
 
 	test('reads all event types.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -78,10 +68,7 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 	});
 
 	test('supports reading event schemas.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const eventType = 'io.eventsourcingdb.test';
 		const schema = {

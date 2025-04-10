@@ -1,31 +1,23 @@
 import assert from 'node:assert/strict';
-import { afterEach, before, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
+import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { Event } from '../src/Event.js';
 import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDb } from './docker/EventSourcingDb.js';
+import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
 
-suite('observeEvents', { timeout: 5_000 }, () => {
-	let eventSourcingDb: EventSourcingDb;
-
-	before(() => {
-		EventSourcingDb.build();
-	});
+suite('observeEvents', { timeout: 30_000 }, () => {
+	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		eventSourcingDb = await EventSourcingDb.run();
+		container = new EventSourcingDbContainer();
+		await container.start();
 	});
 
-	afterEach(() => {
-		eventSourcingDb.kill();
+	afterEach(async () => {
+		await container.stop();
 	});
 
 	test('observes no events if the database is empty.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
-
+		const client = container.getClient();
 		const controller = new AbortController();
 
 		setTimeout(() => {
@@ -47,10 +39,7 @@ suite('observeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('observes all events from the given subject.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -93,10 +82,7 @@ suite('observeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('observes recursively.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -139,10 +125,7 @@ suite('observeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('observes with lower bound.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
@@ -187,10 +170,7 @@ suite('observeEvents', { timeout: 5_000 }, () => {
 	});
 
 	test('observes from latest event.', async (): Promise<void> => {
-		const client = new Client(
-			new URL(`http://localhost:${eventSourcingDb.port}/`),
-			eventSourcingDb.apiToken,
-		);
+		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
