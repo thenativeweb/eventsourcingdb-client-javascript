@@ -201,6 +201,8 @@ for await (const row of client.runEventQlQuery(`
 }
 ```
 
+*Note that each row returned by the iterator matches the projection specified in your query.*
+
 #### Aborting a Query
 
 If you need to abort a query use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
@@ -221,8 +223,6 @@ for await (const row of client.runEventQlQuery(`
 // reading to end.
 controller.abort();
 ```
-
-*Note that each row returned by the iterator matches the projection specified in your query.*
 
 ### Observing Events
 
