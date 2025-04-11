@@ -188,6 +188,42 @@ for await (const event of client.readEvents('/books/42', {
 controller.abort();
 ```
 
+### Running EventQL Queries
+
+To run an EventQL query, call the `runEventQlQuery` function and provide the query as argument. The function returns an asynchronous iterator, which you can use e.g. inside a `for await` loop:
+
+```typescript
+for await (const row of client.runEventQlQuery(`
+  FROM e IN events
+  PROJECT INTO e
+`)) {
+  // ...
+}
+```
+
+#### Aborting a Query
+
+If you need to abort a query use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+
+To abort the query independently of that, hand over an abort signal as second argument when calling `runEventQlQuery`, and abort the appropriate AbortController:
+
+```typescript
+const controller = new AbortController();
+
+for await (const row of client.runEventQlQuery(`
+  FROM e IN events
+  PROJECT INTO e
+`, controller.signal)) {
+  // ...
+}
+
+// Somewhere else, abort the controller, which will cause
+// reading to end.
+controller.abort();
+```
+
+*Note that each row returned by the iterator matches the projection specified in your query.*
+
 ### Observing Events
 
 To observe all events of a subject, call the `observeEvents` function with the subject as the first argument and an options object as the second argument. Set the `recursive` option to `false`. This ensures that only events of the given subject are returned, not events of nested subjects.

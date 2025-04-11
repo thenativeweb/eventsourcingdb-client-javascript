@@ -11,6 +11,7 @@ import { isStreamCloudEvent } from './stream/isStreamCloudEvent.js';
 import { isStreamError } from './stream/isStreamError.js';
 import { isStreamEventType } from './stream/isStreamEventType.js';
 import { isStreamHeartbeat } from './stream/isStreamHeartbeat.js';
+import { isStreamRow } from './stream/isStreamRow.js';
 import { isStreamSubject } from './stream/isStreamSubject.js';
 import { hasShapeOf } from './types/hasShapeOf.js';
 
@@ -173,6 +174,74 @@ class Client {
 					}
 
 					throw new Error('Failed to read events.');
+				}
+			} catch (error) {
+				if (error instanceof DOMException && error.name === 'AbortError') {
+					return;
+				}
+				throw error;
+			} finally {
+				if (removeAbortListener) {
+					removeAbortListener();
+				}
+				if (shouldAbortInternally) {
+					internalAbortController.abort();
+				}
+			}
+		})();
+	}
+
+	public runEventQlQuery(query: string, signal?: AbortSignal): AsyncGenerator<unknown, void, void> {
+		const url = this.#getUrl('/api/v1/run-eventql-query');
+		const apiToken = this.#apiToken;
+
+		return (async function* () {
+			const internalAbortController = new AbortController();
+			const combinedSignal = signal ?? internalAbortController.signal;
+			const shouldAbortInternally = !signal;
+
+			let removeAbortListener: (() => void) | undefined;
+
+			if (signal && !signal.aborted) {
+				const onAbort = () => internalAbortController.abort();
+				signal.addEventListener('abort', onAbort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+			}
+
+			try {
+				const response = await fetch(url, {
+					method: 'post',
+					headers: {
+						authorization: `Bearer ${apiToken}`,
+						'content-type': 'application/json',
+					},
+					body: JSON.stringify({ query }),
+					signal: combinedSignal,
+				});
+
+				if (response.status !== 200) {
+					throw new Error(
+						`Failed to run EventQL query, got HTTP status code '${response.status}', expected '200'.`,
+					);
+				}
+				if (!response.body) {
+					throw new Error('Failed to run EventQL query.');
+				}
+
+				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+					if (isStreamHeartbeat(line)) {
+						continue;
+					}
+					if (isStreamError(line)) {
+						throw new Error(`${line.payload.error}.`);
+					}
+					if (isStreamRow(line)) {
+						const row = line.payload;
+						yield row;
+						continue;
+					}
+
+					throw new Error('Failed to run EventQL query.');
 				}
 			} catch (error) {
 				if (error instanceof DOMException && error.name === 'AbortError') {
