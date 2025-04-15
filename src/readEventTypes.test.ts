@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
-import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
-import type { EventType } from '../src/EventType.js';
+import type { EventCandidate } from './EventCandidate.js';
+import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
+import type { EventType } from './EventType.js';
 
 suite('readEventTypes', { timeout: 20_000 }, () => {
 	let container: EventSourcingDbContainer;

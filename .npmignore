@@ -1,6 +1,5 @@
 .github/
 src/
-test/
 .gitignore
 .npmignore
 biome.json

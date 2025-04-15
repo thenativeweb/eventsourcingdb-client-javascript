@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
-import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
-import { isSubjectOnEventId } from '../src/isSubjectOnEventId.js';
-import { isSubjectPristine } from '../src/isSubjectPristine.js';
+import type { EventCandidate } from './EventCandidate.js';
+import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
+import { isSubjectOnEventId } from './isSubjectOnEventId.js';
+import { isSubjectPristine } from './isSubjectPristine.js';
 
 suite('writeEvents', { timeout: 30_000 }, () => {
 	let container: EventSourcingDbContainer;
