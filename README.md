@@ -220,7 +220,7 @@ for await (const row of client.runEventQlQuery(`
 }
 
 // Somewhere else, abort the controller, which will cause
-// reading to end.
+// the query to end.
 controller.abort();
 ```
 
