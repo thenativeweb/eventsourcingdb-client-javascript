@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
-import { Client } from '../src/Client.js';
-import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
+import { Client } from './Client.js';
+import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
 
 suite('ping', { timeout: 30_000 }, () => {
 	let container: EventSourcingDbContainer;

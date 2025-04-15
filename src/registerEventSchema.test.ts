@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
-import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
+import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
 
 suite('registerEventSchema', { timeout: 30_000 }, () => {
 	let container: EventSourcingDbContainer;

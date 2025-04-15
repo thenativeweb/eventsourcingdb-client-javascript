@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
-import type { Event } from '../src/Event.js';
-import type { EventCandidate } from '../src/EventCandidate.js';
-import { EventSourcingDbContainer } from '../src/EventSourcingDbContainer.js';
+import type { Event } from './Event.js';
+import type { EventCandidate } from './EventCandidate.js';
+import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
 
 suite('observeEvents', { timeout: 30_000 }, () => {
 	let container: EventSourcingDbContainer;
@@ -67,7 +67,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			controller.abort();
 		}, 100);
 
-		const eventsRead: Event[] = [];
+		const eventsObserved: Event[] = [];
 		for await (const event of client.observeEvents(
 			'/test',
 			{
@@ -75,10 +75,10 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			},
 			controller.signal,
 		)) {
-			eventsRead.push(event);
+			eventsObserved.push(event);
 		}
 
-		assert.equal(eventsRead.length, 2);
+		assert.equal(eventsObserved.length, 2);
 	});
 
 	test('observes recursively.', async (): Promise<void> => {
@@ -110,7 +110,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			controller.abort();
 		}, 100);
 
-		const eventsRead: Event[] = [];
+		const eventsObserved: Event[] = [];
 		for await (const event of client.observeEvents(
 			'/',
 			{
@@ -118,10 +118,10 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			},
 			controller.signal,
 		)) {
-			eventsRead.push(event);
+			eventsObserved.push(event);
 		}
 
-		assert.equal(eventsRead.length, 2);
+		assert.equal(eventsObserved.length, 2);
 	});
 
 	test('observes with lower bound.', async (): Promise<void> => {
@@ -153,7 +153,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			controller.abort();
 		}, 100);
 
-		const eventsRead: Event[] = [];
+		const eventsObserved: Event[] = [];
 		for await (const event of client.observeEvents(
 			'/test',
 			{
@@ -162,11 +162,11 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			},
 			controller.signal,
 		)) {
-			eventsRead.push(event);
+			eventsObserved.push(event);
 		}
 
-		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 42);
+		assert.equal(eventsObserved.length, 1);
+		assert.equal(eventsObserved[0].data.value, 42);
 	});
 
 	test('observes from latest event.', async (): Promise<void> => {
@@ -198,7 +198,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			controller.abort();
 		}, 100);
 
-		const eventsRead: Event[] = [];
+		const eventsObserved: Event[] = [];
 		for await (const event of client.observeEvents(
 			'/test',
 			{
@@ -211,10 +211,10 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 			},
 			controller.signal,
 		)) {
-			eventsRead.push(event);
+			eventsObserved.push(event);
 		}
 
-		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 42);
+		assert.equal(eventsObserved.length, 1);
+		assert.equal(eventsObserved[0].data.value, 42);
 	});
 });

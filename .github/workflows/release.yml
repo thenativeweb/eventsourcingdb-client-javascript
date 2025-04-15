@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   release:
@@ -20,7 +19,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: '0'
-        token: ${{ secrets.TOKEN_GITHUB_TO_GITHUB_REPOSITORIES_RW }}
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:

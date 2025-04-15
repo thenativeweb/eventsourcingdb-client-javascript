@@ -13,6 +13,9 @@
 		}
 	},
 	"types": "./dist/index.d.ts",
+	"dependencies": {
+		"testcontainers": "10.24.2"
+	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/node": "22.14.1",
@@ -26,9 +29,7 @@
 		"build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
 		"format": "npx biome format --write .",
 		"qa": "npm run analyze && npm run test",
-		"test": "npm run test:unit && npm run test:integration",
-		"test:unit": "node --test --import tsx \"./src/**/*.test.ts\"",
-		"test:integration": "node --test --import tsx \"./test/**/*.test.ts\""
+		"test": "node --test --import tsx \"./src/**/*.test.ts\""
 	},
 	"repository": {
 		"type": "git",
@@ -43,8 +44,5 @@
 		"event sourcing",
 		"event store",
 		"cqrs"
-	],
-	"dependencies": {
-		"testcontainers": "10.24.2"
-	}
+	]
 }
