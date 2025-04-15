@@ -170,7 +170,7 @@ for await (const event of client.readEvents('/books/42', {
 
 #### Aborting Reading
 
-If you need to abort reading use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+If you need to abort reading use `break` or `return` within the `for await` loop. However, this only works if there is currently an iteration going on.
 
 To abort reading independently of that, hand over an abort signal as third argument when calling `readEvents`, and abort the appropriate `AbortController`:
 
@@ -205,7 +205,7 @@ for await (const row of client.runEventQlQuery(`
 
 #### Aborting a Query
 
-If you need to abort a query use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+If you need to abort a query use `break` or `return` within the `for await` loop. However, this only works if there is currently an iteration going on.
 
 To abort the query independently of that, hand over an abort signal as second argument when calling `runEventQlQuery`, and abort the appropriate AbortController:
 
@@ -290,7 +290,7 @@ for await (const event of client.observeEvents('/books/42', {
 
 #### Aborting Observing
 
-If you need to abort observing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+If you need to abort observing use `break` or `return` within the `for await` loop. However, this only works if there is currently an iteration going on.
 
 To abort observing independently of that, hand over an abort signal as third argument when calling `observeEvents`, and abort the appropriate `AbortController`:
 
@@ -349,7 +349,7 @@ for await (const subject of client.readSubjects('/books')) {
 
 #### Aborting Listing
 
-If you need to abort listing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+If you need to abort listing use `break` or `return` within the `for await` loop. However, this only works if there is currently an iteration going on.
 
 To abort listing independently of that, hand over an abort signal as second argument when calling `readSubjects`, and abort the appropriate `AbortController`:
 
@@ -379,7 +379,7 @@ for await (const eventType of client.readEventTypes()) {
 
 #### Aborting Listing
 
-If you need to abort listing use `break` or `return` within the `await for` loop. However, this only works if there is currently an iteration going on.
+If you need to abort listing use `break` or `return` within the `for await` loop. However, this only works if there is currently an iteration going on.
 
 To abort listing independently of that, hand over an abort signal as argument when calling `readEventTypes`, and abort the appropriate `AbortController`:
 
