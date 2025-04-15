@@ -32,7 +32,7 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		const firstEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/1',
+			subject: '/test',
 			type: 'io.eventsourcingdb.test.foo',
 			data: {
 				value: 23,
@@ -41,7 +41,7 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		const secondEvent: EventCandidate = {
 			source: 'https://www.eventsourcingdb.io',
-			subject: '/test/2',
+			subject: '/test',
 			type: 'io.eventsourcingdb.test.bar',
 			data: {
 				value: 42,
