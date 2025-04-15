@@ -439,7 +439,7 @@ const container = new EventSourcingDbContainer()
 
 In case you need to set up the client yourself, use the following functions to get details on the container:
 
-- `getHost()` returns the host name.
-- `getMappedPort()` returns the port.
-- `getBaseUrl()` returns the full URL of the container.
-- `getApiToken()` returns the API token.
+- `getHost()` returns the host name
+- `getMappedPort()` returns the port
+- `getBaseUrl()` returns the full URL of the container
+- `getApiToken()` returns the API token
