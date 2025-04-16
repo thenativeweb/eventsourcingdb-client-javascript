@@ -10,6 +10,12 @@ This client SDK includes support for [Testcontainers](https://testcontainers.com
 
 ## Getting Started
 
+Install the client SDK:
+
+```shell
+npm install eventsourcingdb
+```
+
 Import the `Client` class and create an instance by providing the URL of your EventSourcingDB instance and the API token to use:
 
 ```typescript
