@@ -16,6 +16,18 @@ updates:
     prefix: chore
     prefix-development: chore
 
+- package-ecosystem: docker
+  directory: "/docker"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  assignees:
+  - thenativeweb/internal_dev
+  labels:
+  - Dependencies
+  commit-message:
+    prefix: chore
+
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:

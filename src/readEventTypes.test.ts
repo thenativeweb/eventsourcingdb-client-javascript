@@ -3,12 +3,14 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { EventCandidate } from './EventCandidate.js';
 import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
 import type { EventType } from './EventType.js';
+import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
 
 suite('readEventTypes', { timeout: 20_000 }, () => {
 	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		container = new EventSourcingDbContainer();
+		const imageVersion = getImageVersionFromDockerfile();
+		container = new EventSourcingDbContainer().withImageTag(imageVersion);
 		await container.start();
 	});
 
