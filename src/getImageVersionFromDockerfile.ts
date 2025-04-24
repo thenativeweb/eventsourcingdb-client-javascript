@@ -10,7 +10,7 @@ const getImageVersionFromDockerfile = (): string => {
 	const matches = data.match(versionRegex);
 
 	if (!matches) {
-		throw new Error('Failed to find image version in Dockerfile');
+		throw new Error('Failed to find image version in Dockerfile.');
 	}
 
 	return matches[1];
