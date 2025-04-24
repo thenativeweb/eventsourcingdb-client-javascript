@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import type { EventCandidate } from './EventCandidate.js';
 import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
+import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
 
 suite('runEventQlQuery', { timeout: 30_000 }, () => {
 	let container: EventSourcingDbContainer;
 
 	beforeEach(async () => {
-		container = new EventSourcingDbContainer();
+		const imageVersion = getImageVersionFromDockerfile();
+		container = new EventSourcingDbContainer().withImageTag(imageVersion);
 		await container.start();
 	});
 

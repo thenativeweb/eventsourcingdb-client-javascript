@@ -1,5 +1,7 @@
 .github/
+docker/
 src/
+
 .gitignore
 .npmignore
 biome.json
