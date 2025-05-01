@@ -2,7 +2,7 @@ import type { StartedTestContainer } from 'testcontainers';
 import { GenericContainer, Wait } from 'testcontainers';
 import { Client } from './Client.js';
 
-class EventSourcingDbContainer {
+class Container {
 	#imageName = 'thenativeweb/eventsourcingdb';
 	#imageTag = 'latest';
 	#internalPort = 3000;
@@ -88,4 +88,4 @@ class EventSourcingDbContainer {
 	}
 }
 
-export { EventSourcingDbContainer };
+export { Container };
