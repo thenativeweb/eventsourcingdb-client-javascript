@@ -403,12 +403,12 @@ controller.abort();
 
 ### Using Testcontainers
 
-Import the `EventSourcingDbContainer` class, create an instance, call the `start` function to run a test container, get a client, run your test code, and finally call the `stop` function to stop the test container:
+Import the `Container` class, create an instance, call the `start` function to run a test container, get a client, run your test code, and finally call the `stop` function to stop the test container:
 
 ```typescript
-import { EventSourcingDbContainer } from 'eventsourcingdb';
+import { Container } from 'eventsourcingdb';
 
-const container = new EventSourcingDbContainer();
+const container = new Container();
 await container.start();
 
 const client = container.getClient();
@@ -426,17 +426,17 @@ const isRunning = container.isRunning();
 
 #### Configuring the Container Instance
 
-By default, `EventSourcingDbContainer` uses the `latest` tag of the official EventSourcingDB Docker image. To change that, call the `withImageTag` function:
+By default, `Container` uses the `latest` tag of the official EventSourcingDB Docker image. To change that, call the `withImageTag` function:
 
 ```typescript
-const container = new EventSourcingDbContainer()
+const container = new Container()
   .withImageTag('1.0.0');
 ```
 
 Similarly, you can configure the port to use and the API token. Call the `withPort` or the `withApiToken` function respectively:
 
 ```typescript
-const container = new EventSourcingDbContainer()
+const container = new Container()
   .withPort(4000)
   .withApiToken('secret');
 ```

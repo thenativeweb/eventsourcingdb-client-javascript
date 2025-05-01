@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
+import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { EventSourcingDbContainer } from './EventSourcingDbContainer.js';
 import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 
 suite('writeEvents', { timeout: 30_000 }, () => {
-	let container: EventSourcingDbContainer;
+	let container: Container;
 
 	beforeEach(async () => {
 		const imageVersion = getImageVersionFromDockerfile();
-		container = new EventSourcingDbContainer().withImageTag(imageVersion);
+		container = new Container().withImageTag(imageVersion);
 		await container.start();
 	});
 
