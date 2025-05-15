@@ -161,9 +161,6 @@ class Client {
 				}
 
 				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
-					if (isStreamHeartbeat(line)) {
-						continue;
-					}
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
@@ -229,9 +226,6 @@ class Client {
 				}
 
 				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
-					if (isStreamHeartbeat(line)) {
-						continue;
-					}
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
