@@ -18,7 +18,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@types/node": "22.15.17",
+		"@types/node": "22.15.19",
 		"get-port": "7.1.0",
 		"tsup": "8.4.0",
 		"tsx": "4.19.4",
