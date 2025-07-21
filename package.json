@@ -17,7 +17,7 @@
     "testcontainers": "11.3.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.1",
+    "@biomejs/biome": "2.1.2",
     "@types/node": "24.0.15",
     "get-port": "7.1.0",
     "tsup": "8.5.0",
@@ -27,7 +27,7 @@
   "scripts": {
     "analyze": "npx biome check --error-on-warnings .",
     "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
-    "format": "npx biome format --write .",
+    "format": "npx biome check --write .",
     "qa": "npm run analyze && npm run test",
     "test": "node --test --import tsx \"./src/**/*.test.ts\""
   },
