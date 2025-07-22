@@ -94,6 +94,22 @@ const writtenEvents = await client.writeEvents([
 
 *Note that according to the CloudEvents standard, event IDs must be of type string.*
 
+#### Using the `isEventQlTrue` precondition
+
+If you want to write events depending on an EventQL query, import the `isEventQlTrue` function and pass it as an array of preconditions in the second argument:
+
+```typescript
+import { isEventQlTrue } from 'eventsourcingdb';
+
+const writtenEvents = await client.writeEvents([
+  // events
+], [
+  isEventQlTrue('FROM e IN events WHERE e.type == \'io.eventsourcingdb.library.book-borrowed\' PROJECT INTO COUNT() < 10')
+]);
+```
+
+*Note that the query must return a single row with a single value, which is interpreted as a boolean.*
+
 ### Reading Events
 
 To read all events of a subject, call the `readEvents` function with the subject as the first argument and an options object as the second argument. Set the `recursive` option to `false`. This ensures that only events of the given subject are returned, not events of nested subjects.
