@@ -21,8 +21,7 @@
 			"quoteStyle": "single",
 			"semicolons": "always",
 			"trailingCommas": "all"
-		},
-		"globals": ["setup", "suite", "suiteSetup", "teardown", "test"]
+		}
 	},
 	"json": {
 		"formatter": {
@@ -34,9 +33,14 @@
 		}
 	},
 	"linter": {
+		"domains": {
+			"test": "all"
+		},
 		"enabled": true,
 		"rules": {
-			"complexity": "off",
+			"complexity": {
+				"noExcessiveCognitiveComplexity": "off"
+			},
 			"correctness": {
 				"noPrivateImports": "off"
 			},
