@@ -1,12 +1,11 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"ignore": ["dist", "node_modules"]
+		"includes": ["src/**", "!dist/**", "!node_modules/**"]
 	},
 	"formatter": {
 		"enabled": true,
 		"formatWithErrors": false,
-		"ignore": [],
 		"indentStyle": "tab",
 		"indentWidth": 2,
 		"lineEnding": "lf",
@@ -34,24 +33,30 @@
 		}
 	},
 	"linter": {
+		"domains": {
+			"test": "all"
+		},
 		"enabled": true,
 		"rules": {
-			"all": true,
 			"complexity": {
 				"noExcessiveCognitiveComplexity": "off"
 			},
 			"correctness": {
-				"noNodejsModules": "off"
+				"noPrivateImports": "off"
 			},
-			"nursery": {
-				"useImportRestrictions": "off"
-			},
+			"performance": "on",
+			"security": "on",
+			"suspicious": "on",
 			"style": {
 				"useFilenamingConvention": "off"
 			}
 		}
 	},
-	"organizeImports": {
-		"enabled": true
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	}
 }
