@@ -145,7 +145,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		);
 	});
 
-	test('supports the isEventQLTrue precondition.', async (): Promise<void> => {
+	test('supports the isEventQlTrue precondition.', async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {

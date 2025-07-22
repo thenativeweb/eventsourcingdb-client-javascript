@@ -1,1 +1,1 @@
-FROM thenativeweb/eventsourcingdb:1.0.3
+FROM thenativeweb/eventsourcingdb:preview

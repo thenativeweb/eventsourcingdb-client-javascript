@@ -21,7 +21,7 @@ type Precondition =
 			payload: IsSubjectOnEventIdPrecondition;
 	  }
 	| {
-			type: 'isEventQLTrue';
+			type: 'isEventQlTrue';
 			payload: IsEventQlTruePrecondition;
 	  };
 
