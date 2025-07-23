@@ -3,6 +3,7 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { isEventQlTrue } from './isEventQlTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 
@@ -132,6 +133,47 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		await assert.rejects(
 			async () => {
 				await client.writeEvents([secondEvent], [isSubjectOnEventId('/test', '1')]);
+			},
+			error => {
+				assert.ok(error instanceof Error);
+				assert.equal(
+					error.message,
+					"Failed to write events, got HTTP status code '409', expected '200'.",
+				);
+				return true;
+			},
+		);
+	});
+
+	test('supports the isEventQlTrue precondition.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const firstEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 23,
+			},
+		};
+
+		await client.writeEvents([firstEvent]);
+
+		const secondEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 42,
+			},
+		};
+
+		await assert.rejects(
+			async () => {
+				await client.writeEvents(
+					[secondEvent],
+					[isEventQlTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
+				);
 			},
 			error => {
 				assert.ok(error instanceof Error);
