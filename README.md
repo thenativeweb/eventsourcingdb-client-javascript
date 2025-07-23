@@ -104,7 +104,7 @@ import { isEventQlTrue } from 'eventsourcingdb';
 const writtenEvents = await client.writeEvents([
   // events
 ], [
-  isEventQlTrue('FROM e IN events WHERE e.type == \'io.eventsourcingdb.library.book-borrowed\' PROJECT INTO COUNT() < 10')
+  isEventQlTrue(`FROM e IN events WHERE e.type == 'io.eventsourcingdb.library.book-borrowed' PROJECT INTO COUNT() < 10`)
 ]);
 ```
 
