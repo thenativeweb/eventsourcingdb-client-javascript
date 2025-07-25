@@ -424,6 +424,37 @@ class Client {
 		})();
 	}
 
+	public async readEventType(eventType: string): Promise<EventType> {
+		const url = this.#getUrl('/api/v1/read-event-type');
+		const response = await fetch(url, {
+			method: 'post',
+			headers: {
+				authorization: `Bearer ${this.#apiToken}`,
+				'content-type': 'application/json',
+			},
+			body: JSON.stringify({
+				eventType,
+			}),
+		});
+
+		if (response.status !== 200) {
+			throw new Error(
+				`Failed to read event type, got HTTP status code '${response.status}', expected '200'.`,
+			);
+		}
+		const responseBody = await response.json();
+		if (
+			!hasShapeOf(responseBody, {
+				eventType: 'string',
+				isPhantom: true,
+			})
+		) {
+			throw new Error('Failed to parse response.');
+		}
+
+		return responseBody;
+	}
+
 	public readEventTypes(signal?: AbortSignal): AsyncGenerator<EventType, void, void> {
 		const url = this.#getUrl('/api/v1/read-event-types');
 		const apiToken = this.#apiToken;
