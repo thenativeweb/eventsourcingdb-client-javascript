@@ -389,6 +389,7 @@ for await (const subject of client.readSubjects(
 controller.abort();
 ```
 
+
 ### Listing Event Types
 
 To list all event types, call the `readEventTypes` function. The function returns an asynchronous iterator, which you can use e.g. inside a `for await` loop:
@@ -415,6 +416,13 @@ for await (const eventType of client.readEventTypes()) {
 // Somewhere else, abort the controller, which will cause
 // reading to end.
 controller.abort();
+```
+
+### Listing A Specific Event Type
+To list a specific event type, call the `readEventTypes` function with the event type as an argument. The function returns an detailed event type, which includes the schema:
+
+```typescript
+eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired")
 ```
 
 ### Using Testcontainers
