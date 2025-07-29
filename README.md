@@ -417,6 +417,14 @@ for await (const eventType of client.readEventTypes()) {
 controller.abort();
 ```
 
+### Listing a Specific Event Type
+
+To list a specific event type, call the `readEventType` function with the event type as an argument. The function returns the detailed event type, which includes the schema:
+
+```typescript
+eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired")
+```
+
 ### Using Testcontainers
 
 Import the `Container` class, create an instance, call the `start` function to run a test container, get a client, run your test code, and finally call the `stop` function to stop the test container:
