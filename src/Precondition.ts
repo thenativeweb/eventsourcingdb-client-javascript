@@ -7,7 +7,7 @@ interface IsSubjectOnEventIdPrecondition {
 	eventId: string;
 }
 
-interface IsEventQlTruePrecondition {
+interface IsEventQlQueryTruePrecondition {
 	query: string;
 }
 
@@ -21,8 +21,8 @@ type Precondition =
 			payload: IsSubjectOnEventIdPrecondition;
 	  }
 	| {
-			type: 'isEventQlTrue';
-			payload: IsEventQlTruePrecondition;
+			type: 'isEventQlQueryTrue';
+			payload: IsEventQlQueryTruePrecondition;
 	  };
 
 export type { Precondition };
