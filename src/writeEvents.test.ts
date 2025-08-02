@@ -3,7 +3,7 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
-import { isEventQlTrue } from './isEventQlTrue.js';
+import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 
@@ -145,7 +145,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		);
 	});
 
-	test('supports the isEventQlTrue precondition.', async (): Promise<void> => {
+	test('supports the isEventQlQueryTrue precondition.', async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -172,7 +172,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 			async () => {
 				await client.writeEvents(
 					[secondEvent],
-					[isEventQlTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
+					[isEventQlQueryTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
 				);
 			},
 			error => {
