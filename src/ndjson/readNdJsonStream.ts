@@ -27,6 +27,7 @@ const readNdJsonStream = async function* (
 				break;
 			}
 
+			// biome-ignore lint/performance/noAwaitInLoops: Awaiting the result is fine here, although we are in a loop.
 			const { done, value } = await reader.read();
 			if (done) {
 				break;
