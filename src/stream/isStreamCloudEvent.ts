@@ -1,31 +1,29 @@
+import { isRecord } from 'src/types/isRecord.js';
+import { isString } from 'src/types/isString.js';
+import { isStringOrNull } from 'src/types/isStringOrNull.js';
+import { isStringOrUndefined } from 'src/types/isStringOrUndefined.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
 import type { StreamCloudEvent } from './StreamCloudEvent.js';
 
-const blueprint: StreamCloudEvent = {
-	type: 'event',
-	payload: {
-		specversion: 'string',
-		id: 'string',
-		time: 'string',
-		source: 'string',
-		subject: 'string',
-		type: 'string',
-		datacontenttype: 'string',
-		data: {},
-		hash: 'string',
-		predecessorhash: 'string',
-	},
-};
-
 const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent => {
-	if (!hasShapeOf(line, blueprint)) {
-		return false;
-	}
-	if (line.type !== 'event') {
-		return false;
-	}
-
-	return true;
+	return hasShapeOf<StreamCloudEvent>(line, {
+		type: value => value === 'event',
+		payload: {
+			specversion: isString,
+			id: isString,
+			time: isString,
+			source: isString,
+			subject: isString,
+			type: isString,
+			datacontenttype: isString,
+			data: isRecord,
+			hash: isString,
+			predecessorhash: isString,
+			traceparent: isStringOrUndefined,
+			tracestate: isStringOrUndefined,
+			signature: isStringOrNull,
+		},
+	});
 };
 
 export { isStreamCloudEvent };

@@ -1,30 +1,42 @@
-const hasShapeOf = <T>(value: unknown, blueprint: T): value is T => {
-	if (typeof blueprint !== typeof value) {
+import { isRecord } from './isRecord.js';
+
+type Guard<T> = (x: unknown) => x is T;
+
+type Shape<T> = {
+	[K in keyof T]: T[K] extends object ? Shape<T[K]> | Guard<T[K]> : Guard<T[K]>;
+};
+
+const hasShapeOf = <T extends object>(value: unknown, shape: Shape<T>): value is T => {
+	if (!isRecord(value)) {
 		return false;
 	}
 
-	if (blueprint === null || value === null) {
-		return blueprint === null && value === null;
-	}
+	for (const key of Object.keys(shape) as Array<keyof T>) {
+		const spec = shape[key] as unknown;
+		const val = value[key as string];
 
-	if (typeof blueprint === 'object') {
-		if (Array.isArray(blueprint) || Array.isArray(value)) {
+		if (typeof spec === 'function') {
+			const guard = spec as Guard<T[typeof key]>;
+
+			if (!guard(val)) {
+				return false;
+			}
+
+			continue;
+		}
+
+		if (!isRecord(val)) {
 			return false;
 		}
 
-		const blueprintObject = blueprint as Record<string, unknown>;
-		const valueObject = value as Record<string, unknown>;
-
-		for (const key of Object.keys(blueprintObject)) {
-			if (!(key in valueObject)) {
-				return false;
-			}
-			if (!hasShapeOf(valueObject[key], blueprintObject[key])) {
-				return false;
-			}
+		if (
+			!hasShapeOf<Extract<T[typeof key], object>>(
+				val,
+				spec as Shape<Extract<T[typeof key], object>>,
+			)
+		) {
+			return false;
 		}
-
-		return true;
 	}
 
 	return true;
