@@ -11,6 +11,7 @@ interface Event {
 	predecessorhash: string;
 	traceparent?: string;
 	tracestate?: string;
+	signature: string | null;
 }
 
 export type { Event };

@@ -13,6 +13,7 @@ interface StreamCloudEvent {
 		predecessorhash: string;
 		traceparent?: string;
 		tracestate?: string;
+		signature: string | null;
 	};
 }
 

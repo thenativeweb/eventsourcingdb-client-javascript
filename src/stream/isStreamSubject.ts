@@ -1,22 +1,14 @@
+import { isString } from 'src/types/isString.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
 import type { StreamSubject } from './StreamSubject.js';
 
-const blueprint: StreamSubject = {
-	type: 'subject',
-	payload: {
-		subject: 'string',
-	},
-};
-
 const isStreamSubject = (line: unknown): line is StreamSubject => {
-	if (!hasShapeOf(line, blueprint)) {
-		return false;
-	}
-	if (line.type !== 'subject') {
-		return false;
-	}
-
-	return true;
+	return hasShapeOf<StreamSubject>(line, {
+		type: value => value === 'subject',
+		payload: {
+			subject: isString,
+		},
+	});
 };
 
 export { isStreamSubject };
