@@ -422,7 +422,15 @@ controller.abort();
 To list a specific event type, call the `readEventType` function with the event type as an argument. The function returns the detailed event type, which includes the schema:
 
 ```typescript
-eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired")
+eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired");
+```
+
+### Verifying an Event's Hash
+
+To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function returns an error:
+
+```typescript
+event.VerifyHash();
 ```
 
 ### Using Testcontainers
