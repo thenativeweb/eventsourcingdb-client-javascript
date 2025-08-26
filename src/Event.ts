@@ -1,22 +1,22 @@
 import crypto from 'node:crypto';
 
 class Event {
-	specversion: string;
-	id: string;
-	time: Date;
+	public specversion: string;
+	public id: string;
+	public time: Date;
 	#timeFromServer: string;
-	source: string;
-	subject: string;
-	type: string;
-	datacontenttype: string;
-	data: Record<string, unknown>;
-	hash: string;
-	predecessorhash: string;
-	traceparent?: string;
-	tracestate?: string;
-	signature: string | null;
+	public source: string;
+	public subject: string;
+	public type: string;
+	public datacontenttype: string;
+	public data: Record<string, unknown>;
+	public hash: string;
+	public predecessorhash: string;
+	public traceparent?: string;
+	public tracestate?: string;
+	public signature: string | null;
 
-	constructor({
+	public constructor({
 		specversion,
 		id,
 		time,
@@ -63,7 +63,7 @@ class Event {
 		this.signature = signature;
 	}
 
-	verifyHash(): void {
+	public verifyHash(): void {
 		const metadata = `${this.specversion}|${this.id}|${this.predecessorhash}|${this.#timeFromServer}|${this.source}|${this.subject}|${this.type}|${this.datacontenttype}`;
 
 		const metadataHash = crypto.createHash('sha256').update(metadata).digest('hex');
@@ -76,6 +76,29 @@ class Event {
 
 		if (finalHash !== this.hash) {
 			throw new Error('Failed to verify hash.');
+		}
+	}
+
+	public verifySignature(verificationKey: crypto.KeyObject): void {
+		if (this.signature === null) {
+			throw new Error('Signature must not be null.');
+		}
+
+		this.verifyHash();
+
+		const signaturePrefix = 'esdb:signature:v1:';
+
+		if (!this.signature.startsWith(signaturePrefix)) {
+			throw new Error(`Signature must start with '${signaturePrefix}'`);
+		}
+
+		const signature = this.signature.slice(signaturePrefix.length);
+		const signatureBytes = Buffer.from(signature, 'hex');
+		const hashBytes = Buffer.from(this.hash, 'utf8');
+
+		const isSignatureValid = crypto.verify(null, hashBytes, verificationKey, signatureBytes);
+		if (!isSignatureValid) {
+			throw new Error('Signature verification failed.');
 		}
 	}
 }
