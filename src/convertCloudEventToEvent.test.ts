@@ -18,6 +18,7 @@ suite('convertCloudEventToEvent', () => {
 			data: { key: 'value' },
 			hash: '55a1f59420da66b2c4c87b565660054cff7c2aad5ebe5f56e04ae0f2a20f00a9',
 			predecessorhash: '4f67e993373952b6b6733a9b99de21842c42ed68ff881169ac914488b49dfeef',
+			signature: null,
 		};
 
 		const event = convertCloudEventToEvent(cloudEvent);
@@ -32,5 +33,6 @@ suite('convertCloudEventToEvent', () => {
 		assert.deepStrictEqual(event.data, cloudEvent.data);
 		assert.deepStrictEqual(event.hash, cloudEvent.hash);
 		assert.deepStrictEqual(event.predecessorhash, cloudEvent.predecessorhash);
+		assert.deepStrictEqual(event.signature, cloudEvent.signature);
 	});
 });

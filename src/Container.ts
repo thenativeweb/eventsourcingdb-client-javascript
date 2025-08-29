@@ -1,12 +1,20 @@
-import type { StartedTestContainer } from 'testcontainers';
+import crypto from 'node:crypto';
+import type { Content, StartedTestContainer } from 'testcontainers';
 import { GenericContainer, Wait } from 'testcontainers';
 import { Client } from './Client.js';
+
+type ContentToCopy = {
+	content: Content;
+	target: string;
+	mode?: number;
+};
 
 class Container {
 	#imageName = 'thenativeweb/eventsourcingdb';
 	#imageTag = 'latest';
 	#internalPort = 3000;
 	#apiToken = 'secret';
+	#signingKey: crypto.KeyObject | undefined;
 	#container: StartedTestContainer | undefined;
 
 	public withImageTag(tag: string): this {
@@ -19,22 +27,44 @@ class Container {
 		return this;
 	}
 
+	public withSigningKey(): this {
+		const { privateKey } = crypto.generateKeyPairSync('ed25519');
+		this.#signingKey = privateKey;
+		return this;
+	}
+
 	public withPort(port: number): this {
 		this.#internalPort = port;
 		return this;
 	}
 
 	public async start(): Promise<void> {
+		const command = [
+			'run',
+			'--api-token',
+			this.#apiToken,
+			'--data-directory-temporary',
+			'--http-enabled',
+			'--https-enabled=false',
+		];
+
+		const contents: ContentToCopy[] = [];
+
+		if (this.#signingKey !== undefined) {
+			command.push('--signing-key-file');
+			command.push('/etc/esdb/signing-key.pem');
+
+			contents.push({
+				content: this.#signingKey.export({ format: 'pem', type: 'pkcs8' }),
+				target: '/etc/esdb/signing-key.pem',
+				mode: 0o777,
+			});
+		}
+
 		this.#container = await new GenericContainer(`${this.#imageName}:${this.#imageTag}`)
 			.withExposedPorts(this.#internalPort)
-			.withCommand([
-				'run',
-				'--api-token',
-				this.#apiToken,
-				'--data-directory-temporary',
-				'--http-enabled',
-				'--https-enabled=false',
-			])
+			.withCommand(command)
+			.withCopyContentToContainer(contents)
 			.withWaitStrategy(Wait.forHttp('/api/v1/ping', this.#internalPort).withStartupTimeout(10_000))
 			.start();
 	}
@@ -68,6 +98,22 @@ class Container {
 
 	public getApiToken(): string {
 		return this.#apiToken;
+	}
+
+	public getSigningKey(): crypto.KeyObject {
+		if (this.#signingKey === undefined) {
+			throw new Error('Signing key not set.');
+		}
+		return this.#signingKey;
+	}
+
+	public getVerificationKey(): crypto.KeyObject {
+		if (this.#signingKey === undefined) {
+			throw new Error('Signing key not set.');
+		}
+
+		const verificationKey = crypto.createPublicKey(this.#signingKey);
+		return verificationKey;
 	}
 
 	public isRunning(): boolean {

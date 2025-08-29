@@ -14,6 +14,21 @@ import { isStreamHeartbeat } from './stream/isStreamHeartbeat.js';
 import { isStreamRow } from './stream/isStreamRow.js';
 import { isStreamSubject } from './stream/isStreamSubject.js';
 import { hasShapeOf } from './types/hasShapeOf.js';
+import { isBoolean } from './types/isBoolean.js';
+import { isString } from './types/isString.js';
+
+interface ResponseBodyPing {
+	type: string;
+}
+
+interface ResponseBodyVerifyApiToken {
+	type: string;
+}
+
+interface ResponseBodyReadEventType {
+	eventType: string;
+	isPhantom: boolean;
+}
 
 class Client {
 	#url: URL;
@@ -39,7 +54,11 @@ class Client {
 		}
 
 		const responseBody = await response.json();
-		if (!hasShapeOf(responseBody, { type: 'string' })) {
+		if (
+			!hasShapeOf<ResponseBodyPing>(responseBody, {
+				type: isString,
+			})
+		) {
 			throw new Error('Failed to parse response.');
 		}
 
@@ -65,7 +84,11 @@ class Client {
 		}
 
 		const responseBody = await response.json();
-		if (!hasShapeOf(responseBody, { type: 'string' })) {
+		if (
+			!hasShapeOf<ResponseBodyVerifyApiToken>(responseBody, {
+				type: isString,
+			})
+		) {
 			throw new Error('Failed to parse response.');
 		}
 
@@ -444,9 +467,9 @@ class Client {
 		}
 		const responseBody = await response.json();
 		if (
-			!hasShapeOf(responseBody, {
-				eventType: 'string',
-				isPhantom: true,
+			!hasShapeOf<ResponseBodyReadEventType>(responseBody, {
+				eventType: isString,
+				isPhantom: isBoolean,
 			})
 		) {
 			throw new Error('Failed to parse response.');

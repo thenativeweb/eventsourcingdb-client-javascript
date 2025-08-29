@@ -1,23 +1,16 @@
+import { isBoolean } from 'src/types/isBoolean.js';
+import { isString } from 'src/types/isString.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
 import type { StreamEventType } from './StreamEventType.js';
 
-const blueprint: StreamEventType = {
-	type: 'eventType',
-	payload: {
-		eventType: 'string',
-		isPhantom: true,
-	},
-};
-
 const isStreamEventType = (line: unknown): line is StreamEventType => {
-	if (!hasShapeOf(line, blueprint)) {
-		return false;
-	}
-	if (line.type !== 'eventType') {
-		return false;
-	}
-
-	return true;
+	return hasShapeOf<StreamEventType>(line, {
+		type: value => value === 'eventType',
+		payload: {
+			eventType: isString,
+			isPhantom: isBoolean,
+		},
+	});
 };
 
 export { isStreamEventType };
