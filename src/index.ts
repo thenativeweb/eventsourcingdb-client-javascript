@@ -6,7 +6,8 @@ import type { EventType } from './EventType.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
+import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
 
 export { Client, Container, isSubjectOnEventId, isSubjectPristine };
-export type { Event, EventCandidate, EventType, ObserveEventsOptions, ReadEventsOptions };
+export type { Event, EventCandidate, EventType, ObserveEventsOptions, Precondition, ReadEventsOptions };
