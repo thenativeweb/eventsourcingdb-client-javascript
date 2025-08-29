@@ -10,4 +10,11 @@ import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
 
 export { Client, Container, isSubjectOnEventId, isSubjectPristine };
-export type { Event, EventCandidate, EventType, ObserveEventsOptions, Precondition, ReadEventsOptions };
+export type {
+	Event,
+	EventCandidate,
+	EventType,
+	ObserveEventsOptions,
+	Precondition,
+	ReadEventsOptions,
+};
