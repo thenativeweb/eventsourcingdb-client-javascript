@@ -25,7 +25,7 @@
     "typescript": "5.9.2"
   },
   "scripts": {
-    "analyze": "npx biome check --error-on-warnings .",
+    "analyze": "npx tsc --noEmit && npx biome check --error-on-warnings .",
     "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
     "format": "npx biome check --write .",
     "qa": "npm run analyze && npm run test",

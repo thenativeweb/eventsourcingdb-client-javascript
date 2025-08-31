@@ -422,7 +422,29 @@ controller.abort();
 To list a specific event type, call the `readEventType` function with the event type as an argument. The function returns the detailed event type, which includes the schema:
 
 ```typescript
-eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired")
+eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired");
+```
+
+### Verifying an Event's Hash
+
+To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function returns an error:
+
+```typescript
+event.VerifyHash();
+```
+
+*Note that this only verifies the hash. If you also want to verify the signature, you can skip this step and call `verifySignature` directly, which performs a hash verification internally.*
+
+### Verifying an Event's Signature
+
+To verify the authenticity of an event, call the `verifySignature` function on the event instance. This requires the public key that matches the private key used for signing on the server.
+
+The function first verifies the event's hash, and then checks the signature. If any verification step fails, it returns an error:
+
+```typescript
+const verificationKey = // an ed25519 public key
+
+event.verifySignature(verificationKey);
 ```
 
 ### Using Testcontainers
@@ -464,6 +486,22 @@ const container = new Container()
   .withPort(4000)
   .withApiToken('secret');
 ```
+
+If you want to sign events, call the `withSigningKey` function. This generates a new signing and verification key pair inside the container:
+
+```typescript
+const container = new Container()
+  .withSigningKey();
+```
+
+You can retrieve the private key (for signing) and the public key (for verifying signatures) once the container has been started:
+
+```typescript
+const signingKey = container.getSigningKey();
+const verificationKey = container.getVerificationKey();
+```
+
+The `signingKey` can be used when configuring the container to sign outgoing events. The `verificationKey` can be passed to `verifySignature` when verifying events read from the database.
 
 #### Configuring the Client Manually
 

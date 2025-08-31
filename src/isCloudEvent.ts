@@ -1,21 +1,26 @@
 import type { CloudEvent } from './CloudEvent.js';
 import { hasShapeOf } from './types/hasShapeOf.js';
-
-const blueprint: CloudEvent = {
-	specversion: 'string',
-	id: 'string',
-	time: 'string',
-	source: 'string',
-	subject: 'string',
-	type: 'string',
-	datacontenttype: 'string',
-	data: {},
-	hash: 'string',
-	predecessorhash: 'string',
-};
+import { isRecord } from './types/isRecord.js';
+import { isString } from './types/isString.js';
+import { isStringOrNull } from './types/isStringOrNull.js';
+import { isStringOrUndefined } from './types/isStringOrUndefined.js';
 
 const isCloudEvent = (value: unknown): value is CloudEvent => {
-	return hasShapeOf(value, blueprint);
+	return hasShapeOf<CloudEvent>(value, {
+		specversion: isString,
+		id: isString,
+		time: isString,
+		source: isString,
+		subject: isString,
+		type: isString,
+		datacontenttype: isString,
+		data: isRecord,
+		hash: isString,
+		predecessorhash: isString,
+		traceparent: isStringOrUndefined,
+		tracestate: isStringOrUndefined,
+		signature: isStringOrNull,
+	});
 };
 
 export { isCloudEvent };
