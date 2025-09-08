@@ -2,6 +2,10 @@ name: QA
 
 on: pull_request
 
+concurrency:
+  group: qa-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   qa:
     name: QA
