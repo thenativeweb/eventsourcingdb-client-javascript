@@ -7,6 +7,10 @@ on:
       - edited
       - synchronize
 
+concurrency:
+  group: lint-pr-title-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   lint-pr-title:
     name: Lint PR title
