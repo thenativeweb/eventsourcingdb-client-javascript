@@ -3,6 +3,7 @@ import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
 import { isCloudEvent } from './isCloudEvent.js';
+import { isValidServerHeader } from './isValidServerHeader.js';
 import { readNdJsonStream } from './ndjson/readNdJsonStream.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
@@ -49,6 +50,10 @@ class Client {
 			method: 'get',
 		});
 
+		if (!isValidServerHeader(response)) {
+			throw new Error('Server must be EventSourcingDB.');
+		}
+
 		if (response.status !== 200) {
 			throw new Error(`Failed to ping, got HTTP status code '${response.status}', expected '200'.`);
 		}
@@ -76,6 +81,10 @@ class Client {
 				authorization: `Bearer ${this.#apiToken}`,
 			},
 		});
+
+		if (!isValidServerHeader(response)) {
+			throw new Error('Server must be EventSourcingDB.');
+		}
 
 		if (response.status !== 200) {
 			throw new Error(
@@ -114,6 +123,10 @@ class Client {
 				preconditions,
 			}),
 		});
+
+		if (!isValidServerHeader(response)) {
+			throw new Error('Server must be EventSourcingDB.');
+		}
 
 		if (response.status !== 200) {
 			throw new Error(
@@ -173,6 +186,14 @@ class Client {
 					}),
 					signal: combinedSignal,
 				});
+
+				if (!isValidServerHeader(response)) {
+					const serverHeader = response.headers.get('Server');
+					if (!serverHeader) {
+						throw new Error('Server must be EventSourcingDB, but Server header is missing.');
+					}
+					throw new Error(`Server must be EventSourcingDB, got Server header: '${serverHeader}'.`);
+				}
 
 				if (response.status !== 200) {
 					throw new Error(
@@ -238,6 +259,14 @@ class Client {
 					body: JSON.stringify({ query }),
 					signal: combinedSignal,
 				});
+
+				if (!isValidServerHeader(response)) {
+					const serverHeader = response.headers.get('Server');
+					if (!serverHeader) {
+						throw new Error('Server must be EventSourcingDB, but Server header is missing.');
+					}
+					throw new Error(`Server must be EventSourcingDB, got Server header: '${serverHeader}'.`);
+				}
 
 				if (response.status !== 200) {
 					throw new Error(
@@ -314,6 +343,14 @@ class Client {
 					signal: combinedSignal,
 				});
 
+				if (!isValidServerHeader(response)) {
+					const serverHeader = response.headers.get('Server');
+					if (!serverHeader) {
+						throw new Error('Server must be EventSourcingDB, but Server header is missing.');
+					}
+					throw new Error(`Server must be EventSourcingDB, got Server header: '${serverHeader}'.`);
+				}
+
 				if (response.status !== 200) {
 					throw new Error(
 						`Failed to observe events, got HTTP status code '${response.status}', expected '200'.`,
@@ -371,6 +408,10 @@ class Client {
 			}),
 		});
 
+		if (!isValidServerHeader(response)) {
+			throw new Error('Server must be EventSourcingDB.');
+		}
+
 		if (response.status !== 200) {
 			throw new Error(
 				`Failed to register event schema, got HTTP status code '${response.status}', expected '200'.`,
@@ -410,6 +451,14 @@ class Client {
 					}),
 					signal: combinedSignal,
 				});
+
+				if (!isValidServerHeader(response)) {
+					const serverHeader = response.headers.get('Server');
+					if (!serverHeader) {
+						throw new Error('Server must be EventSourcingDB, but Server header is missing.');
+					}
+					throw new Error(`Server must be EventSourcingDB, got Server header: '${serverHeader}'.`);
+				}
 
 				if (response.status !== 200) {
 					throw new Error(
@@ -460,6 +509,10 @@ class Client {
 			}),
 		});
 
+		if (!isValidServerHeader(response)) {
+			throw new Error('Server must be EventSourcingDB.');
+		}
+
 		if (response.status !== 200) {
 			throw new Error(
 				`Failed to read event type, got HTTP status code '${response.status}', expected '200'.`,
@@ -503,6 +556,14 @@ class Client {
 					},
 					signal: combinedSignal,
 				});
+
+				if (!isValidServerHeader(response)) {
+					const serverHeader = response.headers.get('Server');
+					if (!serverHeader) {
+						throw new Error('Server must be EventSourcingDB, but Server header is missing.');
+					}
+					throw new Error(`Server must be EventSourcingDB, got Server header: '${serverHeader}'.`);
+				}
 
 				if (response.status !== 200) {
 					throw new Error(
