@@ -430,7 +430,7 @@ eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired
 To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function returns an error:
 
 ```typescript
-event.VerifyHash();
+event.verifyHash();
 ```
 
 *Note that this only verifies the hash. If you also want to verify the signature, you can skip this step and call `verifySignature` directly, which performs a hash verification internally.*
