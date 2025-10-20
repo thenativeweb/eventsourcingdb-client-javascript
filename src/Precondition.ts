@@ -2,6 +2,10 @@ interface IsSubjectPristinePrecondition {
 	subject: string;
 }
 
+interface IsSubjectPopulatedPrecondition {
+	subject: string;
+}
+
 interface IsSubjectOnEventIdPrecondition {
 	subject: string;
 	eventId: string;
@@ -19,6 +23,10 @@ type Precondition =
 	| {
 			type: 'isSubjectOnEventId';
 			payload: IsSubjectOnEventIdPrecondition;
+	  }
+	| {
+			type: 'isSubjectPopulated';
+			payload: IsSubjectPopulatedPrecondition;
 	  }
 	| {
 			type: 'isEventQlQueryTrue';
