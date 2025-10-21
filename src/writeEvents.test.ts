@@ -145,10 +145,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 
 		await client.writeEvents([firstEvent]);
 
-		const writtenEvents = await client.writeEvents(
-			[secondEvent],
-			[isSubjectPopulated('/test')],
-		);
+		const writtenEvents = await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
 
 		assert.equal(writtenEvents.length, 1);
 		assert.equal(writtenEvents[0].id, '1');
