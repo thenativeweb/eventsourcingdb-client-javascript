@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -51,5 +52,4 @@ jobs:
     - name: Publish new version
       if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
       run: |
-        echo "//registry.npmjs.org/:_authToken=${{ secrets.TOKEN_GITHUB_TO_NPM_RW }}" >> .npmrc
         npm publish
