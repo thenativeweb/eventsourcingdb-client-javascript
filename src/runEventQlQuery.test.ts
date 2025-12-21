@@ -68,4 +68,69 @@ suite('runEventQlQuery', { timeout: 30_000 }, () => {
 		assert.equal(secondRow.id, '1');
 		assert.equal(secondRow.data.value, 42);
 	});
+
+	test('reads rows with primitive number values.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const event: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: { value: 42 },
+		};
+
+		await client.writeEvents([event]);
+
+		const rowsRead: unknown[] = [];
+		for await (const row of client.runEventQlQuery('FROM e IN events PROJECT INTO e.data.value')) {
+			rowsRead.push(row);
+		}
+
+		assert.equal(rowsRead.length, 1);
+		assert.equal(rowsRead[0], 42);
+	});
+
+	test('reads rows with primitive boolean values.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const event: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: { value: 42 },
+		};
+
+		await client.writeEvents([event]);
+
+		const rowsRead: unknown[] = [];
+		for await (const row of client.runEventQlQuery(
+			'FROM e IN events PROJECT INTO e.data.value > 0',
+		)) {
+			rowsRead.push(row);
+		}
+
+		assert.equal(rowsRead.length, 1);
+		assert.equal(rowsRead[0], true);
+	});
+
+	test('reads rows with primitive string values.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const event: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test',
+			type: 'io.eventsourcingdb.test',
+			data: { name: 'hello' },
+		};
+
+		await client.writeEvents([event]);
+
+		const rowsRead: unknown[] = [];
+		for await (const row of client.runEventQlQuery('FROM e IN events PROJECT INTO e.data.name')) {
+			rowsRead.push(row);
+		}
+
+		assert.equal(rowsRead.length, 1);
+		assert.equal(rowsRead[0], 'hello');
+	});
 });
