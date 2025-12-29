@@ -14,7 +14,7 @@
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "testcontainers": "11.10.0"
+    "testcontainers": "11.11.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
