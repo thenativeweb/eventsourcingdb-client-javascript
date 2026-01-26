@@ -89,9 +89,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			const writtenEvent = writtenEvents[0];
 			assert.equal(writtenEvent.signature, null);
 
-			const { publicKey: verificationKey } = crypto.generateKeyPairSync('ed25519', {
-				publicKeyEncoding: { format: 'pem', type: 'spki' },
-			});
+			const { publicKey: verificationKey } = crypto.generateKeyPairSync('ed25519');
 
 			assert.throws((): void => {
 				writtenEvent.verifySignature(verificationKey);
