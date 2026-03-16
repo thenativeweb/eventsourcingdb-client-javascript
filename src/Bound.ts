@@ -5,4 +5,4 @@ interface Bound {
 	type: BoundType;
 }
 
-export type { BoundType, Bound };
+export type { Bound, BoundType };
