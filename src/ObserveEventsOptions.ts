@@ -14,4 +14,4 @@ interface ObserveEventsOptions {
 	fromLatestEvent?: ObserveFromLatestEvent;
 }
 
-export type { ObserveIfEventIsMissing, ObserveFromLatestEvent, ObserveEventsOptions };
+export type { ObserveEventsOptions, ObserveFromLatestEvent, ObserveIfEventIsMissing };

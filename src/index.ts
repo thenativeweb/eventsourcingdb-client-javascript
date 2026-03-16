@@ -11,14 +11,6 @@ import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
 
-export {
-	Client,
-	Container,
-	isEventQlQueryTrue,
-	isSubjectOnEventId,
-	isSubjectPopulated,
-	isSubjectPristine,
-};
 export type {
 	Event,
 	EventCandidate,
@@ -26,4 +18,12 @@ export type {
 	ObserveEventsOptions,
 	Precondition,
 	ReadEventsOptions,
+};
+export {
+	Client,
+	Container,
+	isEventQlQueryTrue,
+	isSubjectOnEventId,
+	isSubjectPopulated,
+	isSubjectPristine,
 };

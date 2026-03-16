@@ -18,4 +18,4 @@ interface ReadEventsOptions {
 	fromLatestEvent?: ReadFromLatestEvent;
 }
 
-export type { Order, ReadIfEventIsMissing, ReadFromLatestEvent, ReadEventsOptions };
+export type { Order, ReadEventsOptions, ReadFromLatestEvent, ReadIfEventIsMissing };
