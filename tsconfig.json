@@ -1,14 +1,15 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
+		"ignoreDeprecations": "6.0",
 		"declaration": true,
-		"esModuleInterop": true,
 		"lib": ["ES2023"],
-		"module": "CommonJS",
+		"module": "preserve",
+		"moduleResolution": "bundler",
 		"outDir": "dist",
 		"resolveJsonModule": true,
 		"strict": true,
-		"target": "ES2023"
+		"target": "ES2023",
+		"types": ["node"]
 	},
 	"include": ["./src/**/*.ts"],
 	"exclude": ["./dist"]

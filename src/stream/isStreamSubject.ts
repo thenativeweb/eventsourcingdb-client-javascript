@@ -1,5 +1,5 @@
-import { isString } from 'src/types/isString.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
+import { isString } from '../types/isString.js';
 import type { StreamSubject } from './StreamSubject.js';
 
 const isStreamSubject = (line: unknown): line is StreamSubject => {
