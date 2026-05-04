@@ -17,7 +17,7 @@
     "testcontainers": "11.14.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.13",
+    "@biomejs/biome": "2.4.14",
     "@types/node": "25.6.0",
     "get-port": "7.2.0",
     "tsup": "8.5.1",
