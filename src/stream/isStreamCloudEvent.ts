@@ -1,8 +1,8 @@
-import { isRecord } from 'src/types/isRecord.js';
-import { isString } from 'src/types/isString.js';
-import { isStringOrNull } from 'src/types/isStringOrNull.js';
-import { isStringOrUndefined } from 'src/types/isStringOrUndefined.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
+import { isRecord } from '../types/isRecord.js';
+import { isString } from '../types/isString.js';
+import { isStringOrNull } from '../types/isStringOrNull.js';
+import { isStringOrUndefined } from '../types/isStringOrUndefined.js';
 import type { StreamCloudEvent } from './StreamCloudEvent.js';
 
 const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent => {
