@@ -14,14 +14,14 @@
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "testcontainers": "11.14.0"
+    "testcontainers": "12.0.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.15",
-    "@types/node": "25.8.0",
+    "@biomejs/biome": "2.4.16",
+    "@types/node": "25.9.2",
     "get-port": "7.2.0",
     "tsup": "8.5.1",
-    "tsx": "4.22.2",
+    "tsx": "4.22.4",
     "typescript": "6.0.3"
   },
   "scripts": {
