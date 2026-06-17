@@ -8,11 +8,17 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.cts",
   "dependencies": {
     "testcontainers": "12.0.1"
   },
@@ -20,13 +26,13 @@
     "@biomejs/biome": "2.4.16",
     "@types/node": "25.9.2",
     "get-port": "7.2.0",
-    "tsup": "8.5.1",
+    "tsdown": "0.22.3",
     "tsx": "4.22.4",
     "typescript": "6.0.3"
   },
   "scripts": {
     "analyze": "npx tsc --noEmit && npx biome check --error-on-warnings .",
-    "build": "npx tsc --noEmit && npx tsup --clean --dts --format cjs,esm --minify --out-dir=./dist/ ./src/index.ts",
+    "build": "npx tsc --noEmit && npx tsdown --format cjs,esm --dts --minify --out-dir ./dist ./src/index.ts",
     "format": "npx biome check --write .",
     "qa": "npm run analyze && npm run test",
     "test": "node --test --import tsx \"./src/**/*.test.ts\""

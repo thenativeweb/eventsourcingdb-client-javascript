@@ -1,5 +1,5 @@
-import { isString } from 'src/types/isString.js';
 import { hasShapeOf } from '../types/hasShapeOf.js';
+import { isString } from '../types/isString.js';
 import type { StreamError } from './StreamError.js';
 
 const isStreamError = (line: unknown): line is StreamError => {
