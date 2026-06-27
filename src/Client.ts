@@ -32,8 +32,8 @@ interface ResponseBodyReadEventType {
 }
 
 class Client {
-	#url: URL;
-	#apiToken: string;
+	readonly #url: URL;
+	readonly #apiToken: string;
 
 	#getUrl(path: string): string {
 		return new URL(path, this.#url).toString();
@@ -160,7 +160,7 @@ class Client {
 		const url = this.#getUrl('/api/v1/read-events');
 		const apiToken = this.#apiToken;
 
-		return (async function* () {
+		return (async function* (): AsyncGenerator<Event, void, void> {
 			const internalAbortController = new AbortController();
 			const combinedSignal = signal ?? internalAbortController.signal;
 			const shouldAbortInternally = !signal;
@@ -168,9 +168,9 @@ class Client {
 			let removeAbortListener: (() => void) | undefined;
 
 			if (signal && !signal.aborted) {
-				const onAbort = () => internalAbortController.abort();
+				const onAbort = (): void => internalAbortController.abort();
 				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
 			}
 
 			try {
@@ -236,7 +236,7 @@ class Client {
 		const url = this.#getUrl('/api/v1/run-eventql-query');
 		const apiToken = this.#apiToken;
 
-		return (async function* () {
+		return (async function* (): AsyncGenerator<unknown, void, void> {
 			const internalAbortController = new AbortController();
 			const combinedSignal = signal ?? internalAbortController.signal;
 			const shouldAbortInternally = !signal;
@@ -244,9 +244,9 @@ class Client {
 			let removeAbortListener: (() => void) | undefined;
 
 			if (signal && !signal.aborted) {
-				const onAbort = () => internalAbortController.abort();
+				const onAbort = (): void => internalAbortController.abort();
 				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
 			}
 
 			try {
@@ -316,7 +316,7 @@ class Client {
 		const url = this.#getUrl('/api/v1/observe-events');
 		const apiToken = this.#apiToken;
 
-		return (async function* () {
+		return (async function* (): AsyncGenerator<Event, void, void> {
 			const internalAbortController = new AbortController();
 			const combinedSignal = signal ?? internalAbortController.signal;
 			const shouldAbortInternally = !signal;
@@ -324,9 +324,9 @@ class Client {
 			let removeAbortListener: (() => void) | undefined;
 
 			if (signal && !signal.aborted) {
-				const onAbort = () => internalAbortController.abort();
+				const onAbort = (): void => internalAbortController.abort();
 				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
 			}
 
 			try {
@@ -426,7 +426,7 @@ class Client {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
 
-		return (async function* () {
+		return (async function* (): AsyncGenerator<string, void, void> {
 			const internalAbortController = new AbortController();
 			const combinedSignal = signal ?? internalAbortController.signal;
 			const shouldAbortInternally = !signal;
@@ -434,9 +434,9 @@ class Client {
 			let removeAbortListener: (() => void) | undefined;
 
 			if (signal && !signal.aborted) {
-				const onAbort = () => internalAbortController.abort();
+				const onAbort = (): void => internalAbortController.abort();
 				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
 			}
 
 			try {
@@ -535,7 +535,7 @@ class Client {
 		const url = this.#getUrl('/api/v1/read-event-types');
 		const apiToken = this.#apiToken;
 
-		return (async function* () {
+		return (async function* (): AsyncGenerator<EventType, void, void> {
 			const internalAbortController = new AbortController();
 			const combinedSignal = signal ?? internalAbortController.signal;
 			const shouldAbortInternally = !signal;
@@ -543,9 +543,9 @@ class Client {
 			let removeAbortListener: (() => void) | undefined;
 
 			if (signal && !signal.aborted) {
-				const onAbort = () => internalAbortController.abort();
+				const onAbort = (): void => internalAbortController.abort();
 				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = () => signal.removeEventListener('abort', onAbort);
+				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
 			}
 
 			try {

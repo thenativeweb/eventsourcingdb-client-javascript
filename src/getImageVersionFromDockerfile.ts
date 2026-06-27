@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const versionRegex = /^FROM\sthenativeweb\/eventsourcingdb:(.+)$/m;
+const versionRegex = /^FROM\sthenativeweb\/eventsourcingdb:(.+)$/mu;
 
 const getImageVersionFromDockerfile = (): string => {
-	const dockerfile = path.join(__dirname, '..', 'docker', 'Dockerfile');
+	const dockerfile = path.join(import.meta.dirname, '..', 'docker', 'Dockerfile');
 	const data = fs.readFileSync(dockerfile, 'utf-8');
 
 	const matches = data.match(versionRegex);

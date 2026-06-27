@@ -5,9 +5,9 @@ import { isStringOrNull } from '../types/isStringOrNull.js';
 import { isStringOrUndefined } from '../types/isStringOrUndefined.js';
 import type { StreamCloudEvent } from './StreamCloudEvent.js';
 
-const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent => {
-	return hasShapeOf<StreamCloudEvent>(line, {
-		type: value => value === 'event',
+const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent =>
+	hasShapeOf<StreamCloudEvent>(line, {
+		type: (value: unknown): value is 'event' => value === 'event',
 		payload: {
 			specversion: isString,
 			id: isString,
@@ -24,6 +24,5 @@ const isStreamCloudEvent = (line: unknown): line is StreamCloudEvent => {
 			signature: isStringOrNull,
 		},
 	});
-};
 
 export { isStreamCloudEvent };
