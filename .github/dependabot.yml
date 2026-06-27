@@ -1,47 +1,76 @@
 version: 2
 updates:
-- package-ecosystem: npm
-  directory: "/"
-  cooldown:
-    default-days: 7
-  schedule:
-    interval: weekly
-  open-pull-requests-limit: 10
-  assignees:
-  - thenativeweb/internal_dev
-  labels:
-  - Dependencies
-  versioning-strategy: increase
-  allow:
-  - dependency-type: direct
-  commit-message:
-    prefix: chore
-    prefix-development: chore
+  - package-ecosystem: npm
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    assignees:
+      - goloroden
+    labels:
+      - Dependencies
+    versioning-strategy: increase
+    allow:
+      - dependency-type: direct
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+    groups:
+      npm-production:
+        dependency-type: production
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      npm-development:
+        dependency-type: development
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
-- package-ecosystem: docker
-  directory: "/docker"
-  cooldown:
-    default-days: 7
-  schedule:
-    interval: weekly
-  open-pull-requests-limit: 10
-  assignees:
-  - thenativeweb/internal_dev
-  labels:
-  - Dependencies
-  commit-message:
-    prefix: chore
+  - package-ecosystem: docker
+    directory: "/docker"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    assignees:
+      - goloroden
+    labels:
+      - Dependencies
+    commit-message:
+      prefix: chore
+    groups:
+      docker:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
-- package-ecosystem: "github-actions"
-  directory: "/"
-  cooldown:
-    default-days: 7
-  schedule:
-    interval: "weekly"
-  open-pull-requests-limit: 10
-  assignees:
-  - thenativeweb/internal_dev
-  labels:
-  - Dependencies
-  commit-message:
-    prefix: chore
+  - package-ecosystem: github-actions
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    assignees:
+      - goloroden
+    labels:
+      - Dependencies
+    commit-message:
+      prefix: chore
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
