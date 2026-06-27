@@ -6,7 +6,7 @@ const readNdJsonStream = async function* (
 	const decoder = new TextDecoder('utf-8');
 	let buffer = '';
 
-	const onAbort = () => {
+	const onAbort = (): void => {
 		reader.cancel().catch(() => {
 			// Intentionally left blank.
 		});
@@ -22,11 +22,7 @@ const readNdJsonStream = async function* (
 	signal.addEventListener('abort', onAbort);
 
 	try {
-		while (true) {
-			if (signal.aborted) {
-				break;
-			}
-
+		while (!signal.aborted) {
 			// biome-ignore lint/performance/noAwaitInLoops: Awaiting the result is fine here, although we are in a loop.
 			const { done, value } = await reader.read();
 			if (done) {
@@ -35,19 +31,16 @@ const readNdJsonStream = async function* (
 
 			buffer += decoder.decode(value, { stream: true });
 
-			let index: number;
-			while (true) {
-				index = buffer.indexOf('\n');
-				if (index === -1) {
-					break;
-				}
-
+			let index = buffer.indexOf('\n');
+			while (index !== -1) {
 				const line = buffer.slice(0, index).trim();
 				buffer = buffer.slice(index + 1);
 
 				if (line) {
 					yield JSON.parse(line);
 				}
+
+				index = buffer.indexOf('\n');
 			}
 		}
 	} finally {

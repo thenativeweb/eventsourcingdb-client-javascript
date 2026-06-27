@@ -1,10 +1,8 @@
 import type { Precondition } from './Precondition.js';
 
-const isSubjectPopulated = (subject: string): Precondition => {
-	return {
-		type: 'isSubjectPopulated',
-		payload: { subject },
-	};
-};
+const isSubjectPopulated = (subject: string): Precondition => ({
+	type: 'isSubjectPopulated',
+	payload: { subject },
+});
 
 export { isSubjectPopulated };

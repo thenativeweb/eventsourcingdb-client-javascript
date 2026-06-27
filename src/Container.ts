@@ -3,14 +3,14 @@ import type { Content, StartedTestContainer } from 'testcontainers';
 import { GenericContainer, Wait } from 'testcontainers';
 import { Client } from './Client.js';
 
-type ContentToCopy = {
+interface ContentToCopy {
 	content: Content;
 	target: string;
 	mode?: number;
-};
+}
 
 class Container {
-	#imageName = 'thenativeweb/eventsourcingdb';
+	readonly #imageName = 'thenativeweb/eventsourcingdb';
 	#imageTag = 'latest';
 	#internalPort = 3000;
 	#apiToken = 'secret';

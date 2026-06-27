@@ -33,22 +33,32 @@
 		}
 	},
 	"linter": {
-		"domains": {
-			"test": "all"
-		},
 		"enabled": true,
 		"rules": {
-			"complexity": {
-				"noExcessiveCognitiveComplexity": "off"
-			},
+			"preset": "all",
+			"nursery": "on",
 			"correctness": {
-				"noPrivateImports": "off"
+				"noNodejsModules": "off",
+				"useImportExtensions": {
+					"level": "on",
+					"options": {
+						"forceJsExtensions": true
+					}
+				},
+				"useQwikValidLexicalScope": "off",
+				"useHookAtTopLevel": "off"
 			},
-			"performance": "on",
-			"security": "on",
-			"suspicious": "on",
 			"style": {
-				"useFilenamingConvention": "off"
+				"useFilenamingConvention": {
+					"level": "on",
+					"options": {
+						"filenameCases": ["camelCase", "PascalCase"]
+					}
+				},
+				"noContinue": "off"
+			},
+			"security": {
+				"noSecrets": "off"
 			}
 		}
 	},
@@ -58,5 +68,17 @@
 				"organizeImports": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.test.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noMagicNumbers": "off"
+					}
+				}
+			}
+		}
+	]
 }

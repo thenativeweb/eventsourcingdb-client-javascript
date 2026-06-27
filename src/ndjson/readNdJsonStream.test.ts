@@ -5,7 +5,7 @@ import { readNdJsonStream } from './readNdJsonStream.js';
 
 function convertStreamToWebStream(stream: Readable): ReadableStream<Uint8Array> {
 	return new ReadableStream({
-		start(controller) {
+		start(controller: ReadableStreamDefaultController<Uint8Array>): void {
 			stream.on('data', chunk => {
 				controller.enqueue(new Uint8Array(chunk));
 			});

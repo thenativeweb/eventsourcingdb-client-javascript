@@ -5,8 +5,8 @@ import { isString } from './types/isString.js';
 import { isStringOrNull } from './types/isStringOrNull.js';
 import { isStringOrUndefined } from './types/isStringOrUndefined.js';
 
-const isCloudEvent = (value: unknown): value is CloudEvent => {
-	return hasShapeOf<CloudEvent>(value, {
+const isCloudEvent = (value: unknown): value is CloudEvent =>
+	hasShapeOf<CloudEvent>(value, {
 		specversion: isString,
 		id: isString,
 		time: isString,
@@ -21,6 +21,5 @@ const isCloudEvent = (value: unknown): value is CloudEvent => {
 		tracestate: isStringOrUndefined,
 		signature: isStringOrNull,
 	});
-};
 
 export { isCloudEvent };

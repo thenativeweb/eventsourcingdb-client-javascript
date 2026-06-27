@@ -87,8 +87,8 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 		await client.registerEventSchema(eventType, schema);
 
 		const eventTypesRead: EventType[] = [];
-		for await (const eventType of client.readEventTypes()) {
-			eventTypesRead.push(eventType);
+		for await (const eventTypeRead of client.readEventTypes()) {
+			eventTypesRead.push(eventTypeRead);
 		}
 
 		assert.deepEqual(eventTypesRead, [

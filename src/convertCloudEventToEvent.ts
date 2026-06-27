@@ -1,8 +1,8 @@
 import type { CloudEvent } from './CloudEvent.js';
 import { Event } from './Event.js';
 
-const convertCloudEventToEvent = (cloudEvent: CloudEvent): Event => {
-	return new Event({
+const convertCloudEventToEvent = (cloudEvent: CloudEvent): Event =>
+	new Event({
 		specversion: cloudEvent.specversion,
 		id: cloudEvent.id,
 		time: new Date(cloudEvent.time),
@@ -18,6 +18,5 @@ const convertCloudEventToEvent = (cloudEvent: CloudEvent): Event => {
 		tracestate: cloudEvent.tracestate,
 		signature: cloudEvent.signature,
 	});
-};
 
 export { convertCloudEventToEvent };
