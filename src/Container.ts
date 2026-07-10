@@ -112,6 +112,10 @@ class Container {
 			throw new Error('Signing key not set.');
 		}
 
+		// @types/node >= 26.0.0 dropped the KeyObject overload from createPublicKey,
+		// even though Node accepts a (private) KeyObject at runtime to derive the public
+		// key. Remove this suppression once DefinitelyTyped restores the overload.
+		// @ts-expect-error
 		const verificationKey = crypto.createPublicKey(this.#signingKey);
 		return verificationKey;
 	}
