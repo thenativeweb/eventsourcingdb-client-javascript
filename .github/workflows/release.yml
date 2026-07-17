@@ -22,7 +22,7 @@ jobs:
         fetch-depth: '0'
         token: ${{ secrets.TOKEN_GITHUB_TO_GITHUB_REPOSITORIES_RW }}
     - name: Use Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v6.4.0
       with:
         node-version-file: '.nvmrc'
     - name: Install dependencies
@@ -33,7 +33,7 @@ jobs:
         npm run qa
     - name: Get next version
       id: get_next_version
-      uses: thenativeweb/get-next-version@2.7.3
+      uses: thenativeweb/get-next-version@2.7.4
     - name: Create new version
       if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
       run: |
