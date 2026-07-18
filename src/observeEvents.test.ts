@@ -168,7 +168,9 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsObserved.length, 1);
-		assert.equal(eventsObserved[0].data.value, 42);
+		const [eventObserved] = eventsObserved;
+		assert.ok(eventObserved);
+		assert.equal(eventObserved.data.value, 42);
 	});
 
 	test('observes from latest event.', async (): Promise<void> => {
@@ -217,6 +219,8 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsObserved.length, 1);
-		assert.equal(eventsObserved[0].data.value, 42);
+		const [eventObserved] = eventsObserved;
+		assert.ok(eventObserved);
+		assert.equal(eventObserved.data.value, 42);
 	});
 });

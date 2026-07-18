@@ -36,6 +36,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 
 			assert.doesNotThrow((): void => {
 				writtenEvent.verifyHash();
@@ -59,6 +60,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 
 			const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
 			writtenEvent.hash = invalidHash;
@@ -87,6 +89,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 			assert.equal(writtenEvent.signature, null);
 
 			const { publicKey: verificationKey } = crypto.generateKeyPairSync('ed25519');
@@ -118,6 +121,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 			assert.notEqual(writtenEvent.signature, null);
 
 			const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
@@ -152,6 +156,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 			assert.notEqual(writtenEvent.signature, null);
 
 			writtenEvent.signature += '0123456789abcdef';
@@ -185,6 +190,7 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.equal(writtenEvents.length, 1);
 
 			const writtenEvent = writtenEvents[0];
+			assert.ok(writtenEvent);
 			assert.notEqual(writtenEvent.signature, null);
 
 			const verificationKey = container.getVerificationKey();

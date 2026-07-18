@@ -36,7 +36,9 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		const writtenEvents = await client.writeEvents([event]);
 
 		assert.equal(writtenEvents.length, 1);
-		assert.equal(writtenEvents[0].id, '0');
+		const [writtenEvent] = writtenEvents;
+		assert.ok(writtenEvent);
+		assert.equal(writtenEvent.id, '0');
 	});
 
 	test('writes multiple events.', async (): Promise<void> => {
@@ -63,11 +65,15 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		const writtenEvents = await client.writeEvents([firstEvent, secondEvent]);
 		assert.equal(writtenEvents.length, 2);
 
-		assert.equal(writtenEvents[0].id, '0');
-		assert.equal(writtenEvents[0].data.value, 23);
+		const [firstWrittenEvent, secondWrittenEvent] = writtenEvents;
+		assert.ok(firstWrittenEvent);
+		assert.ok(secondWrittenEvent);
 
-		assert.equal(writtenEvents[1].id, '1');
-		assert.equal(writtenEvents[1].data.value, 42);
+		assert.equal(firstWrittenEvent.id, '0');
+		assert.equal(firstWrittenEvent.data.value, 23);
+
+		assert.equal(secondWrittenEvent.id, '1');
+		assert.equal(secondWrittenEvent.data.value, 42);
 	});
 
 	test('supports the isSubjectPristine precondition.', async (): Promise<void> => {
@@ -148,8 +154,10 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		const writtenEvents = await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
 
 		assert.equal(writtenEvents.length, 1);
-		assert.equal(writtenEvents[0].id, '1');
-		assert.equal(writtenEvents[0].data.value, 42);
+		const [writtenEvent] = writtenEvents;
+		assert.ok(writtenEvent);
+		assert.equal(writtenEvent.id, '1');
+		assert.equal(writtenEvent.data.value, 42);
 	});
 
 	test('supports the isSubjectOnEventId precondition.', async (): Promise<void> => {

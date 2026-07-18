@@ -129,8 +129,11 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsRead.length, 2);
-		assert.equal(eventsRead[0].data.value, 23);
-		assert.equal(eventsRead[1].data.value, 42);
+		const [firstEventRead, secondEventRead] = eventsRead;
+		assert.ok(firstEventRead);
+		assert.ok(secondEventRead);
+		assert.equal(firstEventRead.data.value, 23);
+		assert.equal(secondEventRead.data.value, 42);
 	});
 
 	test('reads anti-chronologically.', async (): Promise<void> => {
@@ -165,8 +168,11 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsRead.length, 2);
-		assert.equal(eventsRead[0].data.value, 42);
-		assert.equal(eventsRead[1].data.value, 23);
+		const [firstEventRead, secondEventRead] = eventsRead;
+		assert.ok(firstEventRead);
+		assert.ok(secondEventRead);
+		assert.equal(firstEventRead.data.value, 42);
+		assert.equal(secondEventRead.data.value, 23);
 	});
 
 	test('reads with lower bound.', async (): Promise<void> => {
@@ -201,7 +207,9 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 42);
+		const [eventRead] = eventsRead;
+		assert.ok(eventRead);
+		assert.equal(eventRead.data.value, 42);
 	});
 
 	test('reads with upper bound.', async (): Promise<void> => {
@@ -236,7 +244,9 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 23);
+		const [eventRead] = eventsRead;
+		assert.ok(eventRead);
+		assert.equal(eventRead.data.value, 23);
 	});
 
 	test('reads from latest event.', async (): Promise<void> => {
@@ -275,6 +285,8 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		}
 
 		assert.equal(eventsRead.length, 1);
-		assert.equal(eventsRead[0].data.value, 42);
+		const [eventRead] = eventsRead;
+		assert.ok(eventRead);
+		assert.equal(eventRead.data.value, 42);
 	});
 });
