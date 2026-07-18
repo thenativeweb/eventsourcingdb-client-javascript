@@ -8,12 +8,13 @@ const getImageVersionFromDockerfile = (): string => {
 	const data = fs.readFileSync(dockerfile, 'utf-8');
 
 	const matches = data.match(versionRegex);
+	const version = matches?.[1];
 
-	if (!matches) {
+	if (version === undefined) {
 		throw new Error('Failed to find image version in Dockerfile.');
 	}
 
-	return matches[1];
+	return version;
 };
 
 export { getImageVersionFromDockerfile };

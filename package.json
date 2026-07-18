@@ -6,19 +6,15 @@
     "name": "the native web GmbH",
     "email": "hello@thenativeweb.io"
   },
+  "type": "module",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
-  "types": "./dist/index.d.cts",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "dependencies": {
     "testcontainers": "12.0.4"
   },
@@ -26,13 +22,12 @@
     "@biomejs/biome": "2.5.3",
     "@types/node": "26.1.1",
     "get-port": "7.2.0",
-    "tsdown": "0.22.4",
     "tsx": "4.23.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "scripts": {
     "analyze": "npx tsc --noEmit && npx biome check --error-on-warnings .",
-    "build": "npx tsc --noEmit && npx tsdown --format cjs,esm --dts --minify --out-dir ./dist ./src/index.ts",
+    "build": "npx tsc -p tsconfig.build.json",
     "format": "npx biome check --write .",
     "qa": "npm run analyze && npm run test",
     "test": "node --test --import tsx \"./src/**/*.test.ts\""
