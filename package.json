@@ -1,6 +1,6 @@
 {
   "name": "eventsourcingdb",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "The official JavaScript client SDK for EventSourcingDB.",
   "author": {
     "name": "the native web GmbH",
@@ -14,7 +14,9 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "testcontainers": "12.0.4"
   },
