@@ -18,7 +18,7 @@
     "dist"
   ],
   "dependencies": {
-    "testcontainers": "12.0.4"
+    "testcontainers": "12.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.5",
