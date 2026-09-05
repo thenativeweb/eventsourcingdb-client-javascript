@@ -3,6 +3,7 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { isRecord } from './types/isRecord.js';
 
 suite('runEventQlQuery', { timeout: 30_000 }, () => {
 	let container: Container;
@@ -58,14 +59,16 @@ suite('runEventQlQuery', { timeout: 30_000 }, () => {
 
 		assert.equal(rowsRead.length, 2);
 
-		// biome-ignore lint/suspicious/noExplicitAny: Here, the cast is okay.
-		const firstRow = rowsRead[0] as any;
+		const firstRow = rowsRead[0];
+		assert.ok(isRecord(firstRow));
 		assert.equal(firstRow.id, '0');
+		assert.ok(isRecord(firstRow.data));
 		assert.equal(firstRow.data.value, 23);
 
-		// biome-ignore lint/suspicious/noExplicitAny: Here, the cast is okay.
-		const secondRow = rowsRead[1] as any;
+		const secondRow = rowsRead[1];
+		assert.ok(isRecord(secondRow));
 		assert.equal(secondRow.id, '1');
+		assert.ok(isRecord(secondRow.data));
 		assert.equal(secondRow.data.value, 42);
 	});
 
