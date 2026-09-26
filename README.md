@@ -515,7 +515,7 @@ const signingKey = container.getSigningKey();
 const verificationKey = container.getVerificationKey();
 ```
 
-The `signingKey` can be used when configuring the container to sign outgoing events. The `verificationKey` can be passed to `verifySignature` when verifying events read from the database.
+The `signingKey` is the private key EventSourcingDB signs events with. The `verificationKey` can be passed to `verifySignature` when verifying events read from the database.
 
 #### Configuring the Client Manually
 
