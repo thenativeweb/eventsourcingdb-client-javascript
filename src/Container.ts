@@ -46,6 +46,8 @@ class Container {
 			'--data-directory-temporary',
 			'--http-enabled',
 			'--https-enabled=false',
+			'--http-port',
+			String(this.#internalPort),
 		];
 
 		const contents: ContentToCopy[] = [];
