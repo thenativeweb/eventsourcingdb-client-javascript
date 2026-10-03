@@ -260,6 +260,29 @@ for await (const row of client.runEventQlQuery(`
 controller.abort();
 ```
 
+#### Detecting a Stalled Connection
+
+While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+
+```typescript
+import { HeartbeatTimeoutError } from 'eventsourcingdb';
+
+try {
+  for await (const row of client.runEventQlQuery(`
+    FROM e IN events
+    PROJECT INTO e
+  `)) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof HeartbeatTimeoutError) {
+    // ...
+  }
+}
+```
+
+*Note that the time you spend handling a row does not count towards the 30 seconds, and that aborting the query does not cause a `HeartbeatTimeoutError`.*
+
 ### Observing Events
 
 To observe all events of a subject, call the `observeEvents` function with the subject as the first argument and an options object as the second argument. Set the `recursive` option to `false`. This ensures that only events of the given subject are returned, not events of nested subjects.
@@ -343,6 +366,28 @@ for await (const event of client.observeEvents('/books/42', {
 // observing to end.
 controller.abort();
 ```
+
+#### Detecting a Stalled Connection
+
+While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+
+```typescript
+import { HeartbeatTimeoutError } from 'eventsourcingdb';
+
+try {
+  for await (const event of client.observeEvents('/books/42', {
+    recursive: false
+  })) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof HeartbeatTimeoutError) {
+    // ...
+  }
+}
+```
+
+*Note that the time you spend handling an event does not count towards the 30 seconds, and that aborting observing does not cause a `HeartbeatTimeoutError`.*
 
 ### Registering an Event Schema
 
