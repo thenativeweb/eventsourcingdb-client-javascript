@@ -3,6 +3,7 @@ import { Container } from './Container.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
+import { HeartbeatTimeoutError } from './HeartbeatTimeoutError.js';
 import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPopulated } from './isSubjectPopulated.js';
@@ -22,6 +23,7 @@ export type {
 export {
 	Client,
 	Container,
+	HeartbeatTimeoutError,
 	isEventQlQueryTrue,
 	isSubjectOnEventId,
 	isSubjectPopulated,

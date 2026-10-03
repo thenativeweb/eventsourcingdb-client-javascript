@@ -2,6 +2,7 @@ import { convertCloudEventToEvent } from './convertCloudEventToEvent.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
+import { heartbeatTimeout } from './heartbeatTimeout.js';
 import { isCloudEvent } from './isCloudEvent.js';
 import { isValidServerHeader } from './isValidServerHeader.js';
 import { readNdJsonStream } from './ndjson/readNdJsonStream.js';
@@ -277,7 +278,11 @@ class Client {
 					throw new Error('Failed to run EventQL query.');
 				}
 
-				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const line of readNdJsonStream(
+					response.body,
+					combinedSignal,
+					heartbeatTimeout.milliseconds,
+				)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -360,7 +365,11 @@ class Client {
 					throw new Error('Failed to observe events.');
 				}
 
-				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const line of readNdJsonStream(
+					response.body,
+					combinedSignal,
+					heartbeatTimeout.milliseconds,
+				)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
