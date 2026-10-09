@@ -1,6 +1,6 @@
 {
   "name": "eventsourcingdb",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "The official JavaScript client SDK for EventSourcingDB.",
   "author": {
     "name": "the native web GmbH",
@@ -18,7 +18,7 @@
     "dist"
   ],
   "dependencies": {
-    "testcontainers": "12.1.0"
+    "testcontainers": "12.2.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
