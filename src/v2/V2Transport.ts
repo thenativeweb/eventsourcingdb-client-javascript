@@ -1,6 +1,7 @@
 import type { Event } from '../Event.js';
 import type { EventCandidate } from '../EventCandidate.js';
 import type { EventType } from '../EventType.js';
+import { createStreamEndedError } from '../http/createStreamEndedError.js';
 import { runWrite } from '../http/runWrite.js';
 import type { ObserveEventsOptions } from '../ObserveEventsOptions.js';
 import type { Precondition } from '../Precondition.js';
@@ -55,7 +56,7 @@ const readWriteAnswer = async (
 	}
 
 	signal?.throwIfAborted();
-	throw new Error(`Failed to ${action}, since the stream ended before its end item.`);
+	throw createStreamEndedError(action);
 };
 
 // Sends the requests through the v2 API, which EventSourcingDB offers since
@@ -219,7 +220,8 @@ class V2Transport implements Transport {
 		});
 	}
 
-	// Observing never ends on its own, so its stream has no end item.
+	// Observing never ends on its own, so its stream has no end item, and fails
+	// if it ends nonetheless.
 	public observeEvents(
 		subject: string,
 		options: ObserveEventsOptions,

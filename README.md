@@ -133,7 +133,7 @@ try {
 
 The v1 API does not send codes. For the errors of the v1 API that clearly match a code of the v2 API, the client SDK sets that code, so that the same code works with both APIs: `preconditionViolated`, `capacityExceeded`, `eventSchemaViolated`, and `licenseInvalid` for writing events, `eventSchemaAlreadyRegistered` and `eventSchemaViolated` for registering an event schema, `rangeUnsatisfiable` for reading events, `eventTypeUnknown` for reading an event type, and `storeReadOnly` for every request. Every other error of the v1 API has no code.
 
-A stream that the server ends with an end item, which every stream of the v2 API except observing does, throws an error if it breaks off before that item.
+A stream that the server ends with an end item, which every stream of the v2 API except observing does, throws an error if it breaks off before that item. Observing never ends on its own, so a stream of observed events that the server closes without reporting an error throws the same error, with both APIs.
 
 #### Knowing Whether a Write Was Stored
 
@@ -411,6 +411,8 @@ for await (const event of client.observeEvents('/books/42', {
   // ...
 }
 ```
+
+*Note that observing never ends on its own. If the server closes the stream without reporting an error, the iterator throws an error, so that a failure does not go unnoticed. To stop observing, use `break`, `return`, or an abort signal, see [Aborting Observing](#aborting-observing).*
 
 #### Observing From Subjects Recursively
 
@@ -790,6 +792,25 @@ Version 2 of this client SDK speaks the v2 API of EventSourcingDB 1.3 as well as
   // After
   if (error instanceof OutcomeUnknownError && error.cause instanceof ConnectionStalledError) {
     // ...
+  }
+  ```
+
+- **Observing that ends:** A stream of observed events that the server closes without reporting an error throws an error, instead of ending the iteration quietly. Stopping with `break`, `return`, or an abort signal still ends it without an error.
+
+  ```typescript
+  // Before
+  for await (const event of client.observeEvents('/books', { recursive: true })) {
+    // ...
+  }
+  // Reached once the server closed the stream.
+
+  // After
+  try {
+    for await (const event of client.observeEvents('/books', { recursive: true })) {
+      // ...
+    }
+  } catch (error) {
+    // Reached once the server closed the stream.
   }
   ```
 

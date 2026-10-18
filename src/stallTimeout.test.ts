@@ -393,6 +393,20 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			});
 
 			suite('observeEvents', () => {
+				// Observing never ends on its own, so the caller stops once it has
+				// observed the events it expects, while the connection stays open.
+				const observe = async (count: number, onEvent?: () => Promise<void>): Promise<Event[]> => {
+					const eventsObserved: Event[] = [];
+					for await (const eventObserved of client.observeEvents('/', { recursive: true })) {
+						eventsObserved.push(eventObserved);
+						if (eventsObserved.length === count) {
+							break;
+						}
+						await onEvent?.();
+					}
+					return eventsObserved;
+				};
+
 				test('ends with a connection stalled error if neither an event nor a heartbeat arrives in time.', {
 					timeout: 5000,
 				}, async (): Promise<void> => {
@@ -422,11 +436,11 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 						writeHead(response, 200, ndJson);
 						sendHeartbeats(response, heartbeat);
 						setTimeout(() => {
-							response.end(event('0'));
+							response.write(event('0'));
 						}, stallTimeout * 4);
 					};
 
-					const eventsObserved = await consume(client.observeEvents('/', { recursive: true }));
+					const eventsObserved = await observe(1);
 
 					assert.equal(eventsObserved.length, 1);
 				});
@@ -437,14 +451,11 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 						response.write(heartbeat);
 						response.write(event('0'));
 						setTimeout(() => {
-							response.end(event('1'));
+							response.write(event('1'));
 						}, stallTimeout / 2);
 					};
 
-					const eventsObserved: Event[] = [];
-					for await (const eventObserved of client.observeEvents('/', { recursive: true })) {
-						eventsObserved.push(eventObserved);
-					}
+					const eventsObserved = await observe(2);
 
 					assert.equal(eventsObserved.length, 2);
 					assert.equal(eventsObserved[0]?.id, '0');
@@ -457,15 +468,13 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 						response.write(event('0'));
 						sendHeartbeats(response, heartbeat);
 						setTimeout(() => {
-							response.end(event('1'));
+							response.write(event('1'));
 						}, stallTimeout * 4);
 					};
 
-					const eventsObserved: Event[] = [];
-					for await (const eventObserved of client.observeEvents('/', { recursive: true })) {
-						eventsObserved.push(eventObserved);
+					const eventsObserved = await observe(2, async () => {
 						await sleep(stallTimeout * 2);
-					}
+					});
 
 					assert.equal(eventsObserved.length, 2);
 				});

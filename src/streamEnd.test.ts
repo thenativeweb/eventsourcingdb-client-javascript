@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
-import { lines } from './testing/answers.js';
+import type { ApiVersion } from './detectApiVersion.js';
+import type { Event } from './Event.js';
+import { apiVersions, lines } from './testing/answers.js';
 import { type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
 
 const ndJson = 'application/x-ndjson';
@@ -101,7 +103,7 @@ suite('streams of the v2 API', { timeout: 30_000 }, () => {
 
 				await assert.rejects(read(client), {
 					name: 'Error',
-					message: `Failed to ${action}, since the stream ended before its end item.`,
+					message: `Failed to ${action}, since the stream ended unexpectedly.`,
 				});
 			});
 		});
@@ -110,15 +112,71 @@ suite('streams of the v2 API', { timeout: 30_000 }, () => {
 	for (const stream of streams) {
 		defineTestsFor(stream);
 	}
+});
 
-	test('ends observing events without an error if the stream ends, since it has no end item.', async (): Promise<void> => {
-		server.respond = (_request: FakeRequest, response: ServerResponse): void => {
-			writeHead(response, 200, ndJson);
-			response.end(`${event('0')}${heartbeat}`);
-		};
+// Observing never ends on its own, so a stream of observed events that ends
+// without an error item broke off, through either API.
+suite('observing events', { timeout: 30_000 }, () => {
+	const defineTestsFor = (apiVersion: ApiVersion): void => {
+		suite(apiVersion, () => {
+			let server: FakeServer;
+			let client: Client;
 
-		const eventsObserved = await consume(client.observeEvents('/', { recursive: true }));
+			beforeEach(async () => {
+				server = new FakeServer(apiVersion);
+				await server.start();
 
-		assert.equal(eventsObserved.length, 1);
-	});
+				client = new Client(server.url, 'secret');
+			});
+
+			afterEach(async () => {
+				await server.stop();
+			});
+
+			test('fails if the stream ends.', async (): Promise<void> => {
+				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+					writeHead(response, 200, ndJson);
+					response.end(`${lines[apiVersion].event('0')}${lines[apiVersion].heartbeat}`);
+				};
+
+				const eventsObserved: Event[] = [];
+				await assert.rejects(
+					async () => {
+						for await (const eventObserved of client.observeEvents('/', { recursive: true })) {
+							eventsObserved.push(eventObserved);
+						}
+					},
+					{
+						name: 'Error',
+						message: 'Failed to observe events, since the stream ended unexpectedly.',
+					},
+				);
+				assert.equal(eventsObserved.length, 1);
+			});
+
+			test('ends without an error if the caller aborts.', async (): Promise<void> => {
+				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+					writeHead(response, 200, ndJson);
+					response.write(lines[apiVersion].event('0'));
+				};
+
+				const controller = new AbortController();
+				const eventsObserved: Event[] = [];
+				for await (const eventObserved of client.observeEvents(
+					'/',
+					{ recursive: true },
+					controller.signal,
+				)) {
+					eventsObserved.push(eventObserved);
+					controller.abort();
+				}
+
+				assert.equal(eventsObserved.length, 1);
+			});
+		});
+	};
+
+	for (const apiVersion of apiVersions) {
+		defineTestsFor(apiVersion);
+	}
 });

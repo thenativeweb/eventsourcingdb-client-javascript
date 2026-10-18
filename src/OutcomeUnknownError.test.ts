@@ -149,7 +149,10 @@ const unknownOutcomes: Record<ApiVersion, Case[]> = {
 			},
 			isCause: (error: unknown): boolean =>
 				error instanceof Error &&
-				error.message.endsWith('since the stream ended before its end item.'),
+				[
+					'Failed to write events, since the stream ended unexpectedly.',
+					'Failed to register event schema, since the stream ended unexpectedly.',
+				].includes(error.message),
 		},
 	],
 };

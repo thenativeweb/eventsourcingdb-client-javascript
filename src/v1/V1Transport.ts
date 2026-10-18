@@ -5,6 +5,7 @@ import type { EventCandidate } from '../EventCandidate.js';
 import type { EventType } from '../EventType.js';
 import { assertEventSourcingDb } from '../http/assertEventSourcingDb.js';
 import { createDbApiErrorFromResponse } from '../http/createDbApiErrorFromResponse.js';
+import { createStreamEndedError } from '../http/createStreamEndedError.js';
 import { runWrite } from '../http/runWrite.js';
 import { isCloudEvent } from '../isCloudEvent.js';
 import { getRawJsonElements } from '../json/getRawJsonElements.js';
@@ -327,6 +328,13 @@ class V1Transport implements Transport {
 				}
 
 				throw new Error('Failed to observe events.');
+			}
+
+			// Observing never ends on its own, so a stream that ends broke off,
+			// unless the caller aborted it.
+			stallGuard.throwIfStalled();
+			if (!signal?.aborted) {
+				throw createStreamEndedError('observe events');
 			}
 		});
 	}
