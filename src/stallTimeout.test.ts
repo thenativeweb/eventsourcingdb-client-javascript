@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { afterEach, beforeEach, suite, test } from 'node:test';
+import { afterEach, before, beforeEach, suite, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { Client } from './Client.js';
 import { ConnectionStalledError } from './ConnectionStalledError.js';
@@ -167,18 +168,50 @@ const requests: Request[] = [
 ];
 
 suite('stallTimeout', { timeout: 30_000 }, () => {
+	// The first call of fetch loads its implementation, which may take longer
+	// than the stall timeout on a busy machine, so the tests start after it.
+	before(async () => {
+		const warmUpServer = createServer((_request, warmUpResponse) => {
+			warmUpResponse.end();
+		});
+		await new Promise<void>(resolve => {
+			warmUpServer.listen(0, 'localhost', resolve);
+		});
+
+		const address = warmUpServer.address();
+		if (address === null || typeof address === 'string') {
+			throw new Error('Failed to get server address.');
+		}
+
+		const response = await fetch(`http://localhost:${address.port}/`);
+		await response.text();
+
+		warmUpServer.closeAllConnections();
+		await new Promise<void>(resolve => {
+			warmUpServer.close(() => resolve());
+		});
+	});
+
 	let server: Server;
 	let url: URL;
 	let client: Client;
 	let respond: (request: IncomingMessage, response: ServerResponse) => void;
-	let connectionClosed: PromiseWithResolvers<void>;
+	let requestReceived: PromiseWithResolvers<void>;
+	let connectionsClosed: Promise<unknown>[];
 
 	beforeEach(async () => {
-		connectionClosed = Promise.withResolvers<void>();
+		requestReceived = Promise.withResolvers<void>();
+		connectionsClosed = [];
 
 		server = createServer((request, response) => {
-			response.on('close', () => connectionClosed.resolve());
+			requestReceived.resolve();
 			respond(request, response);
+		});
+
+		// A request that stalls before it reaches the server leaves no connection
+		// to close, so the tests wait for the connections that were opened.
+		server.on('connection', socket => {
+			connectionsClosed.push(once(socket, 'close'));
 		});
 
 		await new Promise<void>(resolve => {
@@ -256,7 +289,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 				assert.ok(elapsed >= stallTimeout - 10);
 				assert.ok(elapsed < stallTimeout * 4);
 
-				await connectionClosed.promise;
+				await Promise.all(connectionsClosed);
 			});
 
 			if (responseBody === undefined) {
@@ -278,7 +311,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 				assert.ok(elapsed >= stallTimeout - 10);
 				assert.ok(elapsed < stallTimeout * 4);
 
-				await connectionClosed.promise;
+				await Promise.all(connectionsClosed);
 			});
 
 			test('does not fail as long as something arrives in time.', async (): Promise<void> => {
@@ -319,15 +352,12 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			};
 
 			const controller = new AbortController();
-			setTimeout(() => {
-				controller.abort();
-			}, stallTimeout / 2);
+			const eventsRead = consume(client.readEvents('/', { recursive: true }, controller.signal));
 
-			const eventsRead = await consume(
-				client.readEvents('/', { recursive: true }, controller.signal),
-			);
+			await requestReceived.promise;
+			controller.abort();
 
-			assert.deepEqual(eventsRead, []);
+			assert.deepEqual(await eventsRead, []);
 		});
 	});
 
@@ -352,7 +382,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			assert.ok(elapsed >= stallTimeout - 10);
 			assert.ok(elapsed < stallTimeout * 4);
 
-			await connectionClosed.promise;
+			await Promise.all(connectionsClosed);
 		});
 
 		test('does not end as long as heartbeats arrive in time.', async (): Promise<void> => {
@@ -415,15 +445,14 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			};
 
 			const controller = new AbortController();
-			setTimeout(() => {
-				controller.abort();
-			}, stallTimeout / 2);
-
-			const eventsObserved = await consume(
+			const eventsObserved = consume(
 				client.observeEvents('/', { recursive: true }, controller.signal),
 			);
 
-			assert.deepEqual(eventsObserved, []);
+			await requestReceived.promise;
+			controller.abort();
+
+			assert.deepEqual(await eventsObserved, []);
 		});
 	});
 
@@ -446,7 +475,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			assert.ok(elapsed >= stallTimeout - 10);
 			assert.ok(elapsed < stallTimeout * 4);
 
-			await connectionClosed.promise;
+			await Promise.all(connectionsClosed);
 		});
 
 		test('does not end as long as heartbeats arrive in time.', async (): Promise<void> => {
@@ -485,15 +514,14 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 			};
 
 			const controller = new AbortController();
-			setTimeout(() => {
-				controller.abort();
-			}, stallTimeout / 2);
-
-			const rowsRead = await consume(
+			const rowsRead = consume(
 				client.runEventQlQuery('FROM e IN events PROJECT INTO e', controller.signal),
 			);
 
-			assert.deepEqual(rowsRead, []);
+			await requestReceived.promise;
+			controller.abort();
+
+			assert.deepEqual(await rowsRead, []);
 		});
 	});
 });

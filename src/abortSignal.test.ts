@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 import { createServer, type Server } from 'node:http';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
-
-const abortAfter = 100;
 
 interface Request {
 	name: string;
@@ -54,16 +53,18 @@ const isAbortError = (error: unknown): boolean =>
 suite('abortSignal', { timeout: 30_000 }, () => {
 	let server: Server;
 	let client: Client;
-	let connectionClosed: PromiseWithResolvers<void>;
+	let requestReceived: PromiseWithResolvers<void>;
+	let connectionsClosed: Promise<unknown>[];
 	let shouldSendHeaders: boolean;
 
 	beforeEach(async () => {
-		connectionClosed = Promise.withResolvers<void>();
+		requestReceived = Promise.withResolvers<void>();
+		connectionsClosed = [];
 		shouldSendHeaders = false;
 
 		// The server never completes a response, so only aborting can end a request.
 		server = createServer((_request, response) => {
-			response.on('close', () => connectionClosed.resolve());
+			requestReceived.resolve();
 
 			if (shouldSendHeaders) {
 				response.writeHead(200, {
@@ -72,6 +73,9 @@ suite('abortSignal', { timeout: 30_000 }, () => {
 				});
 				response.write('{');
 			}
+		});
+		server.on('connection', socket => {
+			connectionsClosed.push(once(socket, 'close'));
 		});
 
 		await new Promise<void>(resolve => {
@@ -97,26 +101,26 @@ suite('abortSignal', { timeout: 30_000 }, () => {
 		suite(name, () => {
 			test('throws an abort error if the caller aborts.', async (): Promise<void> => {
 				const controller = new AbortController();
-				setTimeout(() => {
-					controller.abort();
-				}, abortAfter);
+				const rejected = assert.rejects(run(client, controller.signal), isAbortError);
 
-				await assert.rejects(async () => await run(client, controller.signal), isAbortError);
+				await requestReceived.promise;
+				controller.abort();
+				await rejected;
 
-				await connectionClosed.promise;
+				await Promise.all(connectionsClosed);
 			});
 
 			test('throws the reason the caller aborts with.', async (): Promise<void> => {
 				const reason = new Error('Aborted by the caller.');
 				const controller = new AbortController();
-				setTimeout(() => {
-					controller.abort(reason);
-				}, abortAfter);
-
-				await assert.rejects(
-					async () => await run(client, controller.signal),
+				const rejected = assert.rejects(
+					run(client, controller.signal),
 					(error: unknown): boolean => error === reason,
 				);
+
+				await requestReceived.promise;
+				controller.abort(reason);
+				await rejected;
 			});
 
 			test('throws an abort error if the signal has been aborted before.', async (): Promise<void> => {
@@ -132,13 +136,27 @@ suite('abortSignal', { timeout: 30_000 }, () => {
 	test('throws an abort error if the caller aborts while the response body arrives.', async (): Promise<void> => {
 		shouldSendHeaders = true;
 
-		const controller = new AbortController();
-		setTimeout(() => {
+		// Notices when the response headers have arrived at the client, so the
+		// test aborts while the body is pending.
+		const originalFetch = globalThis.fetch;
+		const headersArrived = Promise.withResolvers<void>();
+		globalThis.fetch = async (...parameters: Parameters<typeof fetch>): Promise<Response> => {
+			const response = await originalFetch(...parameters);
+			headersArrived.resolve();
+			return response;
+		};
+
+		try {
+			const controller = new AbortController();
+			const rejected = assert.rejects(client.ping(controller.signal), isAbortError);
+
+			await headersArrived.promise;
 			controller.abort();
-		}, abortAfter);
+			await rejected;
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 
-		await assert.rejects(async () => await client.ping(controller.signal), isAbortError);
-
-		await connectionClosed.promise;
+		await Promise.all(connectionsClosed);
 	});
 });
