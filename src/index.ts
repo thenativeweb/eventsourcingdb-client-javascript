@@ -13,6 +13,7 @@ import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
+import { UnsupportedHashVersionError } from './UnsupportedHashVersionError.js';
 
 export type {
 	Event,
@@ -32,4 +33,5 @@ export {
 	isSubjectPopulated,
 	isSubjectPristine,
 	SignatureVerificationFailedError,
+	UnsupportedHashVersionError,
 };

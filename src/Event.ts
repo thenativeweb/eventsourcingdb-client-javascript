@@ -1,6 +1,19 @@
 import crypto from 'node:crypto';
 import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
+import { UnsupportedHashVersionError } from './UnsupportedHashVersionError.js';
+
+// A hash of version 2 starts with this prefix. A hash without a prefix is of
+// version 1, which predates the prefix.
+const hashVersion2Prefix = 'esdb:hash:v2:';
+const hashVersionRegex = /^esdb:hash:(?<version>[^:]*):/u;
+
+// The input of a hash of version 2 writes a field that the event does not
+// have like this.
+const missingField = '-';
+
+const getSha256 = (input: string): string =>
+	crypto.createHash('sha256').update(input).digest('hex');
 
 class Event {
 	public specversion: string;
@@ -69,18 +82,51 @@ class Event {
 		this.signature = signature;
 	}
 
-	public verifyHash(): void {
+	#computeHashOfVersion1(): string {
 		const metadata = `${this.specversion}|${this.id}|${this.predecessorhash}|${this.#timeFromServer}|${this.source}|${this.subject}|${this.type}|${this.datacontenttype}`;
 
-		const metadataHash = crypto.createHash('sha256').update(metadata).digest('hex');
-		const dataHash = crypto.createHash('sha256').update(this.#dataFromServer).digest('hex');
+		const metadataHash = getSha256(metadata);
+		const dataHash = getSha256(this.#dataFromServer);
 
-		const finalHash = crypto
-			.createHash('sha256')
-			.update(`${metadataHash}${dataHash}`)
-			.digest('hex');
+		return getSha256(`${metadataHash}${dataHash}`);
+	}
 
-		if (finalHash !== this.hash) {
+	#computeHashOfVersion2(): string {
+		const input = [
+			hashVersion2Prefix,
+			this.specversion,
+			this.id,
+			this.predecessorhash,
+			this.#timeFromServer,
+			this.source,
+			this.subject,
+			this.type,
+			this.datacontenttype,
+			this.traceparent ?? missingField,
+			this.tracestate ?? missingField,
+			this.#dataFromServer,
+		].join('\n');
+
+		return `${hashVersion2Prefix}${getSha256(input)}`;
+	}
+
+	// An event keeps the version of the hash it was written with, so the hash
+	// is computed in the version it names.
+	#computeHash(): string {
+		const version = hashVersionRegex.exec(this.hash)?.groups?.version;
+
+		if (version === undefined) {
+			return this.#computeHashOfVersion1();
+		}
+		if (`esdb:hash:${version}:` === hashVersion2Prefix) {
+			return this.#computeHashOfVersion2();
+		}
+
+		throw new UnsupportedHashVersionError(version);
+	}
+
+	public verifyHash(): void {
+		if (this.#computeHash() !== this.hash) {
 			throw new HashVerificationFailedError();
 		}
 	}
