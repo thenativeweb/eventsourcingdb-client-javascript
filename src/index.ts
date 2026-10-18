@@ -1,4 +1,6 @@
 import { Client } from './Client.js';
+import type { ClientOptions } from './ClientOptions.js';
+import { ConnectionStalledError } from './ConnectionStalledError.js';
 import { Container } from './Container.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
@@ -16,6 +18,7 @@ import { SignatureVerificationFailedError } from './SignatureVerificationFailedE
 import { UnsupportedHashVersionError } from './UnsupportedHashVersionError.js';
 
 export type {
+	ClientOptions,
 	Event,
 	EventCandidate,
 	EventType,
@@ -25,6 +28,7 @@ export type {
 };
 export {
 	Client,
+	ConnectionStalledError,
 	Container,
 	HashVerificationFailedError,
 	HeartbeatTimeoutError,

@@ -1,8 +1,9 @@
+import type { ClientOptions } from './ClientOptions.js';
 import { convertCloudEventToEvent } from './convertCloudEventToEvent.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
-import { heartbeatTimeout } from './heartbeatTimeout.js';
+import { HeartbeatTimeoutError } from './HeartbeatTimeoutError.js';
 import { isCloudEvent } from './isCloudEvent.js';
 import { isValidServerHeader } from './isValidServerHeader.js';
 import { getRawJsonElements } from './json/getRawJsonElements.js';
@@ -11,6 +12,10 @@ import { readNdJsonStream } from './ndjson/readNdJsonStream.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
+import { defaultStallTimeout, maximumStallTimeout } from './stall/defaultStallTimeout.js';
+import { readResponseText } from './stall/readResponseText.js';
+import { runWithStallGuard } from './stall/runWithStallGuard.js';
+import { StallGuard } from './stall/StallGuard.js';
 import { isStreamCloudEvent } from './stream/isStreamCloudEvent.js';
 import { isStreamError } from './stream/isStreamError.js';
 import { isStreamEventType } from './stream/isStreamEventType.js';
@@ -37,77 +42,95 @@ interface ResponseBodyReadEventType {
 class Client {
 	readonly #url: URL;
 	readonly #apiToken: string;
+	readonly #stallTimeout: number;
 
 	#getUrl(path: string): string {
 		return new URL(path, this.#url).toString();
 	}
 
-	public constructor(url: URL, apiToken: string) {
+	public constructor(url: URL, apiToken: string, options: ClientOptions = {}) {
+		const stallTimeout = options.stallTimeout ?? defaultStallTimeout;
+
+		if (!(stallTimeout >= 1 && stallTimeout <= maximumStallTimeout)) {
+			throw new Error(
+				`Stall timeout must be between 1 and ${maximumStallTimeout} milliseconds, got '${stallTimeout}'.`,
+			);
+		}
+
 		this.#url = url;
 		this.#apiToken = apiToken;
+		this.#stallTimeout = stallTimeout;
 	}
 
 	public async ping(): Promise<void> {
 		const url = this.#getUrl('/api/v1/ping');
-		const response = await fetch(url, {
-			method: 'get',
+		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+			const response = await fetch(url, {
+				method: 'get',
+				signal: stallGuard.signal,
+			});
+
+			if (!isValidServerHeader(response)) {
+				throw new Error('Server must be EventSourcingDB.');
+			}
+
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to ping, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+
+			const responseBody: unknown = JSON.parse(await readResponseText(response, stallGuard));
+			if (
+				!hasShapeOf<ResponseBodyPing>(responseBody, {
+					type: isString,
+				})
+			) {
+				throw new Error('Failed to parse response.');
+			}
+
+			const eventType = 'io.eventsourcingdb.api.ping-received';
+			if (responseBody.type !== eventType) {
+				throw new Error('Failed to ping.');
+			}
 		});
-
-		if (!isValidServerHeader(response)) {
-			throw new Error('Server must be EventSourcingDB.');
-		}
-
-		if (response.status !== 200) {
-			throw new Error(`Failed to ping, got HTTP status code '${response.status}', expected '200'.`);
-		}
-
-		const responseBody = await response.json();
-		if (
-			!hasShapeOf<ResponseBodyPing>(responseBody, {
-				type: isString,
-			})
-		) {
-			throw new Error('Failed to parse response.');
-		}
-
-		const eventType = 'io.eventsourcingdb.api.ping-received';
-		if (responseBody.type !== eventType) {
-			throw new Error('Failed to ping.');
-		}
 	}
 
 	public async verifyApiToken(): Promise<void> {
 		const url = this.#getUrl('/api/v1/verify-api-token');
-		const response = await fetch(url, {
-			method: 'post',
-			headers: {
-				authorization: `Bearer ${this.#apiToken}`,
-			},
+		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+			const response = await fetch(url, {
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${this.#apiToken}`,
+				},
+				signal: stallGuard.signal,
+			});
+
+			if (!isValidServerHeader(response)) {
+				throw new Error('Server must be EventSourcingDB.');
+			}
+
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to verify API token, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+
+			const responseBody: unknown = JSON.parse(await readResponseText(response, stallGuard));
+			if (
+				!hasShapeOf<ResponseBodyVerifyApiToken>(responseBody, {
+					type: isString,
+				})
+			) {
+				throw new Error('Failed to parse response.');
+			}
+
+			const eventType = 'io.eventsourcingdb.api.api-token-verified';
+			if (responseBody.type !== eventType) {
+				throw new Error('Failed to verify API token.');
+			}
 		});
-
-		if (!isValidServerHeader(response)) {
-			throw new Error('Server must be EventSourcingDB.');
-		}
-
-		if (response.status !== 200) {
-			throw new Error(
-				`Failed to verify API token, got HTTP status code '${response.status}', expected '200'.`,
-			);
-		}
-
-		const responseBody = await response.json();
-		if (
-			!hasShapeOf<ResponseBodyVerifyApiToken>(responseBody, {
-				type: isString,
-			})
-		) {
-			throw new Error('Failed to parse response.');
-		}
-
-		const eventType = 'io.eventsourcingdb.api.api-token-verified';
-		if (responseBody.type !== eventType) {
-			throw new Error('Failed to verify API token.');
-		}
 	}
 
 	public async writeEvents(
@@ -115,47 +138,50 @@ class Client {
 		preconditions: Precondition[] = [],
 	): Promise<Event[]> {
 		const url = this.#getUrl('/api/v1/write-events');
-		const response = await fetch(url, {
-			method: 'post',
-			headers: {
-				authorization: `Bearer ${this.#apiToken}`,
-				'content-type': 'application/json',
-			},
-			body: JSON.stringify({
-				events,
-				preconditions,
-			}),
-		});
+		return await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+			const response = await fetch(url, {
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${this.#apiToken}`,
+					'content-type': 'application/json',
+				},
+				body: JSON.stringify({
+					events,
+					preconditions,
+				}),
+				signal: stallGuard.signal,
+			});
 
-		if (!isValidServerHeader(response)) {
-			throw new Error('Server must be EventSourcingDB.');
-		}
-
-		if (response.status !== 200) {
-			throw new Error(
-				`Failed to write events, got HTTP status code '${response.status}', expected '200'.`,
-			);
-		}
-
-		const responseText = await response.text();
-		const responseBody: unknown = JSON.parse(responseText);
-
-		if (!Array.isArray(responseBody)) {
-			throw new Error('Failed to parse response.');
-		}
-
-		const responseItemTexts = getRawJsonElements(responseText);
-
-		const writtenEvents = responseBody.map((item: unknown, index) => {
-			if (!isCloudEvent(item)) {
-				throw new Error('Failed to parse response item.');
+			if (!isValidServerHeader(response)) {
+				throw new Error('Server must be EventSourcingDB.');
 			}
 
-			const event = convertCloudEventToEvent(item, responseItemTexts[index]);
-			return event;
-		});
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to write events, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
 
-		return writtenEvents;
+			const responseText = await readResponseText(response, stallGuard);
+			const responseBody: unknown = JSON.parse(responseText);
+
+			if (!Array.isArray(responseBody)) {
+				throw new Error('Failed to parse response.');
+			}
+
+			const responseItemTexts = getRawJsonElements(responseText);
+
+			const writtenEvents = responseBody.map((item: unknown, index) => {
+				if (!isCloudEvent(item)) {
+					throw new Error('Failed to parse response item.');
+				}
+
+				const event = convertCloudEventToEvent(item, responseItemTexts[index]);
+				return event;
+			});
+
+			return writtenEvents;
+		});
 	}
 
 	public readEvents(
@@ -165,21 +191,13 @@ class Client {
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/read-events');
 		const apiToken = this.#apiToken;
+		const stallTimeout = this.#stallTimeout;
 
 		return (async function* (): AsyncGenerator<Event, void, void> {
-			const internalAbortController = new AbortController();
-			const combinedSignal = signal ?? internalAbortController.signal;
-			const shouldAbortInternally = !signal;
-
-			let removeAbortListener: (() => void) | undefined;
-
-			if (signal && !signal.aborted) {
-				const onAbort = (): void => internalAbortController.abort();
-				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
-			}
+			const stallGuard = new StallGuard(stallTimeout, signal);
 
 			try {
+				stallGuard.restart();
 				const response = await fetch(url, {
 					method: 'post',
 					headers: {
@@ -190,7 +208,7 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: combinedSignal,
+					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
@@ -210,7 +228,11 @@ class Client {
 					throw new Error('Failed to read events.');
 				}
 
-				for await (const { value: line, text } of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line, text } of readNdJsonStream(
+					response.body,
+					stallGuard.signal,
+					stallGuard,
+				)) {
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
@@ -222,18 +244,17 @@ class Client {
 
 					throw new Error('Failed to read events.');
 				}
+
+				stallGuard.throwIfStalled();
 			} catch (error) {
+				stallGuard.throwIfStalled();
+
 				if (error instanceof DOMException && error.name === 'AbortError') {
 					return;
 				}
 				throw error;
 			} finally {
-				if (removeAbortListener) {
-					removeAbortListener();
-				}
-				if (shouldAbortInternally) {
-					internalAbortController.abort();
-				}
+				stallGuard.dispose({ abortRequest: true });
 			}
 		})();
 	}
@@ -241,21 +262,13 @@ class Client {
 	public runEventQlQuery(query: string, signal?: AbortSignal): AsyncGenerator<unknown, void, void> {
 		const url = this.#getUrl('/api/v1/run-eventql-query');
 		const apiToken = this.#apiToken;
+		const stallTimeout = this.#stallTimeout;
 
 		return (async function* (): AsyncGenerator<unknown, void, void> {
-			const internalAbortController = new AbortController();
-			const combinedSignal = signal ?? internalAbortController.signal;
-			const shouldAbortInternally = !signal;
-
-			let removeAbortListener: (() => void) | undefined;
-
-			if (signal && !signal.aborted) {
-				const onAbort = (): void => internalAbortController.abort();
-				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
-			}
+			const stallGuard = new StallGuard(stallTimeout, signal);
 
 			try {
+				stallGuard.restart();
 				const response = await fetch(url, {
 					method: 'post',
 					headers: {
@@ -263,8 +276,12 @@ class Client {
 						'content-type': 'application/json',
 					},
 					body: JSON.stringify({ query }),
-					signal: combinedSignal,
+					signal: stallGuard.signal,
 				});
+
+				// Once the headers have arrived, the server sends a heartbeat every
+				// second, so from now on a stall means that heartbeats are missing.
+				stallGuard.onStall(() => new HeartbeatTimeoutError(stallTimeout));
 
 				if (!isValidServerHeader(response)) {
 					const serverHeader = response.headers.get('Server');
@@ -285,8 +302,8 @@ class Client {
 
 				for await (const { value: line } of readNdJsonStream(
 					response.body,
-					combinedSignal,
-					heartbeatTimeout.milliseconds,
+					stallGuard.signal,
+					stallGuard,
 				)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
@@ -302,18 +319,17 @@ class Client {
 
 					throw new Error('Failed to run EventQL query.');
 				}
+
+				stallGuard.throwIfStalled();
 			} catch (error) {
+				stallGuard.throwIfStalled();
+
 				if (error instanceof DOMException && error.name === 'AbortError') {
 					return;
 				}
 				throw error;
 			} finally {
-				if (removeAbortListener) {
-					removeAbortListener();
-				}
-				if (shouldAbortInternally) {
-					internalAbortController.abort();
-				}
+				stallGuard.dispose({ abortRequest: true });
 			}
 		})();
 	}
@@ -325,21 +341,13 @@ class Client {
 	): AsyncGenerator<Event, void, void> {
 		const url = this.#getUrl('/api/v1/observe-events');
 		const apiToken = this.#apiToken;
+		const stallTimeout = this.#stallTimeout;
 
 		return (async function* (): AsyncGenerator<Event, void, void> {
-			const internalAbortController = new AbortController();
-			const combinedSignal = signal ?? internalAbortController.signal;
-			const shouldAbortInternally = !signal;
-
-			let removeAbortListener: (() => void) | undefined;
-
-			if (signal && !signal.aborted) {
-				const onAbort = (): void => internalAbortController.abort();
-				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
-			}
+			const stallGuard = new StallGuard(stallTimeout, signal);
 
 			try {
+				stallGuard.restart();
 				const response = await fetch(url, {
 					method: 'post',
 					headers: {
@@ -350,8 +358,12 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: combinedSignal,
+					signal: stallGuard.signal,
 				});
+
+				// Once the headers have arrived, the server sends a heartbeat every
+				// second, so from now on a stall means that heartbeats are missing.
+				stallGuard.onStall(() => new HeartbeatTimeoutError(stallTimeout));
 
 				if (!isValidServerHeader(response)) {
 					const serverHeader = response.headers.get('Server');
@@ -372,8 +384,8 @@ class Client {
 
 				for await (const { value: line, text } of readNdJsonStream(
 					response.body,
-					combinedSignal,
-					heartbeatTimeout.milliseconds,
+					stallGuard.signal,
+					stallGuard,
 				)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
@@ -389,18 +401,17 @@ class Client {
 
 					throw new Error('Failed to observe events.');
 				}
+
+				stallGuard.throwIfStalled();
 			} catch (error) {
+				stallGuard.throwIfStalled();
+
 				if (error instanceof DOMException && error.name === 'AbortError') {
 					return;
 				}
 				throw error;
 			} finally {
-				if (removeAbortListener) {
-					removeAbortListener();
-				}
-				if (shouldAbortInternally) {
-					internalAbortController.abort();
-				}
+				stallGuard.dispose({ abortRequest: true });
 			}
 		})();
 	}
@@ -410,27 +421,30 @@ class Client {
 		schema: Record<string, unknown>,
 	): Promise<void> {
 		const url = this.#getUrl('/api/v1/register-event-schema');
-		const response = await fetch(url, {
-			method: 'post',
-			headers: {
-				authorization: `Bearer ${this.#apiToken}`,
-				'content-type': 'application/json',
-			},
-			body: JSON.stringify({
-				eventType,
-				schema,
-			}),
+		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+			const response = await fetch(url, {
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${this.#apiToken}`,
+					'content-type': 'application/json',
+				},
+				body: JSON.stringify({
+					eventType,
+					schema,
+				}),
+				signal: stallGuard.signal,
+			});
+
+			if (!isValidServerHeader(response)) {
+				throw new Error('Server must be EventSourcingDB.');
+			}
+
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to register event schema, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
 		});
-
-		if (!isValidServerHeader(response)) {
-			throw new Error('Server must be EventSourcingDB.');
-		}
-
-		if (response.status !== 200) {
-			throw new Error(
-				`Failed to register event schema, got HTTP status code '${response.status}', expected '200'.`,
-			);
-		}
 	}
 
 	public readSubjects(
@@ -439,21 +453,13 @@ class Client {
 	): AsyncGenerator<string, void, void> {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
+		const stallTimeout = this.#stallTimeout;
 
 		return (async function* (): AsyncGenerator<string, void, void> {
-			const internalAbortController = new AbortController();
-			const combinedSignal = signal ?? internalAbortController.signal;
-			const shouldAbortInternally = !signal;
-
-			let removeAbortListener: (() => void) | undefined;
-
-			if (signal && !signal.aborted) {
-				const onAbort = (): void => internalAbortController.abort();
-				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
-			}
+			const stallGuard = new StallGuard(stallTimeout, signal);
 
 			try {
+				stallGuard.restart();
 				const response = await fetch(url, {
 					method: 'post',
 					headers: {
@@ -463,7 +469,7 @@ class Client {
 					body: JSON.stringify({
 						baseSubject,
 					}),
-					signal: combinedSignal,
+					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
@@ -483,7 +489,11 @@ class Client {
 					throw new Error('Failed to read subjects.');
 				}
 
-				for await (const { value: line } of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line } of readNdJsonStream(
+					response.body,
+					stallGuard.signal,
+					stallGuard,
+				)) {
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
@@ -494,81 +504,75 @@ class Client {
 
 					throw new Error('Failed to read subjects.');
 				}
+
+				stallGuard.throwIfStalled();
 			} catch (error) {
+				stallGuard.throwIfStalled();
+
 				if (error instanceof DOMException && error.name === 'AbortError') {
 					return;
 				}
 				throw error;
 			} finally {
-				if (removeAbortListener) {
-					removeAbortListener();
-				}
-				if (shouldAbortInternally) {
-					internalAbortController.abort();
-				}
+				stallGuard.dispose({ abortRequest: true });
 			}
 		})();
 	}
 
 	public async readEventType(eventType: string): Promise<EventType> {
 		const url = this.#getUrl('/api/v1/read-event-type');
-		const response = await fetch(url, {
-			method: 'post',
-			headers: {
-				authorization: `Bearer ${this.#apiToken}`,
-				'content-type': 'application/json',
-			},
-			body: JSON.stringify({
-				eventType,
-			}),
+		return await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+			const response = await fetch(url, {
+				method: 'post',
+				headers: {
+					authorization: `Bearer ${this.#apiToken}`,
+					'content-type': 'application/json',
+				},
+				body: JSON.stringify({
+					eventType,
+				}),
+				signal: stallGuard.signal,
+			});
+
+			if (!isValidServerHeader(response)) {
+				throw new Error('Server must be EventSourcingDB.');
+			}
+
+			if (response.status !== 200) {
+				throw new Error(
+					`Failed to read event type, got HTTP status code '${response.status}', expected '200'.`,
+				);
+			}
+			const responseBody: unknown = JSON.parse(await readResponseText(response, stallGuard));
+			if (
+				!hasShapeOf<ResponseBodyReadEventType>(responseBody, {
+					eventType: isString,
+					isPhantom: isBoolean,
+				})
+			) {
+				throw new Error('Failed to parse response.');
+			}
+
+			return responseBody;
 		});
-
-		if (!isValidServerHeader(response)) {
-			throw new Error('Server must be EventSourcingDB.');
-		}
-
-		if (response.status !== 200) {
-			throw new Error(
-				`Failed to read event type, got HTTP status code '${response.status}', expected '200'.`,
-			);
-		}
-		const responseBody = await response.json();
-		if (
-			!hasShapeOf<ResponseBodyReadEventType>(responseBody, {
-				eventType: isString,
-				isPhantom: isBoolean,
-			})
-		) {
-			throw new Error('Failed to parse response.');
-		}
-
-		return responseBody;
 	}
 
 	public readEventTypes(signal?: AbortSignal): AsyncGenerator<EventType, void, void> {
 		const url = this.#getUrl('/api/v1/read-event-types');
 		const apiToken = this.#apiToken;
+		const stallTimeout = this.#stallTimeout;
 
 		return (async function* (): AsyncGenerator<EventType, void, void> {
-			const internalAbortController = new AbortController();
-			const combinedSignal = signal ?? internalAbortController.signal;
-			const shouldAbortInternally = !signal;
-
-			let removeAbortListener: (() => void) | undefined;
-
-			if (signal && !signal.aborted) {
-				const onAbort = (): void => internalAbortController.abort();
-				signal.addEventListener('abort', onAbort, { once: true });
-				removeAbortListener = (): void => signal.removeEventListener('abort', onAbort);
-			}
+			const stallGuard = new StallGuard(stallTimeout, signal);
 
 			try {
+				stallGuard.restart();
 				const response = await fetch(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
 					},
-					signal: combinedSignal,
+					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
@@ -588,7 +592,11 @@ class Client {
 					throw new Error('Failed to read event types.');
 				}
 
-				for await (const { value: line } of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line } of readNdJsonStream(
+					response.body,
+					stallGuard.signal,
+					stallGuard,
+				)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}
@@ -602,18 +610,17 @@ class Client {
 
 					throw new Error('Failed to read event types.');
 				}
+
+				stallGuard.throwIfStalled();
 			} catch (error) {
+				stallGuard.throwIfStalled();
+
 				if (error instanceof DOMException && error.name === 'AbortError') {
 					return;
 				}
 				throw error;
 			} finally {
-				if (removeAbortListener) {
-					removeAbortListener();
-				}
-				if (shouldAbortInternally) {
-					internalAbortController.abort();
-				}
+				stallGuard.dispose({ abortRequest: true });
 			}
 		})();
 	}

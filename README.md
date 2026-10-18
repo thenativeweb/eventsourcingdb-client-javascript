@@ -41,6 +41,34 @@ If you want to verify the API token, call `verifyApiToken`. If the token is inva
 await client.verifyApiToken();
 ```
 
+### Handling Stalled Connections
+
+Every request fails once nothing arrives from the server for 30 seconds, for example because the server does not respond, or because a proxy keeps the connection open but no longer passes anything through. The time counts from sending the request until it ends, including connecting and waiting for the response. Everything that arrives starts it anew, so a long stream that keeps receiving events, rows, or heartbeats is never cut off, and the time you spend handling an item of a stream does not count.
+
+A request that stalls throws a `ConnectionStalledError`. It extends `TypeError`, since `fetch` throws a `TypeError` when its own timeouts run out:
+
+```typescript
+import { ConnectionStalledError } from 'eventsourcingdb';
+
+try {
+  await client.ping();
+} catch (error) {
+  if (error instanceof ConnectionStalledError) {
+    // ...
+  }
+}
+```
+
+To change the 30 seconds, hand over the `stallTimeout` option in milliseconds as third argument when creating the client:
+
+```typescript
+const client = new Client(url, apiToken, {
+  stallTimeout: 10_000
+});
+```
+
+*Note that `runEventQlQuery` and `observeEvents` throw a `HeartbeatTimeoutError` instead once the server has started to respond, see [Running EventQL Queries](#running-eventql-queries) and [Observing Events](#observing-events).*
+
 ### Writing Events
 
 Call the `writeEvents` function and hand over an array with one or more events. You do not have to provide all event fields – some are automatically added by the server.
@@ -262,7 +290,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
 
 ```typescript
 import { HeartbeatTimeoutError } from 'eventsourcingdb';
@@ -281,7 +309,7 @@ try {
 }
 ```
 
-*Note that the time you spend handling a row does not count towards the 30 seconds, and that aborting the query does not cause a `HeartbeatTimeoutError`.*
+*Note that the time you spend handling a row does not count towards the stall timeout, and that aborting the query does not cause a `HeartbeatTimeoutError`. If the server does not start to respond in time, the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections).*
 
 ### Observing Events
 
@@ -369,7 +397,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
 
 ```typescript
 import { HeartbeatTimeoutError } from 'eventsourcingdb';
@@ -387,7 +415,7 @@ try {
 }
 ```
 
-*Note that the time you spend handling an event does not count towards the 30 seconds, and that aborting observing does not cause a `HeartbeatTimeoutError`.*
+*Note that the time you spend handling an event does not count towards the stall timeout, and that aborting observing does not cause a `HeartbeatTimeoutError`. If the server does not start to respond in time, the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections).*
 
 ### Registering an Event Schema
 

@@ -1,4 +1,4 @@
-import { HeartbeatTimeoutError } from '../HeartbeatTimeoutError.js';
+import type { StallGuard } from '../stall/StallGuard.js';
 
 // A line comes with its text, so that a value can be taken from it exactly as
 // the server sent it.
@@ -10,34 +10,11 @@ interface NdJsonLine {
 const readNdJsonStream = async function* (
 	stream: ReadableStream<Uint8Array>,
 	signal: AbortSignal,
-	heartbeatTimeoutInMilliseconds?: number,
+	stallGuard?: StallGuard,
 ): AsyncGenerator<NdJsonLine, void, void> {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder('utf-8');
 	let buffer = '';
-
-	let heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
-	let hasHeartbeatTimedOut = false;
-
-	// The timer only runs while waiting for the next line, not while the caller
-	// handles a line, so a slow caller does not cause a heartbeat timeout.
-	const startHeartbeatTimer = (): void => {
-		if (heartbeatTimeoutInMilliseconds === undefined || heartbeatTimer !== undefined) {
-			return;
-		}
-
-		heartbeatTimer = setTimeout(() => {
-			hasHeartbeatTimedOut = true;
-			reader.cancel().catch(() => {
-				// Intentionally left blank.
-			});
-		}, heartbeatTimeoutInMilliseconds);
-	};
-
-	const stopHeartbeatTimer = (): void => {
-		clearTimeout(heartbeatTimer);
-		heartbeatTimer = undefined;
-	};
 
 	const onAbort = (): void => {
 		reader.cancel().catch(() => {
@@ -56,7 +33,9 @@ const readNdJsonStream = async function* (
 
 	try {
 		while (!signal.aborted) {
-			startHeartbeatTimer();
+			// The clock only runs while waiting for the next chunk, not while the
+			// caller handles a line, so a slow caller does not cause a stall.
+			stallGuard?.restart();
 
 			// biome-ignore lint/performance/noAwaitInLoops: Awaiting the result is fine here, although we are in a loop.
 			const { done, value } = await reader.read();
@@ -72,19 +51,15 @@ const readNdJsonStream = async function* (
 				buffer = buffer.slice(index + 1);
 
 				if (line) {
-					stopHeartbeatTimer();
+					stallGuard?.pause();
 					yield { text: line, value: JSON.parse(line) };
 				}
 
 				index = buffer.indexOf('\n');
 			}
 		}
-
-		if (hasHeartbeatTimedOut) {
-			throw new HeartbeatTimeoutError();
-		}
 	} finally {
-		stopHeartbeatTimer();
+		stallGuard?.pause();
 		signal.removeEventListener('abort', onAbort);
 		await reader.cancel().catch(() => {
 			// Intentionally left blank.

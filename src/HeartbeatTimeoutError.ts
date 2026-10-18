@@ -1,6 +1,9 @@
+import { defaultStallTimeout } from './stall/defaultStallTimeout.js';
+import { formatDuration } from './stall/formatDuration.js';
+
 class HeartbeatTimeoutError extends Error {
-	public constructor() {
-		super('No event and no heartbeat arrived for 30 seconds.');
+	public constructor(stallTimeout: number = defaultStallTimeout) {
+		super(`No event and no heartbeat arrived for ${formatDuration(stallTimeout)}.`);
 		this.name = 'HeartbeatTimeoutError';
 	}
 }
