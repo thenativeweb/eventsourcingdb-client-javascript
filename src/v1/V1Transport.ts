@@ -383,7 +383,10 @@ class V1Transport implements Transport {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
-		const normalizedSubject = normalizeSubject(subject);
+		// A caller without types may pass a subject that is not a string, which
+		// the server refuses with an error of its own, so the client normalizes
+		// only a string, and only to read the subject alone.
+		const normalizedSubject = !recursive && isString(subject) ? normalizeSubject(subject) : subject;
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {

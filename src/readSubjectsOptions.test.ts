@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
+import { DbApiError } from './DbApiError.js';
 import { lines } from './testing/answers.js';
-import { type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
+import { answerWithText, type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
 
 const ndJson = 'application/x-ndjson';
 
@@ -109,6 +110,37 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 			const [request] = server.requests;
 			assert.equal(request?.body, '{"baseSubject":"/"}');
 		});
+
+		const defineMissingSubjectTest = (recursive: boolean): void => {
+			test(`throws the error of the server for a missing subject, if recursive is ${recursive}.`, async (): Promise<void> => {
+				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+					answerWithText(response, 400, 'bad request');
+				};
+
+				// A caller without types may leave out the subject, which the types
+				// do not allow, and which the server refuses.
+				const subjects: AsyncGenerator<string, void, void> = Reflect.apply(
+					client.readSubjects,
+					client,
+					[undefined, { recursive }],
+				);
+
+				await assert.rejects(
+					consume(subjects),
+					(error: unknown): boolean =>
+						error instanceof DbApiError &&
+						error.status === 400 &&
+						error.description === 'bad request',
+				);
+
+				const [request] = server.requests;
+				assert.equal(request?.body, '{}');
+			});
+		};
+
+		for (const recursive of [true, false]) {
+			defineMissingSubjectTest(recursive);
+		}
 	});
 
 	suite('v2', () => {
