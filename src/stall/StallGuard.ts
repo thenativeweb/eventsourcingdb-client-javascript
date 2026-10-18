@@ -62,11 +62,9 @@ class StallGuard {
 			return;
 		}
 
-		if (this.#timer !== undefined) {
-			this.#timer.refresh();
-			return;
-		}
-
+		// Starts a new timer rather than refreshing the running one, since the
+		// mocked timers of node:test do not move a refreshed timer.
+		this.pause();
 		this.#timer = setTimeout(() => {
 			this.#timer = undefined;
 			this.#stallError = this.#createStallError();

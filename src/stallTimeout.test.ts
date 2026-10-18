@@ -92,6 +92,10 @@ const isConnectionStalledError =
 		'code' in error.cause &&
 		error.cause.code === causeCode;
 
+const isConnectionStalledError30Seconds = (error: unknown): boolean =>
+	error instanceof ConnectionStalledError &&
+	error.message === 'Nothing arrived from the server for 30 seconds.';
+
 const isHeartbeatTimeoutError = (error: unknown): boolean =>
 	error instanceof HeartbeatTimeoutError &&
 	error.name === 'HeartbeatTimeoutError' &&
@@ -242,7 +246,84 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 	});
 
 	suite('options', () => {
-		test('defaults to 30 seconds.', (): void => {
+		// The clock of the test is mocked, so the tests can let 30 seconds pass
+		// at once. They wait for the request to reach the server with the real
+		// clock, since connecting does not use the mocked timers.
+		const waitForIo = async (): Promise<void> => {
+			await new Promise<void>(resolve => {
+				setImmediate(resolve);
+			});
+		};
+
+		test('fails a request once nothing arrives for 30 seconds by default.', {
+			timeout: 5000,
+		}, async (context): Promise<void> => {
+			respond = (): void => {
+				// Intentionally left blank, so that the headers never arrive.
+			};
+
+			context.mock.timers.enable({ apis: ['setTimeout'] });
+
+			let hasSettled = false;
+			const pinged = new Client(url, 'secret').ping().finally(() => {
+				hasSettled = true;
+			});
+			const rejected = assert.rejects(pinged, isConnectionStalledError30Seconds);
+
+			await requestReceived.promise;
+
+			context.mock.timers.tick(29_999);
+			await waitForIo();
+			assert.equal(hasSettled, false);
+
+			context.mock.timers.tick(1);
+			await rejected;
+		});
+
+		test('ends a stream with heartbeats once nothing arrives for 30 seconds by default.', {
+			timeout: 5000,
+		}, async (context): Promise<void> => {
+			respond = (_request: IncomingMessage, response: ServerResponse): void => {
+				writeHead(response);
+				response.flushHeaders();
+			};
+
+			// Notices when the response headers have arrived at the client, since
+			// the clock starts anew then.
+			const originalFetch = globalThis.fetch;
+			const headersArrived = Promise.withResolvers<void>();
+			globalThis.fetch = async (...parameters: Parameters<typeof fetch>): Promise<Response> => {
+				const response = await originalFetch(...parameters);
+				headersArrived.resolve();
+				return response;
+			};
+
+			try {
+				context.mock.timers.enable({ apis: ['setTimeout'] });
+
+				let hasSettled = false;
+				const observed = consume(
+					new Client(url, 'secret').observeEvents('/', { recursive: true }),
+				).finally(() => {
+					hasSettled = true;
+				});
+				const rejected = assert.rejects(observed, HeartbeatTimeoutError);
+
+				await headersArrived.promise;
+				await waitForIo();
+
+				context.mock.timers.tick(29_999);
+				await waitForIo();
+				assert.equal(hasSettled, false);
+
+				context.mock.timers.tick(1);
+				await rejected;
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
+		});
+
+		test('names the default stall timeout in the messages of its errors.', (): void => {
 			assert.equal(
 				new HeartbeatTimeoutError().message,
 				'No event and no heartbeat arrived for 30 seconds.',
@@ -251,9 +332,6 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 				new ConnectionStalledError().message,
 				'Nothing arrived from the server for 30 seconds.',
 			);
-
-			assert.ok(new Client(unusedUrl, 'secret'));
-			assert.ok(new Client(unusedUrl, 'secret', {}));
 		});
 
 		test('accepts a stall timeout from 1 millisecond up to the longest timer of Node.js.', (): void => {
