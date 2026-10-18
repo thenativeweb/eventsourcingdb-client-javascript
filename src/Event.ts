@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
 import { UnsupportedHashVersionError } from './UnsupportedHashVersionError.js';
@@ -127,6 +128,12 @@ class Event {
 
 	public verifyHash(): void {
 		if (this.#computeHash() !== this.hash) {
+			throw new HashVerificationFailedError();
+		}
+
+		// The hash covers the data as the server sent it, so data that has been
+		// changed since would go unnoticed without comparing the two.
+		if (!isDeepStrictEqual(this.data, JSON.parse(this.#dataFromServer))) {
 			throw new HashVerificationFailedError();
 		}
 	}

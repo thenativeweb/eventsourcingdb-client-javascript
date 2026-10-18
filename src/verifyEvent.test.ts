@@ -80,6 +80,19 @@ suite('verifyEvent', (): void => {
 			});
 		}
 
+		for (const [version, texts] of Object.entries(fixtures)) {
+			test(`throws an error if the data of an event with a hash of ${version} has been changed.`, (): void => {
+				for (const text of texts) {
+					const event = getEvent(text);
+					event.data.isbn = '978-0000000000';
+
+					assert.throws((): void => {
+						event.verifyHash();
+					}, HashVerificationFailedError);
+				}
+			});
+		}
+
 		test('covers the trace context in a hash of version 2, but not in one of version 1.', (): void => {
 			const [, textOfVersion1] = fixtures['version 1'];
 			const [, textOfVersion2] = fixtures['version 2'];
