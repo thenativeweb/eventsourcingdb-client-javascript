@@ -67,6 +67,8 @@ const client = new Client(url, apiToken, {
 });
 ```
 
+*Note that the `fetch` built into Node.js has timeouts of its own, which keep applying: 10 seconds for connecting, 300 seconds for waiting for the response headers, and 300 seconds without data in the response body. If one of them runs out first, the request throws the `TypeError` of `fetch`, with the message `fetch failed` or `terminated`. A `stallTimeout` above these values therefore cannot extend them.*
+
 *Note that `runEventQlQuery` and `observeEvents` throw a `HeartbeatTimeoutError` instead once the server has started to respond, see [Running EventQL Queries](#running-eventql-queries) and [Observing Events](#observing-events).*
 
 ### Aborting a Request
