@@ -110,6 +110,29 @@ suite('detectApiVersion', { timeout: 30_000 }, () => {
 		defineV1Test(status);
 	}
 
+	const defineV1WithoutServerHeaderTest = (status: number): void => {
+		test(`uses the v1 API if a proxy answers the ping of the v2 API with ${status} and without the Server header of EventSourcingDB.`, async (): Promise<void> => {
+			// A proxy in front of a server that offers only the v1 API may forward
+			// only the paths of the v1 API, and answer every other path itself.
+			// The request through the v1 API that follows checks the header.
+			probeAnswers.push((response: ServerResponse): void => {
+				response.writeHead(status, { server: 'nginx', 'content-type': 'text/html' });
+				response.end(`<html><body>${status}</body></html>`);
+			});
+
+			assert.deepEqual(await client.readEventType('io.eventsourcingdb.test'), expectedEventType);
+			assert.equal(server.probeCount, 1);
+
+			const [, request] = server.requests;
+			assert.equal(request?.method, 'POST');
+			assert.equal(request?.path, '/api/v1/read-event-type');
+		});
+	};
+
+	for (const status of [404, 405]) {
+		defineV1WithoutServerHeaderTest(status);
+	}
+
 	const defineRememberTest = (apiVersion: ApiVersion): void => {
 		test(`remembers that the server offers the ${apiVersion} API.`, async (): Promise<void> => {
 			if (apiVersion === 'v1') {
