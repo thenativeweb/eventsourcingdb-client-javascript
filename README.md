@@ -41,6 +41,60 @@ If you want to verify the API token, call `verifyApiToken`. If the token is inva
 await client.verifyApiToken();
 ```
 
+### Handling Stalled Connections
+
+Every request fails once nothing arrives from the server for 30 seconds, for example because the server does not respond, or because a proxy keeps the connection open but no longer passes anything through. The time counts from sending the request until it ends, including connecting and waiting for the response. Everything that arrives starts it anew, so a long stream that keeps receiving events, rows, or heartbeats is never cut off, and the time you spend handling an item of a stream does not count.
+
+A request that stalls throws a `ConnectionStalledError`. It extends `TypeError`, since `fetch` throws a `TypeError` when its own timeouts run out, and its `cause` has the `code` that the cause of that `TypeError` has, `UND_ERR_HEADERS_TIMEOUT` while waiting for the response headers and `UND_ERR_BODY_TIMEOUT` afterwards:
+
+```typescript
+import { ConnectionStalledError } from 'eventsourcingdb';
+
+try {
+  await client.ping();
+} catch (error) {
+  if (error instanceof ConnectionStalledError) {
+    // ...
+  }
+}
+```
+
+To change the 30 seconds, hand over the `stallTimeout` option in milliseconds as third argument when creating the client:
+
+```typescript
+const client = new Client(url, apiToken, {
+  stallTimeout: 10_000
+});
+```
+
+*Note that the `fetch` built into Node.js has timeouts of its own, which keep applying: 10 seconds for connecting, 300 seconds for waiting for the response headers, and 300 seconds without data in the response body. If one of them runs out first, the request throws the `TypeError` of `fetch`, with the message `fetch failed` or `terminated`. A `stallTimeout` above these values therefore cannot extend them.*
+
+*Note that `runEventQlQuery` and `observeEvents` throw a `HeartbeatTimeoutError` instead once the server has started to respond, see [Running EventQL Queries](#running-eventql-queries) and [Observing Events](#observing-events).*
+
+### Aborting a Request
+
+To abort a call of `ping`, `verifyApiToken`, `writeEvents`, `registerEventSchema`, or `readEventType`, hand over an abort signal as last argument, and abort the appropriate `AbortController`. The call then throws the reason of the abort, which is an `AbortError` unless you provide a reason of your own:
+
+```typescript
+const controller = new AbortController();
+
+try {
+  await client.writeEvents([
+    // events
+  ], [], controller.signal);
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    // ...
+  }
+}
+
+// Somewhere else, abort the controller, which will cause
+// writeEvents to throw.
+controller.abort();
+```
+
+*Note that aborting a function that returns an asynchronous iterator, such as `readEvents`, does not throw, but ends the iteration, see [Aborting Reading](#aborting-reading).*
+
 ### Writing Events
 
 Call the `writeEvents` function and hand over an array with one or more events. You do not have to provide all event fields – some are automatically added by the server.
@@ -262,7 +316,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
 
 ```typescript
 import { HeartbeatTimeoutError } from 'eventsourcingdb';
@@ -281,7 +335,7 @@ try {
 }
 ```
 
-*Note that the time you spend handling a row does not count towards the 30 seconds, and that aborting the query does not cause a `HeartbeatTimeoutError`.*
+*Note that the time you spend handling a row does not count towards the stall timeout, and that aborting the query does not cause a `HeartbeatTimeoutError`. If the server does not start to respond in time, the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections).*
 
 ### Observing Events
 
@@ -369,7 +423,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for 30 seconds, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
+While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `HeartbeatTimeoutError`:
 
 ```typescript
 import { HeartbeatTimeoutError } from 'eventsourcingdb';
@@ -387,7 +441,7 @@ try {
 }
 ```
 
-*Note that the time you spend handling an event does not count towards the 30 seconds, and that aborting observing does not cause a `HeartbeatTimeoutError`.*
+*Note that the time you spend handling an event does not count towards the stall timeout, and that aborting observing does not cause a `HeartbeatTimeoutError`. If the server does not start to respond in time, the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections).*
 
 ### Registering an Event Schema
 
@@ -486,10 +540,27 @@ eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired
 
 ### Verifying an Event's Hash
 
-To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function returns an error:
+To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, or if the event's `data` has been changed since it was received, the function throws a `HashVerificationFailedError`:
 
 ```typescript
 event.verifyHash();
+```
+
+The hash of an event tells its version. A hash that starts with `esdb:hash:v2:` is of version 2, which EventSourcingDB writes since version 1.3. A hash without a prefix is of version 1, which events written before keep. `verifyHash` supports both. If the hash is of a version the client SDK does not know, the function throws an `UnsupportedHashVersionError` that names the version, since such a hash cannot be verified, rather than being invalid:
+
+```typescript
+import { HashVerificationFailedError, UnsupportedHashVersionError } from 'eventsourcingdb';
+
+try {
+  event.verifyHash();
+} catch (error) {
+  if (error instanceof HashVerificationFailedError) {
+    // ...
+  }
+  if (error instanceof UnsupportedHashVersionError) {
+    // ...
+  }
+}
 ```
 
 *Note that this only verifies the hash. If you also want to verify the signature, you can skip this step and call `verifySignature` directly, which performs a hash verification internally.*
@@ -498,7 +569,7 @@ event.verifyHash();
 
 To verify the authenticity of an event, call the `verifySignature` function on the event instance. This requires the public key that matches the private key used for signing on the server.
 
-The function first verifies the event's hash, and then checks the signature. If any verification step fails, it returns an error:
+The function first verifies the event's hash, and then checks the signature. If any verification step fails, it throws an error, for example a `SignatureVerificationFailedError` if the signature is invalid:
 
 ```typescript
 const verificationKey = // an ed25519 public key

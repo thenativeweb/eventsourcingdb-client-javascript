@@ -8,9 +8,15 @@ concurrency:
 
 jobs:
   qa:
-    name: QA
+    name: QA (${{ matrix.image-tag }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image-tag:
+          - latest
+          - preview
 
     steps:
     - name: Clone repository
@@ -23,6 +29,8 @@ jobs:
       run: |
         npm ci
     - name: Run QA
+      env:
+        EVENTSOURCINGDB_IMAGE_TAG: ${{ matrix.image-tag }}
       run: |
         npm run qa
     - name: Run build

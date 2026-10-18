@@ -1,16 +1,51 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { afterEach, beforeEach, suite, test } from 'node:test';
+import type { Client } from './Client.js';
 import { Container } from './Container.js';
+import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
+import { HashVerificationFailedError } from './HashVerificationFailedError.js';
+import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
 
-suite('Event', { timeout: 30_000 }, () => {
+// Returns an event as written, as read, and as observed. Its data contains
+// characters that the server escapes, and it carries a trace context.
+const writeReadAndObserveEvent = async (client: Client): Promise<Event[]> => {
+	const event: EventCandidate = {
+		source: 'https://www.eventsourcingdb.io',
+		subject: '/test',
+		type: 'io.eventsourcingdb.test',
+		data: {
+			title: '2001 – A Space Odyssey',
+			tags: ['<classic>'],
+			shelf: 'A&B',
+			price: 12.5,
+		},
+		traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+		tracestate: 'vendor=value',
+	};
+
+	const events = await client.writeEvents([event]);
+
+	for await (const item of client.readEvents('/test', { recursive: false })) {
+		events.push(item);
+	}
+
+	for await (const item of client.observeEvents('/test', { recursive: false })) {
+		events.push(item);
+		break;
+	}
+
+	return events;
+};
+
+suite('Event', { timeout: 60_000 }, () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
 	});
 
@@ -43,6 +78,19 @@ suite('Event', { timeout: 30_000 }, () => {
 			});
 		});
 
+		test('verifies the hash of an event as written, read, and observed, whatever its data and trace context.', async (): Promise<void> => {
+			const client = container.getClient();
+
+			const events = await writeReadAndObserveEvent(client);
+			assert.equal(events.length, 3);
+
+			for (const event of events) {
+				assert.doesNotThrow((): void => {
+					event.verifyHash();
+				});
+			}
+		});
+
 		test('throws an error if the event hash is invalid.', async (): Promise<void> => {
 			const client = container.getClient();
 
@@ -67,7 +115,7 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifyHash();
-			});
+			}, HashVerificationFailedError);
 		});
 	});
 
@@ -101,8 +149,8 @@ suite('Event', { timeout: 30_000 }, () => {
 
 		test('throws an error if the hash verification fails.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();
@@ -131,13 +179,13 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifySignature(verificationKey);
-			});
+			}, HashVerificationFailedError);
 		});
 
 		test('throws an error if the signature verification fails.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();
@@ -165,13 +213,13 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifySignature(verificationKey);
-			});
+			}, SignatureVerificationFailedError);
 		});
 
 		test('verifies the signature.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();
@@ -198,6 +246,26 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.doesNotThrow((): void => {
 				writtenEvent.verifySignature(verificationKey);
 			});
+		});
+
+		test('verifies the signature of an event as written, read, and observed, whatever its data and trace context.', async (): Promise<void> => {
+			await container.stop();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
+			await container.start();
+
+			const client = container.getClient();
+			const verificationKey = container.getVerificationKey();
+
+			const events = await writeReadAndObserveEvent(client);
+			assert.equal(events.length, 3);
+
+			for (const event of events) {
+				assert.notEqual(event.signature, null);
+				assert.doesNotThrow((): void => {
+					event.verifySignature(verificationKey);
+				});
+			}
 		});
 	});
 });
