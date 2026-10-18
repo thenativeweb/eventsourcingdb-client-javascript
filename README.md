@@ -538,10 +538,27 @@ eventType = await client.readEventType("io.eventsourcingdb.library.book-acquired
 
 ### Verifying an Event's Hash
 
-To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function returns an error:
+To verify the integrity of an event, call the `verifyHash` function on the event instance. This recomputes the event's hash locally and compares it to the hash stored in the event. If the hashes differ, the function throws a `HashVerificationFailedError`:
 
 ```typescript
 event.verifyHash();
+```
+
+The hash of an event tells its version. A hash that starts with `esdb:hash:v2:` is of version 2, which EventSourcingDB writes since version 1.3. A hash without a prefix is of version 1, which events written before keep. `verifyHash` supports both. If the hash is of a version the client SDK does not know, the function throws an `UnsupportedHashVersionError` that names the version, since such a hash cannot be verified, rather than being invalid:
+
+```typescript
+import { HashVerificationFailedError, UnsupportedHashVersionError } from 'eventsourcingdb';
+
+try {
+  event.verifyHash();
+} catch (error) {
+  if (error instanceof HashVerificationFailedError) {
+    // ...
+  }
+  if (error instanceof UnsupportedHashVersionError) {
+    // ...
+  }
+}
 ```
 
 *Note that this only verifies the hash. If you also want to verify the signature, you can skip this step and call `verifySignature` directly, which performs a hash verification internally.*
@@ -550,7 +567,7 @@ event.verifyHash();
 
 To verify the authenticity of an event, call the `verifySignature` function on the event instance. This requires the public key that matches the private key used for signing on the server.
 
-The function first verifies the event's hash, and then checks the signature. If any verification step fails, it returns an error:
+The function first verifies the event's hash, and then checks the signature. If any verification step fails, it throws an error, for example a `SignatureVerificationFailedError` if the signature is invalid:
 
 ```typescript
 const verificationKey = // an ed25519 public key
