@@ -4,43 +4,95 @@ import { Container } from './Container.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('observeEvents', { timeout: 30_000 }, () => {
+suite('observeEvents', () => {
 	let container: Container;
 
 	beforeEach(async () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, integrationTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('observes no events if the database is empty.', async (): Promise<void> => {
-		const client = container.getClient();
-		const controller = new AbortController();
+	test(
+		'observes no events if the database is empty.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
+			const controller = new AbortController();
 
-		setTimeout(() => {
-			controller.abort();
-		}, 100);
+			setTimeout(() => {
+				controller.abort();
+			}, 100);
 
-		let didObserveEvents = false;
-		for await (const _event of client.observeEvents(
-			'/',
-			{
-				recursive: true,
-			},
-			controller.signal,
-		)) {
-			didObserveEvents = true;
-		}
+			let didObserveEvents = false;
+			for await (const _event of client.observeEvents(
+				'/',
+				{
+					recursive: true,
+				},
+				controller.signal,
+			)) {
+				didObserveEvents = true;
+			}
 
-		assert.equal(didObserveEvents, false);
-	});
+			assert.equal(didObserveEvents, false);
+		},
+	);
 
-	test('observes all events from the given subject.', async (): Promise<void> => {
+	test(
+		'observes all events from the given subject.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
+
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
+
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
+
+			await client.writeEvents([firstEvent, secondEvent]);
+
+			const controller = new AbortController();
+
+			setTimeout(() => {
+				controller.abort();
+			}, 100);
+
+			const eventsObserved: Event[] = [];
+			for await (const event of client.observeEvents(
+				'/test',
+				{
+					recursive: false,
+				},
+				controller.signal,
+			)) {
+				eventsObserved.push(event);
+			}
+
+			assert.equal(eventsObserved.length, 2);
+		},
+	);
+
+	test('observes recursively.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -71,49 +123,6 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 
 		const eventsObserved: Event[] = [];
 		for await (const event of client.observeEvents(
-			'/test',
-			{
-				recursive: false,
-			},
-			controller.signal,
-		)) {
-			eventsObserved.push(event);
-		}
-
-		assert.equal(eventsObserved.length, 2);
-	});
-
-	test('observes recursively.', async (): Promise<void> => {
-		const client = container.getClient();
-
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
-
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
-
-		await client.writeEvents([firstEvent, secondEvent]);
-
-		const controller = new AbortController();
-
-		setTimeout(() => {
-			controller.abort();
-		}, 100);
-
-		const eventsObserved: Event[] = [];
-		for await (const event of client.observeEvents(
 			'/',
 			{
 				recursive: true,
@@ -126,7 +135,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventsObserved.length, 2);
 	});
 
-	test('observes with lower bound.', async (): Promise<void> => {
+	test('observes with lower bound.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -173,7 +182,7 @@ suite('observeEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventObserved.data.value, 42);
 	});
 
-	test('observes from latest event.', async (): Promise<void> => {
+	test('observes from latest event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {

@@ -1,4 +1,4 @@
-import { hasShapeOf } from '../types/hasShapeOf.js';
+import { hasShapeOf } from '../../types/hasShapeOf.js';
 import type { StreamRow } from './StreamRow.js';
 
 const isStreamRow = (line: unknown): line is StreamRow =>

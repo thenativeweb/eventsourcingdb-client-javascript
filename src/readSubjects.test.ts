@@ -3,32 +3,37 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('readSubjects', { timeout: 30_000 }, () => {
+suite('readSubjects', () => {
 	let container: Container;
 
 	beforeEach(async () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, integrationTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('reads no subjects if the database is empty.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'reads no subjects if the database is empty.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		let didReadSubjects = false;
-		for await (const _event of client.readSubjects('/')) {
-			didReadSubjects = true;
-		}
+			let didReadSubjects = false;
+			for await (const _event of client.readSubjects('/', { recursive: true })) {
+				didReadSubjects = true;
+			}
 
-		assert.equal(didReadSubjects, false);
-	});
+			assert.equal(didReadSubjects, false);
+		},
+	);
 
-	test('reads all subjects.', async (): Promise<void> => {
+	test('reads all subjects.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -52,7 +57,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		await client.writeEvents([firstEvent, secondEvent]);
 
 		const subjectsRead: string[] = [];
-		for await (const subject of client.readSubjects('/')) {
+		for await (const subject of client.readSubjects('/', { recursive: true })) {
 			subjectsRead.push(subject);
 		}
 
@@ -63,7 +68,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		assert.equal(subjectsRead[3], '/test/2');
 	});
 
-	test('reads all subjects from the base subject.', async (): Promise<void> => {
+	test('reads all subjects from the subject.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -87,7 +92,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		await client.writeEvents([firstEvent, secondEvent]);
 
 		const subjectsRead: string[] = [];
-		for await (const subject of client.readSubjects('/test')) {
+		for await (const subject of client.readSubjects('/test', { recursive: true })) {
 			subjectsRead.push(subject);
 		}
 
@@ -96,4 +101,45 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		assert.equal(subjectsRead[1], '/test/1');
 		assert.equal(subjectsRead[2], '/test/2');
 	});
+
+	test(
+		'reads only the subject itself, if it does not read recursively.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
+
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test/1',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
+
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test/1/a',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
+
+			await client.writeEvents([firstEvent, secondEvent]);
+
+			const readSubjects = async (subject: string): Promise<string[]> => {
+				const subjectsRead: string[] = [];
+				for await (const subjectRead of client.readSubjects(subject, { recursive: false })) {
+					subjectsRead.push(subjectRead);
+				}
+				return subjectsRead;
+			};
+
+			assert.deepEqual(await readSubjects('/test/1'), ['/test/1']);
+			assert.deepEqual(await readSubjects('/test'), ['/test']);
+			assert.deepEqual(await readSubjects('/'), ['/']);
+			assert.deepEqual(await readSubjects('/test/2'), []);
+		},
+	);
 });
