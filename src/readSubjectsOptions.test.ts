@@ -81,6 +81,34 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		test('reads no subject, if it does not read recursively and the subject does not exist.', async (): Promise<void> => {
 			assert.deepEqual(await consume(client.readSubjects('/test/3', { recursive: false })), []);
 		});
+
+		test('reads the subject as the server keeps it, if it does not read recursively.', async (): Promise<void> => {
+			// The server keeps a subject without a trailing slash, so it lists
+			// '/test/' as '/test'.
+			assert.deepEqual(await consume(client.readSubjects('/test/', { recursive: false })), [
+				'/test',
+			]);
+			assert.deepEqual(await consume(client.readSubjects('/test/1/', { recursive: false })), [
+				'/test/1',
+			]);
+
+			const [request] = server.requests;
+			assert.equal(request?.body, '{"baseSubject":"/test/"}');
+		});
+
+		test('reads only the root itself, if it does not read recursively from the root.', async (): Promise<void> => {
+			server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+				const { subject } = lines.v1;
+
+				writeHead(response, 200, ndJson);
+				response.end(`${subject('/')}${subject('/test')}${subject('/test/1')}`);
+			};
+
+			assert.deepEqual(await consume(client.readSubjects('/', { recursive: false })), ['/']);
+
+			const [request] = server.requests;
+			assert.equal(request?.body, '{"baseSubject":"/"}');
+		});
 	});
 
 	suite('v2', () => {
