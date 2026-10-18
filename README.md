@@ -69,6 +69,30 @@ const client = new Client(url, apiToken, {
 
 *Note that `runEventQlQuery` and `observeEvents` throw a `HeartbeatTimeoutError` instead once the server has started to respond, see [Running EventQL Queries](#running-eventql-queries) and [Observing Events](#observing-events).*
 
+### Aborting a Request
+
+To abort a call of `ping`, `verifyApiToken`, `writeEvents`, `registerEventSchema`, or `readEventType`, hand over an abort signal as last argument, and abort the appropriate `AbortController`. The call then throws the reason of the abort, which is an `AbortError` unless you provide a reason of your own:
+
+```typescript
+const controller = new AbortController();
+
+try {
+  await client.writeEvents([
+    // events
+  ], [], controller.signal);
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    // ...
+  }
+}
+
+// Somewhere else, abort the controller, which will cause
+// writeEvents to throw.
+controller.abort();
+```
+
+*Note that aborting a function that returns an asynchronous iterator, such as `readEvents`, does not throw, but ends the iteration, see [Aborting Reading](#aborting-reading).*
+
 ### Writing Events
 
 Call the `writeEvents` function and hand over an array with one or more events. You do not have to provide all event fields – some are automatically added by the server.

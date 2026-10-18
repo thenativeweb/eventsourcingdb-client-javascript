@@ -62,9 +62,11 @@ class Client {
 		this.#stallTimeout = stallTimeout;
 	}
 
-	public async ping(): Promise<void> {
+	public async ping(signal?: AbortSignal): Promise<void> {
 		const url = this.#getUrl('/api/v1/ping');
-		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+		const stallTimeout = this.#stallTimeout;
+
+		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
 			const response = await fetch(url, {
 				method: 'get',
 				signal: stallGuard.signal,
@@ -96,9 +98,11 @@ class Client {
 		});
 	}
 
-	public async verifyApiToken(): Promise<void> {
+	public async verifyApiToken(signal?: AbortSignal): Promise<void> {
 		const url = this.#getUrl('/api/v1/verify-api-token');
-		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+		const stallTimeout = this.#stallTimeout;
+
+		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
 			const response = await fetch(url, {
 				method: 'post',
 				headers: {
@@ -136,9 +140,12 @@ class Client {
 	public async writeEvents(
 		events: EventCandidate[],
 		preconditions: Precondition[] = [],
+		signal?: AbortSignal,
 	): Promise<Event[]> {
 		const url = this.#getUrl('/api/v1/write-events');
-		return await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+		const stallTimeout = this.#stallTimeout;
+
+		return await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
 			const response = await fetch(url, {
 				method: 'post',
 				headers: {
@@ -419,9 +426,12 @@ class Client {
 	public async registerEventSchema(
 		eventType: string,
 		schema: Record<string, unknown>,
+		signal?: AbortSignal,
 	): Promise<void> {
 		const url = this.#getUrl('/api/v1/register-event-schema');
-		await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+		const stallTimeout = this.#stallTimeout;
+
+		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
 			const response = await fetch(url, {
 				method: 'post',
 				headers: {
@@ -519,9 +529,11 @@ class Client {
 		})();
 	}
 
-	public async readEventType(eventType: string): Promise<EventType> {
+	public async readEventType(eventType: string, signal?: AbortSignal): Promise<EventType> {
 		const url = this.#getUrl('/api/v1/read-event-type');
-		return await runWithStallGuard({ stallTimeout: this.#stallTimeout }, async stallGuard => {
+		const stallTimeout = this.#stallTimeout;
+
+		return await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
 			const response = await fetch(url, {
 				method: 'post',
 				headers: {
