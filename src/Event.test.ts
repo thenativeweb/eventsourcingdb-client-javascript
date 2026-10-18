@@ -8,6 +8,7 @@ import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
 import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Returns an event as written, as read, and as observed. Its data contains
 // characters that the server escapes, and it carries a trace context.
@@ -40,21 +41,21 @@ const writeReadAndObserveEvent = async (client: Client): Promise<Event[]> => {
 	return events;
 };
 
-suite('Event', { timeout: 60_000 }, () => {
+suite('Event', () => {
 	let container: Container;
 
 	beforeEach(async () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, integrationTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
 	suite('verifyHash', (): void => {
-		test('verifies the event hash.', async (): Promise<void> => {
+		test('verifies the event hash.', integrationTimeout, async (): Promise<void> => {
 			const client = container.getClient();
 
 			const event: EventCandidate = {
@@ -78,145 +79,165 @@ suite('Event', { timeout: 60_000 }, () => {
 			});
 		});
 
-		test('verifies the hash of an event as written, read, and observed, whatever its data and trace context.', async (): Promise<void> => {
-			const client = container.getClient();
+		test(
+			'verifies the hash of an event as written, read, and observed, whatever its data and trace context.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				const client = container.getClient();
 
-			const events = await writeReadAndObserveEvent(client);
-			assert.equal(events.length, 3);
+				const events = await writeReadAndObserveEvent(client);
+				assert.equal(events.length, 3);
 
-			for (const event of events) {
-				assert.doesNotThrow((): void => {
-					event.verifyHash();
-				});
-			}
-		});
+				for (const event of events) {
+					assert.doesNotThrow((): void => {
+						event.verifyHash();
+					});
+				}
+			},
+		);
 
-		test('throws an error if the event hash is invalid.', async (): Promise<void> => {
-			const client = container.getClient();
+		test(
+			'throws an error if the event hash is invalid.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				const client = container.getClient();
 
-			const event: EventCandidate = {
-				source: 'https://www.eventsourcingdb.io',
-				subject: '/test',
-				type: 'io.eventsourcingdb.test',
-				data: {
-					value: 23,
-				},
-			};
+				const event: EventCandidate = {
+					source: 'https://www.eventsourcingdb.io',
+					subject: '/test',
+					type: 'io.eventsourcingdb.test',
+					data: {
+						value: 23,
+					},
+				};
 
-			const writtenEvents = await client.writeEvents([event]);
+				const writtenEvents = await client.writeEvents([event]);
 
-			assert.equal(writtenEvents.length, 1);
+				assert.equal(writtenEvents.length, 1);
 
-			const writtenEvent = writtenEvents[0];
-			assert.ok(writtenEvent);
+				const writtenEvent = writtenEvents[0];
+				assert.ok(writtenEvent);
 
-			const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
-			writtenEvent.hash = invalidHash;
+				const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
+				writtenEvent.hash = invalidHash;
 
-			assert.throws((): void => {
-				writtenEvent.verifyHash();
-			}, HashVerificationFailedError);
-		});
+				assert.throws((): void => {
+					writtenEvent.verifyHash();
+				}, HashVerificationFailedError);
+			},
+		);
 	});
 
 	suite('verifySignature', (): void => {
-		test('throws an error if the signature is null.', async (): Promise<void> => {
-			const client = container.getClient();
+		test(
+			'throws an error if the signature is null.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				const client = container.getClient();
 
-			const event: EventCandidate = {
-				source: 'https://www.eventsourcingdb.io',
-				subject: '/test',
-				type: 'io.eventsourcingdb.test',
-				data: {
-					value: 23,
-				},
-			};
+				const event: EventCandidate = {
+					source: 'https://www.eventsourcingdb.io',
+					subject: '/test',
+					type: 'io.eventsourcingdb.test',
+					data: {
+						value: 23,
+					},
+				};
 
-			const writtenEvents = await client.writeEvents([event]);
+				const writtenEvents = await client.writeEvents([event]);
 
-			assert.equal(writtenEvents.length, 1);
+				assert.equal(writtenEvents.length, 1);
 
-			const writtenEvent = writtenEvents[0];
-			assert.ok(writtenEvent);
-			assert.equal(writtenEvent.signature, null);
+				const writtenEvent = writtenEvents[0];
+				assert.ok(writtenEvent);
+				assert.equal(writtenEvent.signature, null);
 
-			const { publicKey: verificationKey } = crypto.generateKeyPairSync('ed25519');
+				const { publicKey: verificationKey } = crypto.generateKeyPairSync('ed25519');
 
-			assert.throws((): void => {
-				writtenEvent.verifySignature(verificationKey);
-			});
-		});
+				assert.throws((): void => {
+					writtenEvent.verifySignature(verificationKey);
+				});
+			},
+		);
 
-		test('throws an error if the hash verification fails.', async (): Promise<void> => {
-			await container.stop();
-			const imageTag = getImageTag();
-			container = new Container().withImageTag(imageTag).withSigningKey();
-			await container.start();
+		test(
+			'throws an error if the hash verification fails.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				await container.stop();
+				const imageTag = getImageTag();
+				container = new Container().withImageTag(imageTag).withSigningKey();
+				await container.start();
 
-			const client = container.getClient();
+				const client = container.getClient();
 
-			const event: EventCandidate = {
-				source: 'https://www.eventsourcingdb.io',
-				subject: '/test',
-				type: 'io.eventsourcingdb.test',
-				data: {
-					value: 23,
-				},
-			};
+				const event: EventCandidate = {
+					source: 'https://www.eventsourcingdb.io',
+					subject: '/test',
+					type: 'io.eventsourcingdb.test',
+					data: {
+						value: 23,
+					},
+				};
 
-			const writtenEvents = await client.writeEvents([event]);
+				const writtenEvents = await client.writeEvents([event]);
 
-			assert.equal(writtenEvents.length, 1);
+				assert.equal(writtenEvents.length, 1);
 
-			const writtenEvent = writtenEvents[0];
-			assert.ok(writtenEvent);
-			assert.notEqual(writtenEvent.signature, null);
+				const writtenEvent = writtenEvents[0];
+				assert.ok(writtenEvent);
+				assert.notEqual(writtenEvent.signature, null);
 
-			const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
-			writtenEvent.hash = invalidHash;
+				const invalidHash = crypto.createHash('sha256').update('invalid hash').digest('hex');
+				writtenEvent.hash = invalidHash;
 
-			const verificationKey = container.getVerificationKey();
+				const verificationKey = container.getVerificationKey();
 
-			assert.throws((): void => {
-				writtenEvent.verifySignature(verificationKey);
-			}, HashVerificationFailedError);
-		});
+				assert.throws((): void => {
+					writtenEvent.verifySignature(verificationKey);
+				}, HashVerificationFailedError);
+			},
+		);
 
-		test('throws an error if the signature verification fails.', async (): Promise<void> => {
-			await container.stop();
-			const imageTag = getImageTag();
-			container = new Container().withImageTag(imageTag).withSigningKey();
-			await container.start();
+		test(
+			'throws an error if the signature verification fails.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				await container.stop();
+				const imageTag = getImageTag();
+				container = new Container().withImageTag(imageTag).withSigningKey();
+				await container.start();
 
-			const client = container.getClient();
+				const client = container.getClient();
 
-			const event: EventCandidate = {
-				source: 'https://www.eventsourcingdb.io',
-				subject: '/test',
-				type: 'io.eventsourcingdb.test',
-				data: {
-					value: 23,
-				},
-			};
+				const event: EventCandidate = {
+					source: 'https://www.eventsourcingdb.io',
+					subject: '/test',
+					type: 'io.eventsourcingdb.test',
+					data: {
+						value: 23,
+					},
+				};
 
-			const writtenEvents = await client.writeEvents([event]);
+				const writtenEvents = await client.writeEvents([event]);
 
-			assert.equal(writtenEvents.length, 1);
+				assert.equal(writtenEvents.length, 1);
 
-			const writtenEvent = writtenEvents[0];
-			assert.ok(writtenEvent);
-			assert.notEqual(writtenEvent.signature, null);
+				const writtenEvent = writtenEvents[0];
+				assert.ok(writtenEvent);
+				assert.notEqual(writtenEvent.signature, null);
 
-			writtenEvent.signature += '0123456789abcdef';
+				writtenEvent.signature += '0123456789abcdef';
 
-			const verificationKey = container.getVerificationKey();
+				const verificationKey = container.getVerificationKey();
 
-			assert.throws((): void => {
-				writtenEvent.verifySignature(verificationKey);
-			}, SignatureVerificationFailedError);
-		});
+				assert.throws((): void => {
+					writtenEvent.verifySignature(verificationKey);
+				}, SignatureVerificationFailedError);
+			},
+		);
 
-		test('verifies the signature.', async (): Promise<void> => {
+		test('verifies the signature.', integrationTimeout, async (): Promise<void> => {
 			await container.stop();
 			const imageTag = getImageTag();
 			container = new Container().withImageTag(imageTag).withSigningKey();
@@ -248,24 +269,28 @@ suite('Event', { timeout: 60_000 }, () => {
 			});
 		});
 
-		test('verifies the signature of an event as written, read, and observed, whatever its data and trace context.', async (): Promise<void> => {
-			await container.stop();
-			const imageTag = getImageTag();
-			container = new Container().withImageTag(imageTag).withSigningKey();
-			await container.start();
+		test(
+			'verifies the signature of an event as written, read, and observed, whatever its data and trace context.',
+			integrationTimeout,
+			async (): Promise<void> => {
+				await container.stop();
+				const imageTag = getImageTag();
+				container = new Container().withImageTag(imageTag).withSigningKey();
+				await container.start();
 
-			const client = container.getClient();
-			const verificationKey = container.getVerificationKey();
+				const client = container.getClient();
+				const verificationKey = container.getVerificationKey();
 
-			const events = await writeReadAndObserveEvent(client);
-			assert.equal(events.length, 3);
+				const events = await writeReadAndObserveEvent(client);
+				assert.equal(events.length, 3);
 
-			for (const event of events) {
-				assert.notEqual(event.signature, null);
-				assert.doesNotThrow((): void => {
-					event.verifySignature(verificationKey);
-				});
-			}
-		});
+				for (const event of events) {
+					assert.notEqual(event.signature, null);
+					assert.doesNotThrow((): void => {
+						event.verifySignature(verificationKey);
+					});
+				}
+			},
+		);
 	});
 });

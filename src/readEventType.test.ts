@@ -6,21 +6,22 @@ import { ErrorCode } from './ErrorCode.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
 import { getApiVersionOf } from './testing/getApiVersionOf.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('readEventType', { timeout: 30_000 }, () => {
+suite('readEventType', () => {
 	let container: Container;
 
 	beforeEach(async () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, integrationTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('fails if the event type does not exist.', async (): Promise<void> => {
+	test('fails if the event type does not exist.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const apiVersion = await getApiVersionOf(container);
@@ -38,7 +39,7 @@ suite('readEventType', { timeout: 30_000 }, () => {
 		);
 	});
 
-	test('fails if the event type is malformed.', async (): Promise<void> => {
+	test('fails if the event type is malformed.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 		const apiVersion = await getApiVersionOf(container);
 
@@ -62,7 +63,7 @@ suite('readEventType', { timeout: 30_000 }, () => {
 		);
 	});
 
-	test('read an existing event type.', async (): Promise<void> => {
+	test('read an existing event type.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -92,27 +93,31 @@ suite('readEventType', { timeout: 30_000 }, () => {
 		});
 	});
 
-	test('reads an event type that has a schema, but no events.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'reads an event type that has a schema, but no events.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		const schema = {
-			type: 'object',
-			properties: {
-				value: {
-					type: 'number',
+			const schema = {
+				type: 'object',
+				properties: {
+					value: {
+						type: 'number',
+					},
 				},
-			},
-			required: ['value'],
-			additionalProperties: false,
-		};
+				required: ['value'],
+				additionalProperties: false,
+			};
 
-		await client.registerEventSchema('io.eventsourcingdb.test.foo', schema);
+			await client.registerEventSchema('io.eventsourcingdb.test.foo', schema);
 
-		const readEventType = await client.readEventType('io.eventsourcingdb.test.foo');
-		assert.deepEqual(readEventType, {
-			type: 'io.eventsourcingdb.test.foo',
-			hasEvents: false,
-			schema,
-		});
-	});
+			const readEventType = await client.readEventType('io.eventsourcingdb.test.foo');
+			assert.deepEqual(readEventType, {
+				type: 'io.eventsourcingdb.test.foo',
+				hasEvents: false,
+				schema,
+			});
+		},
+	);
 });

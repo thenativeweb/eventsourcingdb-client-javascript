@@ -10,25 +10,26 @@ import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Both APIs report a precondition that does not hold with the same code.
 const isPreconditionViolated = (error: unknown): boolean =>
 	error instanceof DbApiError && error.code === ErrorCode.preconditionViolated;
 
-suite('writeEvents', { timeout: 30_000 }, () => {
+suite('writeEvents', () => {
 	let container: Container;
 
 	beforeEach(async () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, integrationTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('writes a single event.', async (): Promise<void> => {
+	test('writes a single event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const event: EventCandidate = {
@@ -48,7 +49,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		assert.equal(writtenEvent.id, '0');
 	});
 
-	test('writes multiple events.', async (): Promise<void> => {
+	test('writes multiple events.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -83,7 +84,7 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		assert.equal(secondWrittenEvent.data.value, 42);
 	});
 
-	test('writes the trace context of an event.', async (): Promise<void> => {
+	test('writes the trace context of an event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const traceparent = '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01';
@@ -122,126 +123,142 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventRead.tracestate, tracestate);
 	});
 
-	test('supports the isSubjectPristine precondition.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'supports the isSubjectPristine precondition.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
 
-		await client.writeEvents([firstEvent]);
+			await client.writeEvents([firstEvent]);
 
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
 
-		await assert.rejects(async () => {
-			await client.writeEvents([secondEvent], [isSubjectPristine('/test')]);
-		}, isPreconditionViolated);
-	});
+			await assert.rejects(async () => {
+				await client.writeEvents([secondEvent], [isSubjectPristine('/test')]);
+			}, isPreconditionViolated);
+		},
+	);
 
-	test('supports the isSubjectPopulated precondition.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'supports the isSubjectPopulated precondition.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
 
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
 
-		await assert.rejects(async () => {
-			await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
-		}, isPreconditionViolated);
+			await assert.rejects(async () => {
+				await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
+			}, isPreconditionViolated);
 
-		await client.writeEvents([firstEvent]);
+			await client.writeEvents([firstEvent]);
 
-		const writtenEvents = await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
+			const writtenEvents = await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
 
-		assert.equal(writtenEvents.length, 1);
-		const [writtenEvent] = writtenEvents;
-		assert.ok(writtenEvent);
-		assert.equal(writtenEvent.id, '1');
-		assert.equal(writtenEvent.data.value, 42);
-	});
+			assert.equal(writtenEvents.length, 1);
+			const [writtenEvent] = writtenEvents;
+			assert.ok(writtenEvent);
+			assert.equal(writtenEvent.id, '1');
+			assert.equal(writtenEvent.data.value, 42);
+		},
+	);
 
-	test('supports the isSubjectOnEventId precondition.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'supports the isSubjectOnEventId precondition.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
 
-		await client.writeEvents([firstEvent]);
+			await client.writeEvents([firstEvent]);
 
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
 
-		await assert.rejects(async () => {
-			await client.writeEvents([secondEvent], [isSubjectOnEventId('/test', '1')]);
-		}, isPreconditionViolated);
-	});
+			await assert.rejects(async () => {
+				await client.writeEvents([secondEvent], [isSubjectOnEventId('/test', '1')]);
+			}, isPreconditionViolated);
+		},
+	);
 
-	test('supports the isEventQlQueryTrue precondition.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'supports the isEventQlQueryTrue precondition.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		const firstEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 23,
-			},
-		};
+			const firstEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 23,
+				},
+			};
 
-		await client.writeEvents([firstEvent]);
+			await client.writeEvents([firstEvent]);
 
-		const secondEvent: EventCandidate = {
-			source: 'https://www.eventsourcingdb.io',
-			subject: '/test',
-			type: 'io.eventsourcingdb.test',
-			data: {
-				value: 42,
-			},
-		};
+			const secondEvent: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					value: 42,
+				},
+			};
 
-		await assert.rejects(async () => {
-			await client.writeEvents(
-				[secondEvent],
-				[isEventQlQueryTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
-			);
-		}, isPreconditionViolated);
-	});
+			await assert.rejects(async () => {
+				await client.writeEvents(
+					[secondEvent],
+					[isEventQlQueryTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
+				);
+			}, isPreconditionViolated);
+		},
+	);
 });
