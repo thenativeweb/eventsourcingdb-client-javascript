@@ -45,7 +45,7 @@ await client.verifyApiToken();
 
 Every request fails once nothing arrives from the server for 30 seconds, for example because the server does not respond, or because a proxy keeps the connection open but no longer passes anything through. The time counts from sending the request until it ends, including connecting and waiting for the response. Everything that arrives starts it anew, so a long stream that keeps receiving events, rows, or heartbeats is never cut off, and the time you spend handling an item of a stream does not count.
 
-A request that stalls throws a `ConnectionStalledError`. It extends `TypeError`, since `fetch` throws a `TypeError` when its own timeouts run out:
+A request that stalls throws a `ConnectionStalledError`. It extends `TypeError`, since `fetch` throws a `TypeError` when its own timeouts run out, and its `cause` has the `code` that the cause of that `TypeError` has, `UND_ERR_HEADERS_TIMEOUT` while waiting for the response headers and `UND_ERR_BODY_TIMEOUT` afterwards:
 
 ```typescript
 import { ConnectionStalledError } from 'eventsourcingdb';

@@ -1,4 +1,5 @@
 import { ConnectionStalledError } from '../ConnectionStalledError.js';
+import { createFetchTimeoutError } from './createFetchTimeoutError.js';
 
 // Ends a request once nothing arrives from the server for the stall timeout,
 // from sending the request until its end, including connecting and waiting
@@ -10,6 +11,7 @@ class StallGuard {
 	readonly #controller = new AbortController();
 	readonly #callerSignal: AbortSignal | undefined;
 	#createStallError: () => Error;
+	#phase: 'headers' | 'body' = 'headers';
 	#stallError: Error | undefined;
 	#timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -20,7 +22,10 @@ class StallGuard {
 	public constructor(stallTimeout: number, callerSignal?: AbortSignal) {
 		this.#stallTimeout = stallTimeout;
 		this.#callerSignal = callerSignal;
-		this.#createStallError = (): Error => new ConnectionStalledError(stallTimeout);
+		this.#createStallError = (): Error =>
+			new ConnectionStalledError(stallTimeout, {
+				cause: createFetchTimeoutError(this.#phase),
+			});
 
 		if (callerSignal?.aborted) {
 			this.#onCallerAbort();
@@ -29,10 +34,21 @@ class StallGuard {
 		}
 	}
 
-	// The signal to hand to fetch, which aborts once the request stalls or the
+	// The signal of the request, which aborts once the request stalls or the
 	// caller aborts.
 	public get signal(): AbortSignal {
 		return this.#controller.signal;
+	}
+
+	// Sends the request with the signal of the guard. Once the headers of the
+	// response have arrived, the clock starts anew.
+	public async send(url: string, init: RequestInit): Promise<Response> {
+		const response = await fetch(url, { ...init, signal: this.#controller.signal });
+
+		this.#phase = 'body';
+		this.restart();
+
+		return response;
 	}
 
 	// From now on, a stall ends the request with the error that this creates.

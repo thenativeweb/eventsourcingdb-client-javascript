@@ -79,11 +79,18 @@ const trickle = (response: ServerResponse, text: string): void => {
 	});
 };
 
-const isConnectionStalledError = (error: unknown): boolean =>
-	error instanceof ConnectionStalledError &&
-	error instanceof TypeError &&
-	error.name === 'ConnectionStalledError' &&
-	error.message === 'Nothing arrived from the server for 250 milliseconds.';
+// A stall carries the code that the timeout error of fetch has for the same
+// situation as its cause, so that code that checks it keeps working.
+const isConnectionStalledError =
+	(causeCode: 'UND_ERR_HEADERS_TIMEOUT' | 'UND_ERR_BODY_TIMEOUT') =>
+	(error: unknown): boolean =>
+		error instanceof ConnectionStalledError &&
+		error instanceof TypeError &&
+		error.name === 'ConnectionStalledError' &&
+		error.message === 'Nothing arrived from the server for 250 milliseconds.' &&
+		error.cause instanceof Error &&
+		'code' in error.cause &&
+		error.cause.code === causeCode;
 
 const isHeartbeatTimeoutError = (error: unknown): boolean =>
 	error instanceof HeartbeatTimeoutError &&
@@ -283,7 +290,10 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 				};
 
 				const startedAt = performance.now();
-				await assert.rejects(async () => await run(client), isConnectionStalledError);
+				await assert.rejects(
+					async () => await run(client),
+					isConnectionStalledError('UND_ERR_HEADERS_TIMEOUT'),
+				);
 
 				const elapsed = performance.now() - startedAt;
 				assert.ok(elapsed >= stallTimeout - 10);
@@ -305,7 +315,10 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 				};
 
 				const startedAt = performance.now();
-				await assert.rejects(async () => await run(client), isConnectionStalledError);
+				await assert.rejects(
+					async () => await run(client),
+					isConnectionStalledError('UND_ERR_BODY_TIMEOUT'),
+				);
 
 				const elapsed = performance.now() - startedAt;
 				assert.ok(elapsed >= stallTimeout - 10);

@@ -67,9 +67,8 @@ class Client {
 		const stallTimeout = this.#stallTimeout;
 
 		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
-			const response = await fetch(url, {
+			const response = await stallGuard.send(url, {
 				method: 'get',
-				signal: stallGuard.signal,
 			});
 
 			if (!isValidServerHeader(response)) {
@@ -103,12 +102,11 @@ class Client {
 		const stallTimeout = this.#stallTimeout;
 
 		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
-			const response = await fetch(url, {
+			const response = await stallGuard.send(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${this.#apiToken}`,
 				},
-				signal: stallGuard.signal,
 			});
 
 			if (!isValidServerHeader(response)) {
@@ -146,7 +144,7 @@ class Client {
 		const stallTimeout = this.#stallTimeout;
 
 		return await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
-			const response = await fetch(url, {
+			const response = await stallGuard.send(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${this.#apiToken}`,
@@ -156,7 +154,6 @@ class Client {
 					events,
 					preconditions,
 				}),
-				signal: stallGuard.signal,
 			});
 
 			if (!isValidServerHeader(response)) {
@@ -205,7 +202,7 @@ class Client {
 
 			try {
 				stallGuard.restart();
-				const response = await fetch(url, {
+				const response = await stallGuard.send(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
@@ -215,7 +212,6 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
@@ -276,14 +272,13 @@ class Client {
 
 			try {
 				stallGuard.restart();
-				const response = await fetch(url, {
+				const response = await stallGuard.send(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
 						'content-type': 'application/json',
 					},
 					body: JSON.stringify({ query }),
-					signal: stallGuard.signal,
 				});
 
 				// Once the headers have arrived, the server sends a heartbeat every
@@ -355,7 +350,7 @@ class Client {
 
 			try {
 				stallGuard.restart();
-				const response = await fetch(url, {
+				const response = await stallGuard.send(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
@@ -365,7 +360,6 @@ class Client {
 						subject,
 						options,
 					}),
-					signal: stallGuard.signal,
 				});
 
 				// Once the headers have arrived, the server sends a heartbeat every
@@ -432,7 +426,7 @@ class Client {
 		const stallTimeout = this.#stallTimeout;
 
 		await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
-			const response = await fetch(url, {
+			const response = await stallGuard.send(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${this.#apiToken}`,
@@ -442,7 +436,6 @@ class Client {
 					eventType,
 					schema,
 				}),
-				signal: stallGuard.signal,
 			});
 
 			if (!isValidServerHeader(response)) {
@@ -470,7 +463,7 @@ class Client {
 
 			try {
 				stallGuard.restart();
-				const response = await fetch(url, {
+				const response = await stallGuard.send(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
@@ -479,7 +472,6 @@ class Client {
 					body: JSON.stringify({
 						baseSubject,
 					}),
-					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
@@ -534,7 +526,7 @@ class Client {
 		const stallTimeout = this.#stallTimeout;
 
 		return await runWithStallGuard({ stallTimeout, signal }, async stallGuard => {
-			const response = await fetch(url, {
+			const response = await stallGuard.send(url, {
 				method: 'post',
 				headers: {
 					authorization: `Bearer ${this.#apiToken}`,
@@ -543,7 +535,6 @@ class Client {
 				body: JSON.stringify({
 					eventType,
 				}),
-				signal: stallGuard.signal,
 			});
 
 			if (!isValidServerHeader(response)) {
@@ -579,12 +570,11 @@ class Client {
 
 			try {
 				stallGuard.restart();
-				const response = await fetch(url, {
+				const response = await stallGuard.send(url, {
 					method: 'post',
 					headers: {
 						authorization: `Bearer ${apiToken}`,
 					},
-					signal: stallGuard.signal,
 				});
 
 				if (!isValidServerHeader(response)) {
