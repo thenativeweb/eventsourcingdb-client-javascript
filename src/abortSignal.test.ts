@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
-import { createServer, type Server } from 'node:http';
+import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
+import { OutcomeUnknownError } from './OutcomeUnknownError.js';
+import { answers, apiVersions } from './testing/answers.js';
+import { type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
 
 interface Request {
 	name: string;
 	run: (client: Client, signal: AbortSignal) => Promise<unknown>;
+	isWrite?: boolean;
 }
 
 const requests: Request[] = [
@@ -34,11 +37,13 @@ const requests: Request[] = [
 				[],
 				signal,
 			),
+		isWrite: true,
 	},
 	{
 		name: 'registerEventSchema',
 		run: async (client: Client, signal: AbortSignal): Promise<unknown> =>
 			await client.registerEventSchema('io.eventsourcingdb.test', {}, signal),
+		isWrite: true,
 	},
 	{
 		name: 'readEventType',
@@ -50,113 +55,167 @@ const requests: Request[] = [
 const isAbortError = (error: unknown): boolean =>
 	error instanceof DOMException && error.name === 'AbortError';
 
+// Once a write has been sent, aborting it does not undo it, so the write may
+// have been stored nonetheless.
+const isAbortedWrite =
+	(isCause: (cause: unknown) => boolean) =>
+	(error: unknown): boolean =>
+		error instanceof OutcomeUnknownError && isCause(error.cause);
+
 suite('abortSignal', { timeout: 30_000 }, () => {
-	let server: Server;
-	let client: Client;
-	let requestReceived: PromiseWithResolvers<void>;
-	let connectionsClosed: Promise<unknown>[];
-	let shouldSendHeaders: boolean;
+	for (const apiVersion of apiVersions) {
+		suite(apiVersion, () => {
+			let server: FakeServer;
+			let client: Client;
 
-	beforeEach(async () => {
-		requestReceived = Promise.withResolvers<void>();
-		connectionsClosed = [];
-		shouldSendHeaders = false;
+			beforeEach(async () => {
+				// The server never completes a response, so only aborting can end a
+				// request.
+				server = new FakeServer(apiVersion);
+				await server.start();
 
-		// The server never completes a response, so only aborting can end a request.
-		server = createServer((_request, response) => {
-			requestReceived.resolve();
+				client = new Client(server.url, 'secret');
+			});
 
-			if (shouldSendHeaders) {
-				response.writeHead(200, {
-					server: 'EventSourcingDB/test',
-					'content-type': 'application/json',
+			afterEach(async () => {
+				await server.stop();
+			});
+
+			const defineTestsFor = ({ name, run, isWrite = false }: Request): void => {
+				suite(name, () => {
+					test(`throws ${isWrite ? 'an unknown outcome after ' : ''}an abort error if the caller aborts.`, async (): Promise<void> => {
+						const controller = new AbortController();
+						const rejected = assert.rejects(
+							run(client, controller.signal),
+							isWrite ? isAbortedWrite(isAbortError) : isAbortError,
+						);
+
+						await server.requestReceived;
+						controller.abort();
+						await rejected;
+
+						await server.connectionsClosed();
+					});
+
+					test(`throws ${isWrite ? 'an unknown outcome after ' : ''}the reason the caller aborts with.`, async (): Promise<void> => {
+						const reason = new Error('Aborted by the caller.');
+						const isReason = (error: unknown): boolean => error === reason;
+
+						const controller = new AbortController();
+						const rejected = assert.rejects(
+							run(client, controller.signal),
+							isWrite ? isAbortedWrite(isReason) : isReason,
+						);
+
+						await server.requestReceived;
+						controller.abort(reason);
+						await rejected;
+					});
+
+					test('throws an abort error if the signal has been aborted before.', async (): Promise<void> => {
+						await assert.rejects(async () => await run(client, AbortSignal.abort()), isAbortError);
+
+						assert.equal(server.probeCount, 0);
+						assert.equal(server.requests.length, 0);
+					});
+
+					test('throws an abort error if the signal has been aborted before, once the client knows the API.', async (): Promise<void> => {
+						server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+							writeHead(response, 200, answers[apiVersion].ping.contentType);
+							response.end(answers[apiVersion].ping.body);
+						};
+						await client.ping();
+
+						await assert.rejects(async () => await run(client, AbortSignal.abort()), isAbortError);
+
+						assert.equal(server.requests.length, 1);
+					});
 				});
-				response.write('{');
+			};
+
+			for (const request of requests) {
+				defineTestsFor(request);
 			}
-		});
-		server.on('connection', socket => {
-			connectionsClosed.push(once(socket, 'close'));
-		});
 
-		await new Promise<void>(resolve => {
-			server.listen(0, 'localhost', resolve);
-		});
+			test('throws an abort error if the caller aborts while the response body arrives.', async (): Promise<void> => {
+				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+					writeHead(response, 200, 'application/json');
+					response.write('{');
+				};
 
-		const address = server.address();
-		if (address === null || typeof address === 'string') {
-			throw new Error('Failed to get server address.');
-		}
+				// Notices when the response headers of the ping have arrived at the
+				// client, so the test aborts while the body is pending.
+				const originalFetch = globalThis.fetch;
+				const headersArrived = Promise.withResolvers<void>();
+				let fetchCount = 0;
+				globalThis.fetch = async (...parameters: Parameters<typeof fetch>): Promise<Response> => {
+					const response = await originalFetch(...parameters);
+					fetchCount += 1;
 
-		client = new Client(new URL(`http://localhost:${address.port}/`), 'secret');
-	});
+					// The first request finds out which API the server offers.
+					if (fetchCount === 2) {
+						headersArrived.resolve();
+					}
+					return response;
+				};
 
-	afterEach(async () => {
-		server.closeAllConnections();
-		await new Promise<void>(resolve => {
-			server.close(() => resolve());
-		});
-	});
+				try {
+					const controller = new AbortController();
+					const rejected = assert.rejects(client.ping(controller.signal), isAbortError);
 
-	const defineTestsFor = ({ name, run }: Request): void => {
-		suite(name, () => {
-			test('throws an abort error if the caller aborts.', async (): Promise<void> => {
-				const controller = new AbortController();
-				const rejected = assert.rejects(run(client, controller.signal), isAbortError);
+					await headersArrived.promise;
+					controller.abort();
+					await rejected;
+				} finally {
+					globalThis.fetch = originalFetch;
+				}
 
-				await requestReceived.promise;
-				controller.abort();
-				await rejected;
-
-				await Promise.all(connectionsClosed);
+				await server.connectionsClosed();
 			});
 
-			test('throws the reason the caller aborts with.', async (): Promise<void> => {
-				const reason = new Error('Aborted by the caller.');
-				const controller = new AbortController();
-				const rejected = assert.rejects(
-					run(client, controller.signal),
-					(error: unknown): boolean => error === reason,
-				);
+			test('throws an unknown outcome if the caller aborts a write while the response body arrives.', async (): Promise<void> => {
+				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
+					writeHead(response, 200, 'application/json');
+					response.write(apiVersion === 'v1' ? '[' : '{"type":"heartbeat","data":{}}\n');
+				};
 
-				await requestReceived.promise;
-				controller.abort(reason);
-				await rejected;
-			});
+				const originalFetch = globalThis.fetch;
+				const headersArrived = Promise.withResolvers<void>();
+				globalThis.fetch = async (...parameters: Parameters<typeof fetch>): Promise<Response> => {
+					const response = await originalFetch(...parameters);
+					if (String(parameters[0]).includes('write-events')) {
+						headersArrived.resolve();
+					}
+					return response;
+				};
 
-			test('throws an abort error if the signal has been aborted before.', async (): Promise<void> => {
-				await assert.rejects(async () => await run(client, AbortSignal.abort()), isAbortError);
+				try {
+					const controller = new AbortController();
+					const rejected = assert.rejects(
+						client.writeEvents(
+							[
+								{
+									source: 'https://www.eventsourcingdb.io',
+									subject: '/test',
+									type: 'io.eventsourcingdb.test',
+									data: { value: 23 },
+								},
+							],
+							[],
+							controller.signal,
+						),
+						isAbortedWrite(isAbortError),
+					);
+
+					await headersArrived.promise;
+					controller.abort();
+					await rejected;
+				} finally {
+					globalThis.fetch = originalFetch;
+				}
+
+				await server.connectionsClosed();
 			});
 		});
-	};
-
-	for (const request of requests) {
-		defineTestsFor(request);
 	}
-
-	test('throws an abort error if the caller aborts while the response body arrives.', async (): Promise<void> => {
-		shouldSendHeaders = true;
-
-		// Notices when the response headers have arrived at the client, so the
-		// test aborts while the body is pending.
-		const originalFetch = globalThis.fetch;
-		const headersArrived = Promise.withResolvers<void>();
-		globalThis.fetch = async (...parameters: Parameters<typeof fetch>): Promise<Response> => {
-			const response = await originalFetch(...parameters);
-			headersArrived.resolve();
-			return response;
-		};
-
-		try {
-			const controller = new AbortController();
-			const rejected = assert.rejects(client.ping(controller.signal), isAbortError);
-
-			await headersArrived.promise;
-			controller.abort();
-			await rejected;
-		} finally {
-			globalThis.fetch = originalFetch;
-		}
-
-		await Promise.all(connectionsClosed);
-	});
 });

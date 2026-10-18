@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
+import { DbApiError } from './DbApiError.js';
+import { ErrorCode } from './ErrorCode.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { getApiVersionOf } from './testing/getApiVersionOf.js';
 
-suite('readEventType', { timeout: 20_000 }, () => {
+suite('readEventType', { timeout: 30_000 }, () => {
 	let container: Container;
 
 	beforeEach(async () => {
@@ -20,27 +23,41 @@ suite('readEventType', { timeout: 20_000 }, () => {
 	test('fails if the event type does not exist.', async (): Promise<void> => {
 		const client = container.getClient();
 
+		const apiVersion = await getApiVersionOf(container);
+
 		await assert.rejects(
 			async () => {
 				await client.readEventType('non.existent.eventType');
 			},
-			{
-				name: 'Error',
-				message: "Failed to read event type, got HTTP status code '404', expected '200'.",
+			(error: unknown): boolean => {
+				assert.ok(error instanceof DbApiError);
+				assert.equal(error.code, ErrorCode.eventTypeUnknown);
+				assert.equal(error.status, apiVersion === 'v1' ? 404 : 200);
+				return true;
 			},
 		);
 	});
 
-	test('fails if the evenet type is malformed.', async (): Promise<void> => {
+	test('fails if the event type is malformed.', async (): Promise<void> => {
 		const client = container.getClient();
+		const apiVersion = await getApiVersionOf(container);
 
 		await assert.rejects(
 			async () => {
 				await client.readEventType('malformed.eventType.');
 			},
-			{
-				name: 'Error',
-				message: "Failed to read event type, got HTTP status code '400', expected '200'.",
+			(error: unknown): boolean => {
+				assert.ok(error instanceof DbApiError);
+
+				// The v1 API has no code for a malformed event type.
+				if (apiVersion === 'v1') {
+					assert.equal(error.code, undefined);
+					assert.equal(error.status, 400);
+				} else {
+					assert.equal(error.code, ErrorCode.eventTypeMalformed);
+					assert.equal(error.status, 200);
+				}
+				return true;
 			},
 		);
 	});
@@ -69,8 +86,33 @@ suite('readEventType', { timeout: 20_000 }, () => {
 		await client.writeEvents([firstEvent, secondEvent]);
 
 		const readEventType = await client.readEventType('io.eventsourcingdb.test.foo');
-		assert.equal(readEventType.eventType, 'io.eventsourcingdb.test.foo');
-		assert.equal(readEventType.isPhantom, false);
-		assert.equal(readEventType.schema, undefined);
+		assert.deepEqual(readEventType, {
+			type: 'io.eventsourcingdb.test.foo',
+			hasEvents: true,
+		});
+	});
+
+	test('reads an event type that has a schema, but no events.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const schema = {
+			type: 'object',
+			properties: {
+				value: {
+					type: 'number',
+				},
+			},
+			required: ['value'],
+			additionalProperties: false,
+		};
+
+		await client.registerEventSchema('io.eventsourcingdb.test.foo', schema);
+
+		const readEventType = await client.readEventType('io.eventsourcingdb.test.foo');
+		assert.deepEqual(readEventType, {
+			type: 'io.eventsourcingdb.test.foo',
+			hasEvents: false,
+			schema,
+		});
 	});
 });

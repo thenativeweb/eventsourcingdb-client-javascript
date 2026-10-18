@@ -10,7 +10,6 @@ class StallGuard {
 	readonly #stallTimeout: number;
 	readonly #controller = new AbortController();
 	readonly #callerSignal: AbortSignal | undefined;
-	#createStallError: () => Error;
 	#phase: 'headers' | 'body' = 'headers';
 	#stallError: Error | undefined;
 	#timer: ReturnType<typeof setTimeout> | undefined;
@@ -22,10 +21,6 @@ class StallGuard {
 	public constructor(stallTimeout: number, callerSignal?: AbortSignal) {
 		this.#stallTimeout = stallTimeout;
 		this.#callerSignal = callerSignal;
-		this.#createStallError = (): Error =>
-			new ConnectionStalledError(stallTimeout, {
-				cause: createFetchTimeoutError(this.#phase),
-			});
 
 		if (callerSignal?.aborted) {
 			this.#onCallerAbort();
@@ -51,11 +46,6 @@ class StallGuard {
 		return response;
 	}
 
-	// From now on, a stall ends the request with the error that this creates.
-	public onStall(createStallError: () => Error): void {
-		this.#createStallError = createStallError;
-	}
-
 	// Starts the clock, or starts it anew, since something arrived.
 	public restart(): void {
 		if (this.#controller.signal.aborted) {
@@ -67,7 +57,9 @@ class StallGuard {
 		this.pause();
 		this.#timer = setTimeout(() => {
 			this.#timer = undefined;
-			this.#stallError = this.#createStallError();
+			this.#stallError = new ConnectionStalledError(this.#stallTimeout, {
+				cause: createFetchTimeoutError(this.#phase),
+			});
 			this.#controller.abort(this.#stallError);
 		}, this.#stallTimeout);
 	}

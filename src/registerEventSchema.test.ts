@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
+import { DbApiError } from './DbApiError.js';
+import { ErrorCode } from './ErrorCode.js';
 import { getImageTag } from './getImageTag.js';
 
 suite('registerEventSchema', { timeout: 30_000 }, () => {
@@ -56,12 +58,9 @@ suite('registerEventSchema', { timeout: 30_000 }, () => {
 			async () => {
 				await client.registerEventSchema(eventType, schema);
 			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					`Failed to register event schema, got HTTP status code '409', expected '200'.`,
-				);
+			(error: unknown): boolean => {
+				assert.ok(error instanceof DbApiError);
+				assert.equal(error.code, ErrorCode.eventSchemaAlreadyRegistered);
 				return true;
 			},
 		);

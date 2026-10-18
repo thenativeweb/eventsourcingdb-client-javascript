@@ -21,7 +21,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		const client = container.getClient();
 
 		let didReadSubjects = false;
-		for await (const _event of client.readSubjects('/')) {
+		for await (const _event of client.readSubjects('/', { recursive: true })) {
 			didReadSubjects = true;
 		}
 
@@ -52,7 +52,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		await client.writeEvents([firstEvent, secondEvent]);
 
 		const subjectsRead: string[] = [];
-		for await (const subject of client.readSubjects('/')) {
+		for await (const subject of client.readSubjects('/', { recursive: true })) {
 			subjectsRead.push(subject);
 		}
 
@@ -63,7 +63,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		assert.equal(subjectsRead[3], '/test/2');
 	});
 
-	test('reads all subjects from the base subject.', async (): Promise<void> => {
+	test('reads all subjects from the subject.', async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -87,7 +87,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		await client.writeEvents([firstEvent, secondEvent]);
 
 		const subjectsRead: string[] = [];
-		for await (const subject of client.readSubjects('/test')) {
+		for await (const subject of client.readSubjects('/test', { recursive: true })) {
 			subjectsRead.push(subject);
 		}
 
@@ -95,5 +95,42 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		assert.equal(subjectsRead[0], '/test');
 		assert.equal(subjectsRead[1], '/test/1');
 		assert.equal(subjectsRead[2], '/test/2');
+	});
+
+	test('reads only the subject itself, if it does not read recursively.', async (): Promise<void> => {
+		const client = container.getClient();
+
+		const firstEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test/1',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 23,
+			},
+		};
+
+		const secondEvent: EventCandidate = {
+			source: 'https://www.eventsourcingdb.io',
+			subject: '/test/1/a',
+			type: 'io.eventsourcingdb.test',
+			data: {
+				value: 42,
+			},
+		};
+
+		await client.writeEvents([firstEvent, secondEvent]);
+
+		const readSubjects = async (subject: string): Promise<string[]> => {
+			const subjectsRead: string[] = [];
+			for await (const subjectRead of client.readSubjects(subject, { recursive: false })) {
+				subjectsRead.push(subjectRead);
+			}
+			return subjectsRead;
+		};
+
+		assert.deepEqual(await readSubjects('/test/1'), ['/test/1']);
+		assert.deepEqual(await readSubjects('/test'), ['/test']);
+		assert.deepEqual(await readSubjects('/'), ['/']);
+		assert.deepEqual(await readSubjects('/test/2'), []);
 	});
 });

@@ -59,12 +59,12 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		assert.deepEqual(eventTypesRead, [
 			{
-				eventType: 'io.eventsourcingdb.test.bar',
-				isPhantom: false,
+				type: 'io.eventsourcingdb.test.bar',
+				hasEvents: true,
 			},
 			{
-				eventType: 'io.eventsourcingdb.test.foo',
-				isPhantom: false,
+				type: 'io.eventsourcingdb.test.foo',
+				hasEvents: true,
 			},
 		]);
 	});
@@ -93,8 +93,8 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		assert.deepEqual(eventTypesRead, [
 			{
-				eventType: 'io.eventsourcingdb.test',
-				isPhantom: true,
+				type: 'io.eventsourcingdb.test',
+				hasEvents: false,
 				schema,
 			},
 		]);

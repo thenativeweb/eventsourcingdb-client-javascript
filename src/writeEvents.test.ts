@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
+import { DbApiError } from './DbApiError.js';
+import { ErrorCode } from './ErrorCode.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
@@ -8,6 +10,10 @@ import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
+
+// Both APIs report a precondition that does not hold with the same code.
+const isPreconditionViolated = (error: unknown): boolean =>
+	error instanceof DbApiError && error.code === ErrorCode.preconditionViolated;
 
 suite('writeEvents', { timeout: 30_000 }, () => {
 	let container: Container;
@@ -139,19 +145,9 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 			},
 		};
 
-		await assert.rejects(
-			async () => {
-				await client.writeEvents([secondEvent], [isSubjectPristine('/test')]);
-			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					"Failed to write events, got HTTP status code '409', expected '200'.",
-				);
-				return true;
-			},
-		);
+		await assert.rejects(async () => {
+			await client.writeEvents([secondEvent], [isSubjectPristine('/test')]);
+		}, isPreconditionViolated);
 	});
 
 	test('supports the isSubjectPopulated precondition.', async (): Promise<void> => {
@@ -175,19 +171,9 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 			},
 		};
 
-		await assert.rejects(
-			async () => {
-				await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
-			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					"Failed to write events, got HTTP status code '409', expected '200'.",
-				);
-				return true;
-			},
-		);
+		await assert.rejects(async () => {
+			await client.writeEvents([secondEvent], [isSubjectPopulated('/test')]);
+		}, isPreconditionViolated);
 
 		await client.writeEvents([firstEvent]);
 
@@ -223,19 +209,9 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 			},
 		};
 
-		await assert.rejects(
-			async () => {
-				await client.writeEvents([secondEvent], [isSubjectOnEventId('/test', '1')]);
-			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					"Failed to write events, got HTTP status code '409', expected '200'.",
-				);
-				return true;
-			},
-		);
+		await assert.rejects(async () => {
+			await client.writeEvents([secondEvent], [isSubjectOnEventId('/test', '1')]);
+		}, isPreconditionViolated);
 	});
 
 	test('supports the isEventQlQueryTrue precondition.', async (): Promise<void> => {
@@ -261,21 +237,11 @@ suite('writeEvents', { timeout: 30_000 }, () => {
 			},
 		};
 
-		await assert.rejects(
-			async () => {
-				await client.writeEvents(
-					[secondEvent],
-					[isEventQlQueryTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
-				);
-			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					"Failed to write events, got HTTP status code '409', expected '200'.",
-				);
-				return true;
-			},
-		);
+		await assert.rejects(async () => {
+			await client.writeEvents(
+				[secondEvent],
+				[isEventQlQueryTrue('FROM e IN events PROJECT INTO COUNT() == 0')],
+			);
+		}, isPreconditionViolated);
 	});
 });

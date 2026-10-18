@@ -1,6 +1,6 @@
 interface EventType {
-	eventType: string;
-	isPhantom: boolean;
+	type: string;
+	hasEvents: boolean;
 	schema?: Record<string, unknown>;
 }
 
