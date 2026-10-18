@@ -5,6 +5,8 @@ import type { EventType } from './EventType.js';
 import { heartbeatTimeout } from './heartbeatTimeout.js';
 import { isCloudEvent } from './isCloudEvent.js';
 import { isValidServerHeader } from './isValidServerHeader.js';
+import { getRawJsonElements } from './json/getRawJsonElements.js';
+import { getRawJsonMember } from './json/getRawJsonMember.js';
 import { readNdJsonStream } from './ndjson/readNdJsonStream.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
@@ -135,18 +137,21 @@ class Client {
 			);
 		}
 
-		const responseBody = await response.json();
+		const responseText = await response.text();
+		const responseBody: unknown = JSON.parse(responseText);
 
 		if (!Array.isArray(responseBody)) {
 			throw new Error('Failed to parse response.');
 		}
 
-		const writtenEvents = responseBody.map(item => {
+		const responseItemTexts = getRawJsonElements(responseText);
+
+		const writtenEvents = responseBody.map((item: unknown, index) => {
 			if (!isCloudEvent(item)) {
 				throw new Error('Failed to parse response item.');
 			}
 
-			const event = convertCloudEventToEvent(item);
+			const event = convertCloudEventToEvent(item, responseItemTexts[index]);
 			return event;
 		});
 
@@ -205,12 +210,12 @@ class Client {
 					throw new Error('Failed to read events.');
 				}
 
-				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line, text } of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
 					if (isStreamCloudEvent(line)) {
-						const event = convertCloudEventToEvent(line.payload);
+						const event = convertCloudEventToEvent(line.payload, getRawJsonMember(text, 'payload'));
 						yield event;
 						continue;
 					}
@@ -278,7 +283,7 @@ class Client {
 					throw new Error('Failed to run EventQL query.');
 				}
 
-				for await (const line of readNdJsonStream(
+				for await (const { value: line } of readNdJsonStream(
 					response.body,
 					combinedSignal,
 					heartbeatTimeout.milliseconds,
@@ -365,7 +370,7 @@ class Client {
 					throw new Error('Failed to observe events.');
 				}
 
-				for await (const line of readNdJsonStream(
+				for await (const { value: line, text } of readNdJsonStream(
 					response.body,
 					combinedSignal,
 					heartbeatTimeout.milliseconds,
@@ -377,7 +382,7 @@ class Client {
 						throw new Error(`${line.payload.error}.`);
 					}
 					if (isStreamCloudEvent(line)) {
-						const event = convertCloudEventToEvent(line.payload);
+						const event = convertCloudEventToEvent(line.payload, getRawJsonMember(text, 'payload'));
 						yield event;
 						continue;
 					}
@@ -478,7 +483,7 @@ class Client {
 					throw new Error('Failed to read subjects.');
 				}
 
-				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line } of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamError(line)) {
 						throw new Error(`${line.payload.error}.`);
 					}
@@ -583,7 +588,7 @@ class Client {
 					throw new Error('Failed to read event types.');
 				}
 
-				for await (const line of readNdJsonStream(response.body, combinedSignal)) {
+				for await (const { value: line } of readNdJsonStream(response.body, combinedSignal)) {
 					if (isStreamHeartbeat(line)) {
 						continue;
 					}

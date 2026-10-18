@@ -1,10 +1,17 @@
 import { HeartbeatTimeoutError } from '../HeartbeatTimeoutError.js';
 
+// A line comes with its text, so that a value can be taken from it exactly as
+// the server sent it.
+interface NdJsonLine {
+	text: string;
+	value: Record<string, unknown>;
+}
+
 const readNdJsonStream = async function* (
 	stream: ReadableStream<Uint8Array>,
 	signal: AbortSignal,
 	heartbeatTimeoutInMilliseconds?: number,
-): AsyncGenerator<Record<string, unknown>, void, void> {
+): AsyncGenerator<NdJsonLine, void, void> {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder('utf-8');
 	let buffer = '';
@@ -66,7 +73,7 @@ const readNdJsonStream = async function* (
 
 				if (line) {
 					stopHeartbeatTimer();
-					yield JSON.parse(line);
+					yield { text: line, value: JSON.parse(line) };
 				}
 
 				index = buffer.indexOf('\n');
@@ -85,4 +92,5 @@ const readNdJsonStream = async function* (
 	}
 };
 
+export type { NdJsonLine };
 export { readNdJsonStream };

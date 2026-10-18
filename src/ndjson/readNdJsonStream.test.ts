@@ -28,10 +28,25 @@ suite('readNdJsonStream', (): void => {
 		const controller = new AbortController();
 
 		const values: Record<string, unknown>[] = [];
-		for await (const value of readNdJsonStream(stream, controller.signal)) {
+		for await (const { value } of readNdJsonStream(stream, controller.signal)) {
 			values.push(value);
 		}
 
 		assert.deepEqual(values, [{ foo: 'bar' }, { bar: 'baz' }]);
+	});
+
+	test('yields the text of each line as the stream contains it.', async (): Promise<void> => {
+		const stream = convertStreamToWebStream(
+			Readable.from(Buffer.from('{ "foo" : "\\u003c" }\n{"bar":1.0}\n', 'utf-8')),
+		);
+
+		const controller = new AbortController();
+
+		const texts: string[] = [];
+		for await (const { text } of readNdJsonStream(stream, controller.signal)) {
+			texts.push(text);
+		}
+
+		assert.deepEqual(texts, ['{ "foo" : "\\u003c" }', '{"bar":1.0}']);
 	});
 });

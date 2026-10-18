@@ -10,6 +10,7 @@ class Event {
 	public type: string;
 	public datacontenttype: string;
 	public data: Record<string, unknown>;
+	#dataFromServer: string;
 	public hash: string;
 	public predecessorhash: string;
 	public traceparent?: string;
@@ -26,6 +27,7 @@ class Event {
 		type,
 		datacontenttype,
 		data,
+		dataFromServer,
 		hash,
 		predecessorhash,
 		traceparent,
@@ -41,6 +43,7 @@ class Event {
 		type: string;
 		datacontenttype: string;
 		data: Record<string, unknown>;
+		dataFromServer: string;
 		hash: string;
 		predecessorhash: string;
 		traceparent?: string;
@@ -56,6 +59,7 @@ class Event {
 		this.type = type;
 		this.datacontenttype = datacontenttype;
 		this.data = data;
+		this.#dataFromServer = dataFromServer;
 		this.hash = hash;
 		this.predecessorhash = predecessorhash;
 		this.traceparent = traceparent;
@@ -67,7 +71,7 @@ class Event {
 		const metadata = `${this.specversion}|${this.id}|${this.predecessorhash}|${this.#timeFromServer}|${this.source}|${this.subject}|${this.type}|${this.datacontenttype}`;
 
 		const metadataHash = crypto.createHash('sha256').update(metadata).digest('hex');
-		const dataHash = crypto.createHash('sha256').update(JSON.stringify(this.data)).digest('hex');
+		const dataHash = crypto.createHash('sha256').update(this.#dataFromServer).digest('hex');
 
 		const finalHash = crypto
 			.createHash('sha256')

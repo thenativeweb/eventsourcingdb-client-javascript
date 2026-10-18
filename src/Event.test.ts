@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
+import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
 
@@ -41,6 +42,46 @@ suite('Event', { timeout: 30_000 }, () => {
 			assert.doesNotThrow((): void => {
 				writtenEvent.verifyHash();
 			});
+		});
+
+		test('verifies the hash of an event as written, read, and observed, whatever its data and trace context.', async (): Promise<void> => {
+			const client = container.getClient();
+
+			const event: EventCandidate = {
+				source: 'https://www.eventsourcingdb.io',
+				subject: '/test',
+				type: 'io.eventsourcingdb.test',
+				data: {
+					title: '2001 – A Space Odyssey',
+					tags: ['<classic>'],
+					shelf: 'A&B',
+					price: 12.5,
+				},
+				traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+				tracestate: 'vendor=value',
+			};
+
+			const [writtenEvent] = await client.writeEvents([event]);
+			assert.ok(writtenEvent);
+
+			let readEvent: Event | undefined;
+			for await (const item of client.readEvents('/test', { recursive: false })) {
+				readEvent = item;
+			}
+			assert.ok(readEvent);
+
+			let observedEvent: Event | undefined;
+			for await (const item of client.observeEvents('/test', { recursive: false })) {
+				observedEvent = item;
+				break;
+			}
+			assert.ok(observedEvent);
+
+			for (const item of [writtenEvent, readEvent, observedEvent]) {
+				assert.doesNotThrow((): void => {
+					item.verifyHash();
+				});
+			}
 		});
 
 		test('throws an error if the event hash is invalid.', async (): Promise<void> => {
