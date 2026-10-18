@@ -3,14 +3,14 @@ import crypto from 'node:crypto';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
 
 suite('Event', { timeout: 30_000 }, () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
 	});
 
@@ -101,8 +101,8 @@ suite('Event', { timeout: 30_000 }, () => {
 
 		test('throws an error if the hash verification fails.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();
@@ -136,8 +136,8 @@ suite('Event', { timeout: 30_000 }, () => {
 
 		test('throws an error if the signature verification fails.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();
@@ -170,8 +170,8 @@ suite('Event', { timeout: 30_000 }, () => {
 
 		test('verifies the signature.', async (): Promise<void> => {
 			await container.stop();
-			const imageVersion = getImageVersionFromDockerfile();
-			container = new Container().withImageTag(imageVersion).withSigningKey();
+			const imageTag = getImageTag();
+			container = new Container().withImageTag(imageTag).withSigningKey();
 			await container.start();
 
 			const client = container.getClient();

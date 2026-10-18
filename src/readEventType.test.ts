@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
 
 suite('readEventType', { timeout: 20_000 }, () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
 	});
 
