@@ -25,6 +25,7 @@ import { isBoolean } from '../types/isBoolean.js';
 import { isString } from '../types/isString.js';
 import { getV1ErrorCode } from './getV1ErrorCode.js';
 import { isV1Refusal } from './isV1Refusal.js';
+import { normalizeSubject } from './normalizeSubject.js';
 import { isStreamCloudEvent } from './stream/isStreamCloudEvent.js';
 import { isStreamError } from './stream/isStreamError.js';
 import { isStreamEventType } from './stream/isStreamEventType.js';
@@ -371,7 +372,9 @@ class V1Transport implements Transport {
 
 	// The v1 API always reads the subjects below the subject as well. Reading
 	// only the subject itself keeps the subject alone, which the server lists
-	// at most once, so the request ends once it arrives.
+	// at most once, so the request ends once it arrives. The server lists it
+	// as it keeps it, so it is compared as the server keeps it, which makes
+	// '/test/' keep '/test', as the v2 API does.
 	public readSubjects(
 		subject: string,
 		{ recursive }: ReadSubjectsOptions,
@@ -380,6 +383,10 @@ class V1Transport implements Transport {
 		const url = this.#getUrl('/api/v1/read-subjects');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		// A caller without types may pass a subject that is not a string, which
+		// the server refuses with an error of its own, so the client normalizes
+		// only a string, and only to read the subject alone.
+		const normalizedSubject = !recursive && isString(subject) ? normalizeSubject(subject) : subject;
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {
@@ -404,7 +411,7 @@ class V1Transport implements Transport {
 						yield line.payload.subject;
 						continue;
 					}
-					if (line.payload.subject === subject) {
+					if (line.payload.subject === normalizedSubject) {
 						yield line.payload.subject;
 						return;
 					}

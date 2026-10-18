@@ -137,6 +137,7 @@ suite('readSubjects', () => {
 			};
 
 			assert.deepEqual(await readSubjects('/test/1'), ['/test/1']);
+			assert.deepEqual(await readSubjects('/test/1/'), ['/test/1']);
 			assert.deepEqual(await readSubjects('/test'), ['/test']);
 			assert.deepEqual(await readSubjects('/'), ['/']);
 			assert.deepEqual(await readSubjects('/test/2'), []);
