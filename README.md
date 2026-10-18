@@ -99,7 +99,7 @@ try {
 controller.abort();
 ```
 
-Aborting `writeEvents` or `registerEventSchema` once the write has been sent does not undo it, so the write may have been stored nonetheless. The call then throws an `OutcomeUnknownError` whose `cause` is the reason of the abort, see [Knowing Whether a Write Was Stored](#knowing-whether-a-write-was-stored). Only if the signal was aborted before the write was sent, the call throws the reason of the abort itself.
+Aborting `writeEvents` or `registerEventSchema` once the write has been sent does not undo it, so the write may have been stored nonetheless. The call then throws an `OutcomeUnknownError` whose `cause` is the reason of the abort, see [Knowing Whether a Write Was Stored](#knowing-whether-a-write-was-stored). If the write has not been sent yet, because the signal was aborted before or while the client SDK still establishes the connection, the call throws the reason of the abort itself.
 
 *Note that aborting a function that returns an asynchronous iterator, such as `readEvents`, does not throw, but ends the iteration, see [Aborting Reading](#aborting-reading).*
 
@@ -154,7 +154,7 @@ try {
 }
 ```
 
-A write certainly was not stored, and throws the error itself, only if the client SDK could not establish a connection at all, or if the server refused the write before storing anything. The server refuses a write with every `DbApiError` except one with the code `ErrorCode.storeFailed`, and, through the v2 API, with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`, or, through the v1 API, with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
+A write certainly was not stored, and throws the error itself, only if its request never went out, for example since the client SDK could not establish a connection, or since the write was aborted or stalled while connecting, or if the server refused the write before storing anything. A request counts as gone out once its headers have been sent. The server refuses a write with every `DbApiError` except one with the code `ErrorCode.storeFailed`, and, through the v2 API, with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`, or, through the v1 API, with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
 
 ### Writing Events
 
