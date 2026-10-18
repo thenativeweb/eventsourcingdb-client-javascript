@@ -131,7 +131,7 @@ try {
 }
 ```
 
-The v1 API does not send codes. For the errors of the v1 API that clearly match a code of the v2 API, the client SDK sets that code, so that the same code works with both APIs: `preconditionViolated`, `eventSchemaViolated`, and `licenseInvalid` for writing events, `eventSchemaAlreadyRegistered` for registering an event schema, `eventTypeUnknown` for reading an event type, and `storeReadOnly` for every request. Every other error of the v1 API has no code.
+The v1 API does not send codes. For the errors of the v1 API that clearly match a code of the v2 API, the client SDK sets that code, so that the same code works with both APIs: `preconditionViolated`, `capacityExceeded`, `eventSchemaViolated`, and `licenseInvalid` for writing events, `eventSchemaAlreadyRegistered` and `eventSchemaViolated` for registering an event schema, `rangeUnsatisfiable` for reading events, `eventTypeUnknown` for reading an event type, and `storeReadOnly` for every request. Every other error of the v1 API has no code.
 
 A stream that the server ends with an end item, which every stream of the v2 API except observing does, throws an error if it breaks off before that item.
 

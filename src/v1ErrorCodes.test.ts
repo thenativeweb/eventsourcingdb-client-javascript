@@ -73,6 +73,12 @@ const cases: Case[] = [
 	{
 		call: 'writeEvents',
 		status: 409,
+		text: 'state conflict: exceeded max store capacity',
+		code: ErrorCode.capacityExceeded,
+	},
+	{
+		call: 'writeEvents',
+		status: 409,
 		text: 'schema conflict: event candidate does not match schema: expected string, but got number',
 		code: ErrorCode.eventSchemaViolated,
 	},
@@ -81,6 +87,18 @@ const cases: Case[] = [
 		status: 409,
 		text: 'schema conflict: schema already exists',
 		code: ErrorCode.eventSchemaAlreadyRegistered,
+	},
+	{
+		call: 'registerEventSchema',
+		status: 409,
+		text: 'schema conflict: event with ID 0: expected string, but got number',
+		code: ErrorCode.eventSchemaViolated,
+	},
+	{
+		call: 'readEvents',
+		status: 409,
+		text: 'state conflict: fromLatestEvent results in an event ID greater than upperBound ID',
+		code: ErrorCode.rangeUnsatisfiable,
 	},
 	{
 		call: 'readEventType',
@@ -103,17 +121,18 @@ const cases: Case[] = [
 		code: ErrorCode.licenseInvalid,
 	},
 
-	// These have no code, since none of the v2 API clearly matches them.
+	// These have no code, since none of the v2 API clearly matches them, or
+	// since their text belongs to another call.
 	{
 		call: 'writeEvents',
 		status: 409,
-		text: 'state conflict: exceeded max store capacity',
+		text: 'schema conflict: event with ID 0: expected string, but got number',
 		code: undefined,
 	},
 	{
-		call: 'registerEventSchema',
+		call: 'readEvents',
 		status: 409,
-		text: 'schema conflict: event with ID 0: expected string, but got number',
+		text: 'state conflict: precondition failed',
 		code: undefined,
 	},
 	{
