@@ -5,6 +5,8 @@ import { Container } from './Container.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { HashVerificationFailedError } from './HashVerificationFailedError.js';
+import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
 
 suite('Event', { timeout: 30_000 }, () => {
 	let container: Container;
@@ -108,7 +110,7 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifyHash();
-			});
+			}, HashVerificationFailedError);
 		});
 	});
 
@@ -172,7 +174,7 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifySignature(verificationKey);
-			});
+			}, HashVerificationFailedError);
 		});
 
 		test('throws an error if the signature verification fails.', async (): Promise<void> => {
@@ -206,7 +208,7 @@ suite('Event', { timeout: 30_000 }, () => {
 
 			assert.throws((): void => {
 				writtenEvent.verifySignature(verificationKey);
-			});
+			}, SignatureVerificationFailedError);
 		});
 
 		test('verifies the signature.', async (): Promise<void> => {

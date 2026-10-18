@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { suite, test } from 'node:test';
 import { convertCloudEventToEvent } from './convertCloudEventToEvent.js';
 import type { Event } from './Event.js';
+import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { isCloudEvent } from './isCloudEvent.js';
+import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
 
 // The events that EventSourcingDB uses as its own fixtures for both versions
 // of the hash, as its API sends them, byte for byte. The second one carries a
@@ -22,6 +25,15 @@ const getEvent = (text: string): Event => {
 	}
 
 	return convertCloudEventToEvent(cloudEvent, text);
+};
+
+// The server signs the text of the hash, including its prefix, if it has one.
+const getSignedEvent = (text: string, signingKey: crypto.KeyObject): Event => {
+	const event = getEvent(text);
+	const signature = crypto.sign(null, Buffer.from(event.hash, 'utf8'), signingKey).toString('hex');
+	event.signature = `esdb:signature:v1:${signature}`;
+
+	return event;
 };
 
 suite('verifyEvent', (): void => {
@@ -45,11 +57,58 @@ suite('verifyEvent', (): void => {
 						event.verifyHash();
 					},
 					error => {
+						assert.ok(error instanceof HashVerificationFailedError);
 						assert.ok(error instanceof Error);
+						assert.equal(error.name, 'HashVerificationFailedError');
 						assert.equal(error.message, 'Failed to verify hash.');
 						return true;
 					},
 				);
+			}
+		});
+	});
+
+	suite('verifySignature', (): void => {
+		const { privateKey: signingKey, publicKey: verificationKey } =
+			crypto.generateKeyPairSync('ed25519');
+
+		test('verifies the signature of an event with a hash of version 1.', (): void => {
+			for (const text of fixtures.version1) {
+				const event = getSignedEvent(text, signingKey);
+
+				assert.doesNotThrow((): void => {
+					event.verifySignature(verificationKey);
+				});
+			}
+		});
+
+		test('throws an error if the signature is invalid.', (): void => {
+			for (const text of fixtures.version1) {
+				const event = getSignedEvent(text, signingKey);
+				const { publicKey: otherVerificationKey } = crypto.generateKeyPairSync('ed25519');
+
+				assert.throws(
+					(): void => {
+						event.verifySignature(otherVerificationKey);
+					},
+					error => {
+						assert.ok(error instanceof SignatureVerificationFailedError);
+						assert.ok(error instanceof Error);
+						assert.equal(error.name, 'SignatureVerificationFailedError');
+						assert.equal(error.message, 'Signature verification failed.');
+						return true;
+					},
+				);
+			}
+		});
+
+		test('throws an error if the hash is invalid.', (): void => {
+			for (const text of fixtures.version1) {
+				const event = getSignedEvent(text.replace('"source":"tag:', '"source":"urn:'), signingKey);
+
+				assert.throws((): void => {
+					event.verifySignature(verificationKey);
+				}, HashVerificationFailedError);
 			}
 		});
 	});

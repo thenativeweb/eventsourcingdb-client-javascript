@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { HashVerificationFailedError } from './HashVerificationFailedError.js';
+import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
 
 class Event {
 	public specversion: string;
@@ -79,7 +81,7 @@ class Event {
 			.digest('hex');
 
 		if (finalHash !== this.hash) {
-			throw new Error('Failed to verify hash.');
+			throw new HashVerificationFailedError();
 		}
 	}
 
@@ -102,7 +104,7 @@ class Event {
 
 		const isSignatureValid = crypto.verify(null, hashBytes, verificationKey, signatureBytes);
 		if (!isSignatureValid) {
-			throw new Error('Signature verification failed.');
+			throw new SignatureVerificationFailedError();
 		}
 	}
 }
