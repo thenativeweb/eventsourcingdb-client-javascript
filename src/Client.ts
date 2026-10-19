@@ -58,6 +58,8 @@ class Client {
 	// a client finds out which API the server offers, and the client keeps the
 	// answer. Requests that start meanwhile wait for the same answer. If the
 	// client fails to find out, the request fails, and the next one tries again.
+	// The same holds once the client forgets the answer, as #createV2Transport
+	// describes.
 	async #getTransport(signal?: AbortSignal): Promise<Transport> {
 		if (this.#transport !== undefined) {
 			return this.#transport;
@@ -68,9 +70,7 @@ class Client {
 		if (this.#detection === undefined) {
 			const detection = detectApiVersion(this.#transportOptions).then(apiVersion => {
 				this.#transport =
-					apiVersion === 'v2'
-						? new V2Transport(this.#transportOptions)
-						: new V1Transport(this.#transportOptions);
+					apiVersion === 'v2' ? this.#createV2Transport() : new V1Transport(this.#transportOptions);
 
 				return this.#transport;
 			});
@@ -86,6 +86,27 @@ class Client {
 		}
 
 		return await waitUnlessAborted(this.#detection, signal);
+	}
+
+	// A server that answers a path of the v2 API with 404 or 405 no longer
+	// offers it, for example because it was rolled back to a version without
+	// it, so the client forgets the answer, and the next request finds out
+	// again, while the request itself fails as before. Only the transport that
+	// the client still keeps makes it forget. So a late answer to a request
+	// through a transport that the client has forgotten already neither
+	// disturbs finding out anew, which may run meanwhile, nor discards what
+	// that finds.
+	#createV2Transport(): V2Transport {
+		const transport = new V2Transport({
+			...this.#transportOptions,
+			forgetApiVersion: (): void => {
+				if (this.#transport === transport) {
+					this.#transport = undefined;
+				}
+			},
+		});
+
+		return transport;
 	}
 
 	public async ping(signal?: AbortSignal): Promise<void> {
