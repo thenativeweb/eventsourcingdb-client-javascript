@@ -43,13 +43,13 @@ If you want to verify the API token, call `verifyApiToken`. If the token is inva
 await client.verifyApiToken();
 ```
 
-### Choosing the API
+### Talking to Servers With and Without the v2 API
 
 EventSourcingDB offers its v2 API since version 1.3, while older versions offer only the v1 API. This client SDK works with both. Creating a client does not send a request. Instead, the first request of a client asks the server whether it offers the v2 API, by sending a `GET` request to `/api/v2/system/ping`, and the client uses the v2 API if it does, and the v1 API otherwise. The client keeps the answer for its lifetime, so every later request goes straight to the API it found. If the client cannot find out, for example because the server is not reachable, the first request fails with that error, and the next request asks again.
 
 Through the v2 API, all functions that read use the HTTP method `QUERY` ([RFC 10008](https://www.rfc-editor.org/rfc/rfc10008)), which, unlike `GET`, carries a request body. If there is a proxy or a load balancer in front of EventSourcingDB, it has to let `QUERY` requests through. There is no fallback to `POST`.
 
-### Handling Stalled Connections
+### Configuring the Stall Timeout
 
 Every request fails once nothing arrives from the server for 30 seconds, for example because the server does not respond, or because a proxy keeps the connection open but no longer passes anything through. The time counts from sending the request until it ends, including connecting and waiting for the response. Everything that arrives starts it anew, so a long stream that keeps receiving events, rows, or heartbeats is never cut off, and the time you spend handling an item of a stream does not count.
 
@@ -377,7 +377,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections):
+While a query is running, EventSourcingDB sends a heartbeat every second whenever there is no row to send. If neither a row nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `ConnectionStalledError`, see [Configuring the Stall Timeout](#configuring-the-stall-timeout):
 
 ```typescript
 import { ConnectionStalledError } from 'eventsourcingdb';
@@ -486,7 +486,7 @@ controller.abort();
 
 #### Detecting a Stalled Connection
 
-While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `ConnectionStalledError`, see [Handling Stalled Connections](#handling-stalled-connections):
+While observing, EventSourcingDB sends a heartbeat every second whenever there is no event to send. If neither an event nor a heartbeat arrives for the stall timeout, 30 seconds by default, for example because a proxy keeps the connection open but no longer passes anything through, the client SDK closes the connection and the iterator throws a `ConnectionStalledError`, see [Configuring the Stall Timeout](#configuring-the-stall-timeout):
 
 ```typescript
 import { ConnectionStalledError } from 'eventsourcingdb';
@@ -727,7 +727,7 @@ In case you need to set up the client yourself, use the following functions to g
 
 ## Upgrading From Version 1
 
-Version 2 of this client SDK speaks the v2 API of EventSourcingDB 1.3 as well as the v1 API of older versions, see [Choosing the API](#choosing-the-api). It brings the following breaking changes:
+Version 2 of this client SDK speaks the v2 API of EventSourcingDB 1.3 as well as the v1 API of older versions, see [Talking to Servers With and Without the v2 API](#talking-to-servers-with-and-without-the-v2-api). It brings the following breaking changes:
 
 - **Event types:** An event type names its type in the field `type` instead of `eventType`, and tells whether it has events in the field `hasEvents` instead of `isPhantom`, which meant the opposite.
 
@@ -814,4 +814,4 @@ Version 2 of this client SDK speaks the v2 API of EventSourcingDB 1.3 as well as
   }
   ```
 
-- **Reading through a proxy:** Against EventSourcingDB 1.3 and later, the functions that read use the HTTP method `QUERY` instead of `POST`, which a proxy in front of the database has to let through, see [Choosing the API](#choosing-the-api).
+- **Reading through a proxy:** Against EventSourcingDB 1.3 and later, the functions that read use the HTTP method `QUERY` instead of `POST`, which a proxy in front of the database has to let through, see [Talking to Servers With and Without the v2 API](#talking-to-servers-with-and-without-the-v2-api).
