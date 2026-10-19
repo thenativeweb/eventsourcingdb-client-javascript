@@ -4,7 +4,6 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
 import { DbApiError } from './DbApiError.js';
 import type { ApiVersion } from './detectApiVersion.js';
-import { ErrorCode } from './ErrorCode.js';
 import { OutcomeUnknownError } from './OutcomeUnknownError.js';
 import { type Answer, answers, lines } from './testing/answers.js';
 import { answerWithText, type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
@@ -53,8 +52,8 @@ const readEventType: Call = {
 	isWrite: false,
 };
 
-// A single answer, a stream, a write, and the registration of an event schema,
-// each of which reads its answer differently.
+// A single answer, streams with and without an end, a write, and the
+// registration of an event schema, each of which reads its answer differently.
 const calls: Call[] = [
 	readEventType,
 	{
@@ -65,6 +64,24 @@ const calls: Call[] = [
 		answers: {
 			v1: { contentType: ndJson, body: lines.v1.event('0') },
 			v2: { contentType: ndJson, body: `${lines.v2.event('0')}${lines.v2.end}` },
+		},
+		isWrite: false,
+	},
+	{
+		name: 'observeEvents',
+		run: async (client: Client): Promise<unknown> => {
+			// Observing never ends on its own, so the call stops after the first
+			// event.
+			for await (const event of client.observeEvents('/', { recursive: true })) {
+				return event.id;
+			}
+
+			throw new Error('Failed to observe an event.');
+		},
+		paths: { v1: '/api/v1/observe-events', v2: '/api/v2/data/observe-events' },
+		answers: {
+			v1: { contentType: ndJson, body: lines.v1.event('0') },
+			v2: { contentType: ndJson, body: lines.v2.event('0') },
 		},
 		isWrite: false,
 	},
@@ -115,6 +132,43 @@ const isFailureOf =
 
 		return error instanceof OutcomeUnknownError && isDbApiErrorWithStatus(status)(error.cause);
 	};
+
+// A call fails with the error of the server, which a write wraps in an
+// OutcomeUnknownError, unless the server refused it.
+const isFailureWithStatus =
+	(status: number) =>
+	(error: unknown): boolean =>
+		isDbApiErrorWithStatus(status)(error instanceof OutcomeUnknownError ? error.cause : error);
+
+interface KeptAnswer {
+	name: string;
+	status: number;
+	answer: (call: Call, response: ServerResponse) => void;
+}
+
+// The answers with which a call through the v2 API fails, although the server
+// still offers the v2 API.
+const keptAnswers: KeptAnswer[] = [
+	{
+		name: 'an error item of the v2 API, which comes with the status 200',
+		status: 200,
+		answer: (call: Call, response: ServerResponse): void => {
+			answerWith(response, {
+				contentType: call.answers.v2.contentType,
+				body: lines.v2.error('the store is read-only'),
+			});
+		},
+	},
+	...[409, 500, 503].map(
+		(status): KeptAnswer => ({
+			name: `the status ${status} of the v2 API`,
+			status,
+			answer: (_call: Call, response: ServerResponse): void => {
+				answerWithText(response, status, 'failed');
+			},
+		}),
+	),
+];
 
 suite('a server that is rolled back to a version without the v2 API', { timeout: 30_000 }, () => {
 	let server: FakeServer;
@@ -172,24 +226,15 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 		});
 	};
 
-	const defineErrorItemTest = (call: Call): void => {
-		test('keeps the API after an error item of the v2 API, which comes with the status 200.', async (): Promise<void> => {
+	const defineKeepTest = (call: Call, { name, status, answer }: KeptAnswer): void => {
+		test(`keeps the API after ${name}.`, async (): Promise<void> => {
 			server.respond = respondTo(call);
 			await call.run(client);
 
 			server.respond = (_request: FakeRequest, response: ServerResponse): void => {
-				answerWith(response, {
-					contentType: call.answers.v2.contentType,
-					body: lines.v2.error('the store is read-only'),
-				});
+				answer(call, response);
 			};
-			await assert.rejects(
-				call.run(client),
-				(error: unknown): boolean =>
-					error instanceof DbApiError &&
-					error.status === 200 &&
-					error.code === ErrorCode.storeReadOnly,
-			);
+			await assert.rejects(call.run(client), isFailureWithStatus(status));
 
 			server.respond = respondTo(call);
 			await call.run(client);
@@ -216,7 +261,9 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 				defineForgetTest(call, status);
 			}
 
-			defineErrorItemTest(call);
+			for (const keptAnswer of keptAnswers) {
+				defineKeepTest(call, keptAnswer);
+			}
 		});
 	}
 
@@ -252,13 +299,16 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 	});
 
 	suite('while it finds out again which API the server offers', () => {
-		test('shares the probe, and keeps its answer, if requests of the v2 API that started before fail with 404 meanwhile.', async (): Promise<void> => {
-			// The server holds the requests of the v2 API and the next probe, so
-			// that the test answers them in an order of its own. Every probe after
-			// that one finds the v1 API at once, so a probe too many shows in the
-			// number of probes.
-			const heldRequests: PromiseWithResolvers<ServerResponse>[] = [];
-			const heldProbe = Promise.withResolvers<ServerResponse>();
+		let heldRequests: PromiseWithResolvers<ServerResponse>[];
+		let heldProbe: PromiseWithResolvers<ServerResponse>;
+
+		// The server holds the requests of the v2 API once it is rolled back, and
+		// the next probe, so that the test answers them in an order of its own.
+		// Every probe after that one finds the v1 API at once, so a probe too many
+		// shows in the number of probes.
+		beforeEach(async () => {
+			heldRequests = [];
+			heldProbe = Promise.withResolvers<ServerResponse>();
 			let isProbeHeld = false;
 			const respond = respondTo(readEventType);
 			server.respond = (request: FakeRequest, response: ServerResponse): void => {
@@ -282,17 +332,19 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 
 			await readEventType.run(client);
 			offersV2 = false;
+		});
 
-			// Each request has to arrive before the next one starts, so that the
-			// test knows which answer belongs to which request.
-			const sendHeld = async (): Promise<[Promise<unknown>, ServerResponse]> => {
-				const held = Promise.withResolvers<ServerResponse>();
-				heldRequests.push(held);
-				const result = readEventType.run(client);
+		// Each request has to arrive before the next one starts, so that the test
+		// knows which answer belongs to which request.
+		const sendHeld = async (): Promise<[Promise<unknown>, ServerResponse]> => {
+			const held = Promise.withResolvers<ServerResponse>();
+			heldRequests.push(held);
+			const result = readEventType.run(client);
 
-				return [result, await held.promise];
-			};
+			return [result, await held.promise];
+		};
 
+		test('shares the probe, and keeps its answer, if requests of the v2 API that started before fail with 404 meanwhile.', async (): Promise<void> => {
 			const [failsFirst, firstResponse] = await sendHeld();
 			const [failsDuringProbe, duringProbeResponse] = await sendHeld();
 			const [failsAfterProbe, afterProbeResponse] = await sendHeld();
@@ -323,6 +375,33 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 				readEventType.paths.v1,
 				readEventType.paths.v1,
 				readEventType.paths.v1,
+			]);
+		});
+
+		test('keeps the answer of the probe if it finds the v2 API again, and a request of the v2 API that started before fails with 404 afterwards.', async (): Promise<void> => {
+			const [failsFirst, firstResponse] = await sendHeld();
+			const [failsLate, lateResponse] = await sendHeld();
+
+			answerAsNotOffered(firstResponse, 404);
+			await assert.rejects(failsFirst, isDbApiErrorWithStatus(404));
+
+			const waiting = readEventType.run(client);
+			const probeResponse = await heldProbe.promise;
+			offersV2 = true;
+			answerWith(probeResponse, answers.v2.ping);
+			await waiting;
+
+			answerAsNotOffered(lateResponse, 404);
+			await assert.rejects(failsLate, isDbApiErrorWithStatus(404));
+
+			await readEventType.run(client);
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), [
+				readEventType.paths.v2,
+				readEventType.paths.v2,
+				readEventType.paths.v2,
+				readEventType.paths.v2,
+				readEventType.paths.v2,
 			]);
 		});
 	});
