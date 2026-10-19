@@ -3,6 +3,7 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
 import { Container } from './Container.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 suite('ping', () => {
@@ -12,7 +13,7 @@ suite('ping', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

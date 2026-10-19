@@ -8,6 +8,7 @@ import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
 import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Returns an event as written, as read, and as observed. Its data contains
@@ -48,7 +49,7 @@ suite('Event', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
@@ -162,7 +163,7 @@ suite('Event', () => {
 
 		test(
 			'throws an error if the hash verification fails.',
-			integrationTimeout,
+			containerStartTimeout,
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();
@@ -201,7 +202,7 @@ suite('Event', () => {
 
 		test(
 			'throws an error if the signature verification fails.',
-			integrationTimeout,
+			containerStartTimeout,
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();
@@ -237,7 +238,7 @@ suite('Event', () => {
 			},
 		);
 
-		test('verifies the signature.', integrationTimeout, async (): Promise<void> => {
+		test('verifies the signature.', containerStartTimeout, async (): Promise<void> => {
 			await container.stop();
 			const imageTag = getImageTag();
 			container = new Container().withImageTag(imageTag).withSigningKey();
@@ -271,7 +272,7 @@ suite('Event', () => {
 
 		test(
 			'verifies the signature of an event as written, read, and observed, whatever its data and trace context.',
-			integrationTimeout,
+			containerStartTimeout,
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();

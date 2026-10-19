@@ -700,6 +700,13 @@ const container = new Container()
   .withApiToken('secret');
 ```
 
+By default, the `start` function gives the test container 30 seconds to become reachable, from creating it until the database answers a ping, without the time it takes to pull the image. A container that is running but does not become reachable in time is replaced by a new one, up to 3 containers in total. If the container exits before it becomes reachable, or if Docker fails, the `start` function fails at once. Every container whose start fails is removed at once. To change the 30 seconds, call the `withStartupTimeout` function with the time in milliseconds:
+
+```typescript
+const container = new Container()
+  .withStartupTimeout(60_000);
+```
+
 If you want to sign events, call the `withSigningKey` function. This generates a new signing and verification key pair inside the container:
 
 ```typescript

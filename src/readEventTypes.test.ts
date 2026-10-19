@@ -4,6 +4,7 @@ import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 suite('readEventTypes', () => {
@@ -13,7 +14,7 @@ suite('readEventTypes', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

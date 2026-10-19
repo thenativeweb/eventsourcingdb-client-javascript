@@ -5,6 +5,7 @@ import { DbApiError } from './DbApiError.js';
 import { ErrorCode } from './ErrorCode.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { getApiVersionOf } from './testing/getApiVersionOf.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
@@ -15,7 +16,7 @@ suite('readEventType', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
