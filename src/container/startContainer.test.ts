@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { IncomingMessage } from 'node:http';
 import { suite, test } from 'node:test';
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { StartedTestContainer } from 'testcontainers';
-import { getContainerRuntimeClient, getReaper } from 'testcontainers';
+import { getContainerRuntimeClient } from 'testcontainers';
 import { getImageTag } from '../getImageTag.js';
+import { failPortLookups } from '../testing/failPortLookups.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
 import { startContainer } from './startContainer.js';
 
@@ -227,28 +229,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const client = await getContainerRuntimeClient();
-			const { containerRuntime } = client.info;
-			const { hostIps } = containerRuntime;
-
-			// Ryuk starts with the first container of the process, so it starts
-			// before the lookup fails, and only the first container of the test is
-			// affected.
-			await getReaper(client);
-
-			// testcontainers looks up the port of a container on the host once per
-			// start, by the addresses of the host. Without any, the lookup of the
-			// first container fails, as when Docker publishes the port only for
-			// another address.
-			let lookupCount = 0;
-			Object.defineProperty(containerRuntime, 'hostIps', {
-				configurable: true,
-				get: (): typeof hostIps => {
-					lookupCount += 1;
-					return lookupCount === 1 ? [] : hostIps;
-				},
-			});
-
+			const endFailing = await failPortLookups(1);
 			const stopWatching = await watchCreatedContainers(testId);
 
 			let container: StartedTestContainer;
@@ -262,11 +243,7 @@ suite('startContainer', () => {
 					labels: { [testLabel]: testId },
 				});
 			} finally {
-				Object.defineProperty(containerRuntime, 'hostIps', {
-					configurable: true,
-					writable: true,
-					value: hostIps,
-				});
+				endFailing();
 			}
 
 			try {
@@ -274,6 +251,92 @@ suite('startContainer', () => {
 				assert.equal(startIds.length, 2);
 				assert.equal(new Set(startIds).size, 2);
 				assert.equal((await listContainers(testId)).length, 1);
+			} finally {
+				await container.stop();
+			}
+
+			assert.deepEqual(await listContainers(testId), []);
+		},
+	);
+
+	test(
+		'removes a container that testcontainers creates after the startup timeout, and gives up on.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+
+			// The time runs out before Docker has created the container, and the
+			// lookup of the port fails, so testcontainers gives up on the container
+			// without removing it.
+			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
+			const stopWatching = await watchCreatedContainers(testId);
+
+			try {
+				await assert.rejects(
+					startContainer({
+						image,
+						port: 3000,
+						command: getCommand(3000),
+						contents: [],
+						startupTimeout: 1,
+						labels: { [testLabel]: testId },
+					}),
+					{
+						message:
+							'Failed to start the container, the database did not become reachable within 0.001s in any of 3 containers',
+					},
+				);
+			} finally {
+				endFailing();
+			}
+
+			assert.equal(stopWatching().length, 3);
+			assert.deepEqual(await listContainers(testId), []);
+		},
+	);
+
+	test(
+		'does not count pulling the image towards the startup timeout.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+			const client = await getContainerRuntimeClient();
+			const { image: imageClient } = client;
+			const { pull } = imageClient;
+			let pullCount = 0;
+
+			// The first pull takes longer than the startup timeout, the others are
+			// as fast as Docker.
+			imageClient.pull = async (...parameters: Parameters<typeof pull>): Promise<void> => {
+				pullCount += 1;
+				if (pullCount === 1) {
+					await sleep(2000);
+				}
+				await pull.apply(imageClient, parameters);
+			};
+
+			const stopWatching = await watchCreatedContainers(testId);
+
+			let container: StartedTestContainer;
+			try {
+				container = await startContainer({
+					image,
+					port: 3000,
+					command: getCommand(3000),
+					contents: [],
+					startupTimeout: 1500,
+					labels: { [testLabel]: testId },
+				});
+			} finally {
+				imageClient.pull = pull;
+			}
+
+			try {
+				assert.ok(pullCount >= 1);
+
+				// Had the pull counted, the first attempt would have created its
+				// container late, and another attempt one more.
+				assert.equal(stopWatching().length, 1);
 			} finally {
 				await container.stop();
 			}

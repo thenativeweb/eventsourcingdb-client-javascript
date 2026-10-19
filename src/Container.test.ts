@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 import { Container } from './Container.js';
-import { defaultStartupTimeout } from './container/defaultStartupTimeout.js';
 import { getImageTag } from './getImageTag.js';
+import { failPortLookups } from './testing/failPortLookups.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 suite('Container', () => {
@@ -24,8 +24,21 @@ suite('Container', () => {
 	});
 
 	suite('startup timeout', () => {
-		test('is 30 seconds by default.', (): void => {
-			assert.equal(defaultStartupTimeout, 30_000);
+		test('is 30 seconds by default.', integrationTimeout, async (): Promise<void> => {
+			const imageTag = getImageTag();
+			const container = new Container().withImageTag(imageTag);
+
+			// Each attempt fails as soon as the port cannot be found, so that the
+			// default can show up in the error without waiting for it.
+			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
+			try {
+				await assert.rejects(container.start(), {
+					message:
+						'Failed to start the container, the database did not become reachable within 30s in any of 3 containers',
+				});
+			} finally {
+				endFailing();
+			}
 		});
 
 		test('accepts a startup timeout from 1 millisecond up to the longest timer of Node.js.', (): void => {
