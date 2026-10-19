@@ -9,6 +9,7 @@ import { GenericContainer, getContainerRuntimeClient, getReaper, ImageName } fro
 import { waitUnlessAborted } from '../http/waitUnlessAborted.js';
 import { ContainerExitedError } from './ContainerExitedError.js';
 import { removeContainersOfAttempt, startLabel } from './containersOfAttempt.js';
+import { isPortError } from './isPortError.js';
 import { waitUntilReachable } from './waitUntilReachable.js';
 
 interface ContentToCopy {
@@ -28,17 +29,7 @@ interface StartContainerOptions {
 
 const maximumAttempts = 3;
 const millisecondsPerSecond = 1000;
-
-// testcontainers waits for the port of a container for 10 seconds at most, and
-// then looks up the port on the host once. If either fails, the container is
-// running, but it cannot be reached.
-const portErrors = [
-	/^Timed out after \d+ms while waiting for container ports to be bound to the host$/u,
-	/^No host port found for host IP$/u,
-];
-
-const isPortError = (error: unknown): boolean =>
-	error instanceof Error && portErrors.some(portError => portError.test(error.message));
+const settleTimeout = 10_000;
 
 // Lets testcontainers wait for the readiness of the database, which the
 // attempt follows from the creation of the container on.
@@ -72,15 +63,34 @@ class ReadinessWait implements WaitStrategy {
 	}
 }
 
+const getMessage = (error: unknown): string =>
+	error instanceof Error ? error.message : String(error);
+
+// Waits for the promises to settle, but for the given time at most.
+const waitForSettling = async (promises: Promise<unknown>[], timeout: number): Promise<void> => {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	await Promise.race([
+		Promise.allSettled(promises),
+		new Promise<void>(resolve => {
+			timer = setTimeout(resolve, timeout);
+		}),
+	]);
+	clearTimeout(timer);
+};
+
 // Starts a container and waits until its database is reachable, for the
 // startup timeout at most, from creating the container on. If that fails, it
 // removes the container at once. If the time ran out while Docker was still
-// creating or starting the container, it then waits for that to end, and
-// removes what was created meanwhile. It returns undefined if the database did
-// not become reachable, so that another container can take its place.
+// creating or starting the container, it then waits for that to end, for a
+// while at most, and removes what was created meanwhile. A failed removal does
+// not change the outcome of the attempt, but is collected. It returns
+// undefined if the database did not become reachable, so that another
+// container can take its place.
 const attemptToStart = async (
 	client: ContainerRuntimeClient,
 	options: StartContainerOptions,
+	removalErrors: unknown[],
 ): Promise<StartedTestContainer | undefined> => {
 	const startId = randomUUID();
 	const deadline = new AbortController();
@@ -112,12 +122,20 @@ const attemptToStart = async (
 		return container;
 	} catch (error) {
 		attemptEnded.abort();
-		await removeContainersOfAttempt(client, startId);
+		const removeContainers = async (): Promise<void> => {
+			try {
+				await removeContainersOfAttempt(client, startId);
+			} catch (removalError) {
+				removalErrors.push(removalError);
+			}
+		};
+
+		await removeContainers();
 
 		// The attempt has failed already, so how the start ends no longer
 		// matters, only that nothing of it is left.
-		await Promise.allSettled([starting, readiness]);
-		await removeContainersOfAttempt(client, startId);
+		await waitForSettling([starting, readiness], settleTimeout);
+		await removeContainers();
 
 		if ((deadline.signal.aborted && error === deadline.signal.reason) || isPortError(error)) {
 			return undefined;
@@ -136,6 +154,18 @@ const attemptToStart = async (
 // containers in total. If Docker fails, or if the container exits, starting
 // fails at once.
 const startContainer = async (options: StartContainerOptions): Promise<StartedTestContainer> => {
+	const removalErrors: unknown[] = [];
+	const createError = (message: string, errorOptions?: ErrorOptions): Error =>
+		new Error(
+			[
+				message,
+				...removalErrors.map(
+					removalError => `Failed to remove a container: ${getMessage(removalError)}`,
+				),
+			].join('\n'),
+			errorOptions,
+		);
+
 	try {
 		const client = await getContainerRuntimeClient();
 
@@ -146,7 +176,7 @@ const startContainer = async (options: StartContainerOptions): Promise<StartedTe
 
 		for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
 			// biome-ignore lint/performance/noAwaitInLoops: Each attempt waits for the one before.
-			const container = await attemptToStart(client, options);
+			const container = await attemptToStart(client, options, removalErrors);
 
 			if (container !== undefined) {
 				return container;
@@ -154,14 +184,13 @@ const startContainer = async (options: StartContainerOptions): Promise<StartedTe
 		}
 	} catch (error) {
 		if (error instanceof ContainerExitedError) {
-			throw error;
+			throw createError(error.message);
 		}
 
-		const message = error instanceof Error ? error.message : String(error);
-		throw new Error(`Failed to start the container: ${message}`, { cause: error });
+		throw createError(`Failed to start the container: ${getMessage(error)}`, { cause: error });
 	}
 
-	throw new Error(
+	throw createError(
 		`Failed to start the container, the database did not become reachable within ${options.startupTimeout / millisecondsPerSecond}s in any of ${maximumAttempts} containers`,
 	);
 };
