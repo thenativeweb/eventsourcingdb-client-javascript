@@ -43,11 +43,20 @@ const isEventOfType = (item: V2Item, eventType: string): boolean =>
 const readWriteAnswer = async (
 	response: Response,
 	stallGuard: StallGuard,
-	{ signal, action }: { signal?: AbortSignal; action: string },
+	{
+		signal,
+		action,
+		forgetApiVersion,
+	}: { signal?: AbortSignal; action: string; forgetApiVersion: () => void },
 ): Promise<V2Item[]> => {
 	const items: V2Item[] = [];
 
-	for await (const item of readV2Stream(response, stallGuard, { signal, action, hasEnd: true })) {
+	for await (const item of readV2Stream(response, stallGuard, {
+		signal,
+		action,
+		hasEnd: true,
+		forgetApiVersion,
+	})) {
 		if (item.type === 'end') {
 			return items;
 		}
@@ -59,21 +68,29 @@ const readWriteAnswer = async (
 	throw createStreamEndedError(action);
 };
 
+interface V2TransportOptions extends TransportOptions {
+	// Tells the client to forget which API the server offers, once the server
+	// answers as one that does not offer the v2 API.
+	forgetApiVersion: () => void;
+}
+
 // Sends the requests through the v2 API, which EventSourcingDB offers since
 // version 1.3.
 class V2Transport implements Transport {
 	readonly #url: URL;
 	readonly #apiToken: string;
 	readonly #stallTimeout: number;
+	readonly #forgetApiVersion: () => void;
 
 	#getUrl(path: string): string {
 		return new URL(path, this.#url).toString();
 	}
 
-	public constructor({ url, apiToken, stallTimeout }: TransportOptions) {
+	public constructor({ url, apiToken, stallTimeout, forgetApiVersion }: V2TransportOptions) {
 		this.#url = url;
 		this.#apiToken = apiToken;
 		this.#stallTimeout = stallTimeout;
+		this.#forgetApiVersion = forgetApiVersion;
 	}
 
 	public async ping(signal?: AbortSignal): Promise<void> {
@@ -85,7 +102,10 @@ class V2Transport implements Transport {
 				method: 'GET',
 			});
 
-			const item = await readV2Answer(response, stallGuard, 'ping');
+			const item = await readV2Answer(response, stallGuard, {
+				action: 'ping',
+				forgetApiVersion: this.#forgetApiVersion,
+			});
 			if (!isEventOfType(item, 'io.eventsourcingdb.api.ping-received')) {
 				throw new Error('Failed to ping.');
 			}
@@ -104,7 +124,10 @@ class V2Transport implements Transport {
 				},
 			});
 
-			const item = await readV2Answer(response, stallGuard, 'verify API token');
+			const item = await readV2Answer(response, stallGuard, {
+				action: 'verify API token',
+				forgetApiVersion: this.#forgetApiVersion,
+			});
 			if (!isEventOfType(item, 'io.eventsourcingdb.api.token-verified')) {
 				throw new Error('Failed to verify API token.');
 			}
@@ -134,7 +157,11 @@ class V2Transport implements Transport {
 						body,
 					});
 
-					const items = await readWriteAnswer(response, stallGuard, { signal, action });
+					const items = await readWriteAnswer(response, stallGuard, {
+						signal,
+						action,
+						forgetApiVersion: this.#forgetApiVersion,
+					});
 
 					return items.map(item => {
 						if (item.type !== 'event') {
@@ -155,6 +182,7 @@ class V2Transport implements Transport {
 		const url = this.#getUrl('/api/v2/data/read-events');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		const forgetApiVersion = this.#forgetApiVersion;
 		const action = 'read events';
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
@@ -171,6 +199,7 @@ class V2Transport implements Transport {
 				signal,
 				action,
 				hasEnd: true,
+				forgetApiVersion,
 			})) {
 				if (item.type === 'end') {
 					return;
@@ -189,6 +218,7 @@ class V2Transport implements Transport {
 		const url = this.#getUrl('/api/v2/data/run-eventql-query');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		const forgetApiVersion = this.#forgetApiVersion;
 		const action = 'run EventQL query';
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
@@ -205,6 +235,7 @@ class V2Transport implements Transport {
 				signal,
 				action,
 				hasEnd: true,
+				forgetApiVersion,
 			})) {
 				if (item.type === 'end') {
 					return;
@@ -230,6 +261,7 @@ class V2Transport implements Transport {
 		const url = this.#getUrl('/api/v2/data/observe-events');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		const forgetApiVersion = this.#forgetApiVersion;
 		const action = 'observe events';
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
@@ -246,6 +278,7 @@ class V2Transport implements Transport {
 				signal,
 				action,
 				hasEnd: false,
+				forgetApiVersion,
 			})) {
 				if (item.type === 'event') {
 					yield convertV2ItemToEvent(item, action);
@@ -283,7 +316,11 @@ class V2Transport implements Transport {
 						body,
 					});
 
-					const items = await readWriteAnswer(response, stallGuard, { signal, action });
+					const items = await readWriteAnswer(response, stallGuard, {
+						signal,
+						action,
+						forgetApiVersion: this.#forgetApiVersion,
+					});
 
 					const [item, ...otherItems] = items;
 					if (
@@ -305,6 +342,7 @@ class V2Transport implements Transport {
 		const url = this.#getUrl('/api/v2/data/read-subjects');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		const forgetApiVersion = this.#forgetApiVersion;
 		const action = 'read subjects';
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
@@ -324,6 +362,7 @@ class V2Transport implements Transport {
 				signal,
 				action,
 				hasEnd: true,
+				forgetApiVersion,
 			})) {
 				if (item.type === 'end') {
 					return;
@@ -355,7 +394,10 @@ class V2Transport implements Transport {
 				}),
 			});
 
-			const item = await readV2Answer(response, stallGuard, action);
+			const item = await readV2Answer(response, stallGuard, {
+				action,
+				forgetApiVersion: this.#forgetApiVersion,
+			});
 			if (item.type !== 'eventType') {
 				throw new Error(`Failed to ${action}, got an unexpected answer.`);
 			}
@@ -368,6 +410,7 @@ class V2Transport implements Transport {
 		const url = this.#getUrl('/api/v2/data/read-event-types');
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
+		const forgetApiVersion = this.#forgetApiVersion;
 		const action = 'read event types';
 
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
@@ -382,6 +425,7 @@ class V2Transport implements Transport {
 				signal,
 				action,
 				hasEnd: true,
+				forgetApiVersion,
 			})) {
 				if (item.type === 'end') {
 					return;

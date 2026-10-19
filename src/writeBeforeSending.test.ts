@@ -10,10 +10,16 @@ import { apiVersions } from './testing/answers.js';
 import { V1Transport } from './v1/V1Transport.js';
 import { V2Transport } from './v2/V2Transport.js';
 
+const keepApiVersion = (): void => {
+	// Intentionally left blank, since there is no client that could forget.
+};
+
 // The transports are used directly, since the client would first have to find
 // out which API the server offers, which needs a connection that works.
 const createTransport = (apiVersion: ApiVersion, options: TransportOptions): Transport =>
-	apiVersion === 'v1' ? new V1Transport(options) : new V2Transport(options);
+	apiVersion === 'v1'
+		? new V1Transport(options)
+		: new V2Transport({ ...options, forgetApiVersion: keepApiVersion });
 
 interface Write {
 	name: string;
