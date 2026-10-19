@@ -4,6 +4,7 @@ import { Client } from './Client.js';
 import { Container } from './Container.js';
 import { DbApiError } from './DbApiError.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 suite('verifyApiToken', () => {
@@ -13,7 +14,7 @@ suite('verifyApiToken', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

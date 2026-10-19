@@ -3,6 +3,7 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { ApiVersion } from './detectApiVersion.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { getApiVersionOf } from './testing/getApiVersionOf.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
@@ -29,7 +30,7 @@ suite('apiVersion', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

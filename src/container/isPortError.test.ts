@@ -38,7 +38,7 @@ suite('isPortError', () => {
 
 			const container = await client.container.create({
 				Image: image.string,
-				Labels: { 'io.eventsourcingdb.container-start-test': randomUUID() },
+				Labels: { 'io.eventsourcingdb.client-javascript-test': randomUUID() },
 				ExposedPorts: { '3000/tcp': {} },
 				HostConfig: { PortBindings: { '3000/tcp': [{ HostPort: '0' }] } },
 			});

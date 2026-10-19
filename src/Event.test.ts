@@ -8,6 +8,7 @@ import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
 import { HashVerificationFailedError } from './HashVerificationFailedError.js';
 import { SignatureVerificationFailedError } from './SignatureVerificationFailedError.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Returns an event as written, as read, and as observed. Its data contains
@@ -48,7 +49,7 @@ suite('Event', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

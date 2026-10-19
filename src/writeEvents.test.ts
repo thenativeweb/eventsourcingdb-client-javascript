@@ -10,6 +10,7 @@ import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Both APIs report a precondition that does not hold with the same code.
@@ -23,7 +24,7 @@ suite('writeEvents', () => {
 		const imageTag = getImageTag();
 		container = new Container().withImageTag(imageTag);
 		await container.start();
-	}, integrationTimeout);
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();

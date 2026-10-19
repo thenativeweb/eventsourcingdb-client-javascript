@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { IncomingMessage } from 'node:http';
+import { Readable } from 'node:stream';
 import { suite, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { StartedTestContainer } from 'testcontainers';
@@ -8,10 +9,11 @@ import { getContainerRuntimeClient } from 'testcontainers';
 import { getImageTag } from '../getImageTag.js';
 import { failPortLookups } from '../testing/failPortLookups.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
+import type { ContainerInfo } from './containersOfAttempt.js';
 import { startContainer } from './startContainer.js';
 
 const startLabel = 'io.eventsourcingdb.container-start';
-const testLabel = 'io.eventsourcingdb.container-start-test';
+const testLabel = 'io.eventsourcingdb.client-javascript-test';
 const exitedPrefix =
 	'Failed to start the container, it exited before the database became reachable: ';
 
@@ -28,7 +30,7 @@ const getCommand = (port: number): string[] => [
 
 // Each test labels its containers, so that it finds them, and only them, while
 // other tests use the same Docker.
-const listContainers = async (testId: string): Promise<unknown[]> => {
+const listContainers = async (testId: string): Promise<ContainerInfo[]> => {
 	const client = await getContainerRuntimeClient();
 
 	return await client.container.dockerode.listContainers({
@@ -310,7 +312,7 @@ suite('startContainer', () => {
 			imageClient.pull = async (...parameters: Parameters<typeof pull>): Promise<void> => {
 				pullCount += 1;
 				if (pullCount === 1) {
-					await sleep(2000);
+					await sleep(6000);
 				}
 				await pull.apply(imageClient, parameters);
 			};
@@ -324,7 +326,7 @@ suite('startContainer', () => {
 					port: 3000,
 					command: getCommand(3000),
 					contents: [],
-					startupTimeout: 1500,
+					startupTimeout: 5000,
 					labels: { [testLabel]: testId },
 				});
 			} finally {
@@ -339,6 +341,167 @@ suite('startContainer', () => {
 				assert.equal(stopWatching().length, 1);
 			} finally {
 				await container.stop();
+			}
+
+			assert.deepEqual(await listContainers(testId), []);
+		},
+	);
+
+	test(
+		'removes a container that Docker creates only after the wait for it has ended, without waiting for it.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+			const client = await getContainerRuntimeClient();
+			const { container: containerClient } = client;
+			const { create } = containerClient;
+			const creations: Promise<unknown>[] = [];
+
+			// Docker takes longer to create a container than the attempt waits for
+			// it, and testcontainers gives up on it without removing it, since the
+			// lookup of its port fails.
+			containerClient.create = async (
+				...parameters: Parameters<typeof create>
+			): ReturnType<typeof create> => {
+				const creation = sleep(4000).then(
+					async (): ReturnType<typeof create> => await create.apply(containerClient, parameters),
+				);
+				creations.push(creation);
+				return await creation;
+			};
+			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
+
+			try {
+				const startedAt = Date.now();
+				await assert.rejects(
+					startContainer({
+						image,
+						port: 3000,
+						command: getCommand(3000),
+						contents: [],
+						startupTimeout: 100,
+						labels: { [testLabel]: testId },
+						settleTimeout: 300,
+					}),
+					{
+						message:
+							'Failed to start the container, the database did not become reachable within 0.1s in any of 3 containers',
+					},
+				);
+
+				// The attempts do not wait for Docker beyond the settle timeout.
+				assert.ok(Date.now() - startedAt < 4000);
+
+				await Promise.allSettled(creations);
+				assert.equal(creations.length, 3);
+
+				let containers = await listContainers(testId);
+				for (let poll = 0; containers.length > 0 && poll < 50; poll += 1) {
+					// biome-ignore lint/performance/noAwaitInLoops: Each poll waits for the one before.
+					await sleep(100);
+					containers = await listContainers(testId);
+				}
+				assert.deepEqual(containers, []);
+			} finally {
+				endFailing();
+				containerClient.create = create;
+			}
+		},
+	);
+
+	test(
+		'reports a failed removal after the error of the start, and goes on with the next attempt.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+			const client = await getContainerRuntimeClient();
+			const { dockerode } = client.container;
+			const { getContainer } = dockerode;
+
+			dockerode.getContainer = (
+				...parameters: Parameters<typeof getContainer>
+			): ReturnType<typeof getContainer> =>
+				Object.assign(getContainer.apply(dockerode, parameters), {
+					remove: async (): Promise<never> => {
+						await Promise.resolve();
+						throw new Error('removal failed');
+					},
+				});
+			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
+			const stopWatching = await watchCreatedContainers(testId);
+
+			try {
+				await assert.rejects(
+					startContainer({
+						image,
+						port: 3000,
+						command: getCommand(3000),
+						contents: [],
+						startupTimeout: 20_000,
+						labels: { [testLabel]: testId },
+					}),
+					(error: unknown): boolean => {
+						assert.ok(error instanceof Error);
+
+						const [message, ...removalFailures] = error.message.split('\n');
+						assert.equal(
+							message,
+							'Failed to start the container, the database did not become reachable within 20s in any of 3 containers',
+						);
+						assert.ok(removalFailures.length > 0);
+						for (const removalFailure of removalFailures) {
+							assert.equal(removalFailure, 'Failed to remove a container: removal failed');
+						}
+						return true;
+					},
+				);
+
+				assert.equal(stopWatching().length, 3);
+			} finally {
+				endFailing();
+				dockerode.getContainer = getContainer;
+
+				for (const { Id: id } of await listContainers(testId)) {
+					// biome-ignore lint/performance/noAwaitInLoops: The test removes its containers one after another.
+					await dockerode.getContainer(id).remove({ force: true, v: true });
+				}
+			}
+
+			assert.deepEqual(await listContainers(testId), []);
+		},
+	);
+
+	test(
+		'says so if the log of a container that exits is not available.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+			const client = await getContainerRuntimeClient();
+			const { container: containerClient } = client;
+			const { logs } = containerClient;
+
+			// testcontainers ends the log without an error if Docker fails to read
+			// it.
+			containerClient.logs = async (): Promise<Readable> =>
+				await Promise.resolve(Readable.from([]));
+
+			try {
+				await assert.rejects(
+					startContainer({
+						image,
+						port: 3000,
+						command: [...getCommand(3000), '--no-such-flag'],
+						contents: [],
+						startupTimeout: 20_000,
+						labels: { [testLabel]: testId },
+					}),
+					{
+						message:
+							'Failed to start the container, it exited before the database became reachable: no log available',
+					},
+				);
+			} finally {
+				containerClient.logs = logs;
 			}
 
 			assert.deepEqual(await listContainers(testId), []);
