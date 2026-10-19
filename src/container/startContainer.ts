@@ -25,11 +25,12 @@ interface StartContainerOptions {
 	contents: ContentToCopy[];
 	startupTimeout: number;
 	labels?: Record<string, string>;
+	settleTimeout?: number;
 }
 
 const maximumAttempts = 3;
 const millisecondsPerSecond = 1000;
-const settleTimeout = 10_000;
+const defaultSettleTimeout = 10_000;
 
 // Lets testcontainers wait for the readiness of the database, which the
 // attempt follows from the creation of the container on.
@@ -66,25 +67,32 @@ class ReadinessWait implements WaitStrategy {
 const getMessage = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
-// Waits for the promises to settle, but for the given time at most.
-const waitForSettling = async (promises: Promise<unknown>[], timeout: number): Promise<void> => {
+// Waits for the promises to settle, but for the given time at most, and
+// returns whether they have settled.
+const waitForSettling = async (promises: Promise<unknown>[], timeout: number): Promise<boolean> => {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	await Promise.race([
-		Promise.allSettled(promises),
-		new Promise<void>(resolve => {
-			timer = setTimeout(resolve, timeout);
+	const hasSettled = await Promise.race([
+		Promise.allSettled(promises).then(() => true),
+		new Promise<boolean>(resolve => {
+			timer = setTimeout(() => {
+				resolve(false);
+			}, timeout);
 		}),
 	]);
 	clearTimeout(timer);
+
+	return hasSettled;
 };
 
 // Starts a container and waits until its database is reachable, for the
 // startup timeout at most, from creating the container on. If that fails, it
 // removes the container at once. If the time ran out while Docker was still
 // creating or starting the container, it then waits for that to end, for a
-// while at most, and removes what was created meanwhile. A failed removal does
-// not change the outcome of the attempt, but is collected. It returns
+// while at most, and removes what was created meanwhile. If that takes longer,
+// it removes the container once Docker has created it, without waiting for
+// that. A failed removal does not change the outcome of the attempt, but is
+// collected. It returns
 // undefined if the database did not become reachable, so that another
 // container can take its place.
 const attemptToStart = async (
@@ -134,8 +142,17 @@ const attemptToStart = async (
 
 		// The attempt has failed already, so how the start ends no longer
 		// matters, only that nothing of it is left.
-		await waitForSettling([starting, readiness], settleTimeout);
+		const hasSettled = await waitForSettling(
+			[starting, readiness],
+			options.settleTimeout ?? defaultSettleTimeout,
+		);
 		await removeContainers();
+
+		if (!hasSettled) {
+			// The caller does not wait for a start that Docker does not finish, and
+			// the removal collects its own errors.
+			Promise.allSettled([starting]).then(removeContainers);
+		}
 
 		if ((deadline.signal.aborted && error === deadline.signal.reason) || isPortError(error)) {
 			return undefined;
