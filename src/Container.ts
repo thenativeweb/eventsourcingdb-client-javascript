@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
+import type { StartedTestContainer } from 'testcontainers';
 import { Client } from './Client.js';
-import type { ContentToCopy } from './container/createArchive.js';
 import { defaultStartupTimeout, maximumStartupTimeout } from './container/defaultStartupTimeout.js';
-import type { StartedContainer } from './container/startContainer.js';
+import type { ContentToCopy } from './container/startContainer.js';
 import { startContainer } from './container/startContainer.js';
 
 class Container {
@@ -12,7 +12,7 @@ class Container {
 	#apiToken = 'secret';
 	#signingKey: crypto.KeyObject | undefined;
 	#startupTimeout = defaultStartupTimeout;
-	#container: StartedContainer | undefined;
+	#container: StartedTestContainer | undefined;
 
 	public withImageTag(tag: string): this {
 		this.#imageTag = tag;
@@ -85,7 +85,7 @@ class Container {
 			throw new Error('Container must be running.');
 		}
 
-		return this.#container.host;
+		return this.#container.getHost();
 	}
 
 	public getMappedPort(): number {
@@ -93,7 +93,7 @@ class Container {
 			throw new Error('Container must be running.');
 		}
 
-		return this.#container.mappedPort;
+		return this.#container.getMappedPort(this.#internalPort);
 	}
 
 	public getBaseUrl(): URL {

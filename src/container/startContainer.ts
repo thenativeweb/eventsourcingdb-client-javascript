@@ -1,19 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { Readable } from 'node:stream';
-import type { ContainerRuntimeClient } from 'testcontainers';
-import {
-	getContainerRuntimeClient,
-	getReaper,
-	ImageName,
-	LABEL_TESTCONTAINERS_SESSION_ID,
+import type {
+	ContainerRuntimeClient,
+	Content,
+	StartedTestContainer,
+	WaitStrategy,
 } from 'testcontainers';
+import { GenericContainer, getContainerRuntimeClient, getReaper, ImageName } from 'testcontainers';
 import { waitUnlessAborted } from '../http/waitUnlessAborted.js';
-import { isRecord } from '../types/isRecord.js';
-import { attachOutput } from './attachOutput.js';
 import { ContainerExitedError } from './ContainerExitedError.js';
-import type { ContentToCopy } from './createArchive.js';
-import { createArchive } from './createArchive.js';
+import { removeContainersOfAttempt, startLabel } from './containersOfAttempt.js';
 import { waitUntilReachable } from './waitUntilReachable.js';
+
+interface ContentToCopy {
+	content: Content;
+	target: string;
+	mode?: number;
+}
 
 interface StartContainerOptions {
 	image: string;
@@ -24,156 +26,106 @@ interface StartContainerOptions {
 	labels?: Record<string, string>;
 }
 
-interface StartedContainer {
-	host: string;
-	mappedPort: number;
-	stop: () => Promise<void>;
-}
-
-interface Attempt {
-	client: ContainerRuntimeClient;
-	image: ImageName;
-	labels: Record<string, string>;
-	options: StartContainerOptions;
-	signal: AbortSignal;
-}
-
 const maximumAttempts = 3;
 const millisecondsPerSecond = 1000;
-const startLabel = 'io.eventsourcingdb.container-start';
-const statusNotFound = 404;
-const statusConflict = 409;
 
-// A container that is gone, or that Docker is removing already, needs no
-// removing.
-const isGone = (error: unknown): boolean =>
-	isRecord(error) && (error.statusCode === statusNotFound || error.statusCode === statusConflict);
+// testcontainers waits for the port of a container for 10 seconds at most, and
+// then looks up the port on the host once. If either fails, the container is
+// running, but it cannot be reached.
+const portErrors = [
+	/^Timed out after \d+ms while waiting for container ports to be bound to the host$/u,
+	/^No host port found for host IP$/u,
+];
 
-// Removes the containers of an attempt by its label, whatever state they are
-// in, so that this also finds a container whose creation was still pending.
-const removeContainers = async (client: ContainerRuntimeClient, startId: string): Promise<void> => {
-	const { dockerode } = client.container;
-	const containers = await dockerode.listContainers({
-		all: true,
-		filters: { label: [`${startLabel}=${startId}`] },
-	});
+const isPortError = (error: unknown): boolean =>
+	error instanceof Error && portErrors.some(portError => portError.test(error.message));
 
-	await Promise.all(
-		containers.map(async ({ Id: id }): Promise<void> => {
-			try {
-				await dockerode.getContainer(id).remove({ force: true, v: true });
-			} catch (error) {
-				if (!isGone(error)) {
-					throw error;
-				}
-			}
-		}),
-	);
-};
+// Lets testcontainers wait for the readiness of the database, which the
+// attempt follows from the creation of the container on.
+class ReadinessWait implements WaitStrategy {
+	readonly #readiness: Promise<unknown>;
+	readonly #startupTimeout: number;
 
-// Creates the container, copies the files into it, starts it, and waits until
-// its database is reachable, while it follows the output of the container.
-// Once the signal aborts, it does not take the next step, so that it does not
-// start a container whose time has run out.
-const createAndStart = async ({
-	client,
-	image,
-	labels,
-	options,
-	signal,
-}: Attempt): Promise<StartedContainer> => {
-	const exposedPort = `${options.port}/tcp`;
-	const container = await client.container.create({
-		Image: image.string,
-		Cmd: options.command,
-		Labels: labels,
-		ExposedPorts: { [exposedPort]: {} },
-		HostConfig: { PortBindings: { [exposedPort]: [{ HostPort: '0' }] } },
-	});
-
-	if (options.contents.length > 0) {
-		signal.throwIfAborted();
-		await client.container.putArchive(
-			container,
-			Readable.from(createArchive(options.contents)),
-			'/',
-		);
+	public constructor(readiness: Promise<unknown>, startupTimeout: number) {
+		this.#readiness = readiness;
+		this.#startupTimeout = startupTimeout;
 	}
 
-	signal.throwIfAborted();
-	const output = await attachOutput(client, container);
-
-	try {
-		signal.throwIfAborted();
-		await client.container.start(container);
-
-		const mappedPort = await waitUntilReachable({
-			client,
-			container,
-			output,
-			port: options.port,
-			signal,
-		});
-
-		return {
-			host: client.info.containerRuntime.host,
-			mappedPort,
-			stop: async (): Promise<void> => {
-				await client.container.stop(container, { timeout: 0 });
-				await client.container.remove(container, { removeVolumes: true });
-			},
-		};
-	} finally {
-		output.detach();
+	public async waitUntilReady(): Promise<void> {
+		await this.#readiness;
 	}
-};
+
+	// testcontainers sets the timeout of a wait strategy only if the container
+	// has a startup timeout of its own, which this one does not, since the
+	// attempt has its own clock.
+	public withStartupTimeout(): this {
+		return this;
+	}
+
+	// biome-ignore lint/nursery/useThisInClassMethods: The interface of testcontainers asks for this method.
+	public isStartupTimeoutSet(): boolean {
+		return true;
+	}
+
+	public getStartupTimeout(): number {
+		return this.#startupTimeout;
+	}
+}
 
 // Starts a container and waits until its database is reachable, for the
 // startup timeout at most, from creating the container on. If that fails, it
 // removes the container at once. If the time ran out while Docker was still
 // creating or starting the container, it then waits for that to end, and
 // removes what was created meanwhile. It returns undefined if the database did
-// not become reachable in time, so that another container can take its place.
+// not become reachable, so that another container can take its place.
 const attemptToStart = async (
 	client: ContainerRuntimeClient,
-	image: ImageName,
-	sessionId: string,
 	options: StartContainerOptions,
-): Promise<StartedContainer | undefined> => {
+): Promise<StartedTestContainer | undefined> => {
 	const startId = randomUUID();
 	const deadline = new AbortController();
 	const timer = setTimeout(() => {
 		deadline.abort();
 	}, options.startupTimeout);
+	const attemptEnded = new AbortController();
 
-	const starting = createAndStart({
+	const readiness = waitUntilReachable({
 		client,
-		image,
-		labels: {
-			...options.labels,
-			[LABEL_TESTCONTAINERS_SESSION_ID]: sessionId,
-			[startLabel]: startId,
-		},
-		options,
-		signal: deadline.signal,
+		startId,
+		port: options.port,
+		signal: AbortSignal.any([deadline.signal, attemptEnded.signal]),
 	});
+	const starting = new GenericContainer(options.image)
+		.withExposedPorts(options.port)
+		.withCommand(options.command)
+		.withCopyContentToContainer(options.contents)
+		.withLabels({ ...options.labels, [startLabel]: startId })
+		.withWaitStrategy(new ReadinessWait(readiness, options.startupTimeout))
+		.start();
 
 	try {
-		return await waitUnlessAborted(starting, deadline.signal);
+		const [container] = await waitUnlessAborted(
+			Promise.all([starting, readiness]),
+			deadline.signal,
+		);
+
+		return container;
 	} catch (error) {
-		await removeContainers(client, startId);
+		attemptEnded.abort();
+		await removeContainersOfAttempt(client, startId);
 
 		// The attempt has failed already, so how the start ends no longer
 		// matters, only that nothing of it is left.
-		await Promise.allSettled([starting]);
-		await removeContainers(client, startId);
+		await Promise.allSettled([starting, readiness]);
+		await removeContainersOfAttempt(client, startId);
 
-		if (deadline.signal.aborted && error === deadline.signal.reason) {
+		if ((deadline.signal.aborted && error === deadline.signal.reason) || isPortError(error)) {
 			return undefined;
 		}
 
 		throw error;
 	} finally {
+		attemptEnded.abort();
 		clearTimeout(timer);
 	}
 };
@@ -182,24 +134,22 @@ const attemptToStart = async (
 // reachable. A container that is running, but whose database does not become
 // reachable within the startup timeout, gives way to another one, up to 3
 // containers in total. If Docker fails, or if the container exits, starting
-// fails at once. Ryuk removes the containers once the process ends, as it does
-// for the other containers of testcontainers.
-const startContainer = async (options: StartContainerOptions): Promise<StartedContainer> => {
+// fails at once.
+const startContainer = async (options: StartContainerOptions): Promise<StartedTestContainer> => {
 	try {
 		const client = await getContainerRuntimeClient();
-		const image = ImageName.fromString(options.image);
 
 		// Neither pulling the image nor starting Ryuk counts towards the startup
 		// timeout.
-		await client.image.pull(image);
-		const { sessionId } = await getReaper(client);
+		await client.image.pull(ImageName.fromString(options.image));
+		await getReaper(client);
 
 		for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
 			// biome-ignore lint/performance/noAwaitInLoops: Each attempt waits for the one before.
-			const startedContainer = await attemptToStart(client, image, sessionId, options);
+			const container = await attemptToStart(client, options);
 
-			if (startedContainer !== undefined) {
-				return startedContainer;
+			if (container !== undefined) {
+				return container;
 			}
 		}
 	} catch (error) {
@@ -216,5 +166,5 @@ const startContainer = async (options: StartContainerOptions): Promise<StartedCo
 	);
 };
 
-export type { StartContainerOptions, StartedContainer };
+export type { ContentToCopy, StartContainerOptions };
 export { startContainer };

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { IncomingMessage } from 'node:http';
 import { suite, test } from 'node:test';
-import { getContainerRuntimeClient } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
+import { getContainerRuntimeClient, getReaper } from 'testcontainers';
 import { getImageTag } from '../getImageTag.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
 import { startContainer } from './startContainer.js';
@@ -147,10 +148,11 @@ suite('startContainer', () => {
 					assert.ok(error.message.startsWith(exitedPrefix));
 
 					// The database prints its usage, which ends with this flag, and more
-					// than 20 lines in all. Docker passes on stdout and stderr in the
-					// order in which they arrive, so the last line may come from either.
+					// than 20 lines in all. Docker interleaves stdout and stderr in the
+					// order in which they arrive, and its log may still lack the last
+					// line, so the test does not rely on which line comes last.
 					const logLines = error.message.slice(exitedPrefix.length).split('\n');
-					assert.equal(logLines.length, 20);
+					assert.ok(logLines.length <= 20);
 					assert.ok(logLines.some(line => line.includes('--with-ui')));
 					return true;
 				},
@@ -221,13 +223,73 @@ suite('startContainer', () => {
 	);
 
 	test(
+		'replaces a running container whose port testcontainers cannot find, and removes it.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const testId = randomUUID();
+			const client = await getContainerRuntimeClient();
+			const { containerRuntime } = client.info;
+			const { hostIps } = containerRuntime;
+
+			// Ryuk starts with the first container of the process, so it starts
+			// before the lookup fails, and only the first container of the test is
+			// affected.
+			await getReaper(client);
+
+			// testcontainers looks up the port of a container on the host once per
+			// start, by the addresses of the host. Without any, the lookup of the
+			// first container fails, as when Docker publishes the port only for
+			// another address.
+			let lookupCount = 0;
+			Object.defineProperty(containerRuntime, 'hostIps', {
+				configurable: true,
+				get: (): typeof hostIps => {
+					lookupCount += 1;
+					return lookupCount === 1 ? [] : hostIps;
+				},
+			});
+
+			const stopWatching = await watchCreatedContainers(testId);
+
+			let container: StartedTestContainer;
+			try {
+				container = await startContainer({
+					image,
+					port: 3000,
+					command: getCommand(3000),
+					contents: [],
+					startupTimeout: 20_000,
+					labels: { [testLabel]: testId },
+				});
+			} finally {
+				Object.defineProperty(containerRuntime, 'hostIps', {
+					configurable: true,
+					writable: true,
+					value: hostIps,
+				});
+			}
+
+			try {
+				const startIds = stopWatching();
+				assert.equal(startIds.length, 2);
+				assert.equal(new Set(startIds).size, 2);
+				assert.equal((await listContainers(testId)).length, 1);
+			} finally {
+				await container.stop();
+			}
+
+			assert.deepEqual(await listContainers(testId), []);
+		},
+	);
+
+	test(
 		'starts a container whose database becomes reachable.',
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const stopWatching = await watchCreatedContainers(testId);
 
-			const { host, mappedPort, stop } = await startContainer({
+			const container = await startContainer({
 				image,
 				port: 3000,
 				command: getCommand(3000),
@@ -237,13 +299,15 @@ suite('startContainer', () => {
 			});
 
 			try {
-				const response = await fetch(`http://${host}:${mappedPort}/api/v1/ping`);
+				const response = await fetch(
+					`http://${container.getHost()}:${container.getMappedPort(3000)}/api/v1/ping`,
+				);
 				assert.equal(response.status, 200);
 				await response.body?.cancel();
 
 				assert.equal(stopWatching().length, 1);
 			} finally {
-				await stop();
+				await container.stop();
 			}
 
 			assert.deepEqual(await listContainers(testId), []);
