@@ -154,7 +154,7 @@ try {
 }
 ```
 
-A write certainly was not stored, and throws the error itself, only if its request never went out, for example since the client SDK could not establish a connection, or since the write was aborted or stalled while connecting, or if the server refused the write before storing anything. A request counts as gone out once its headers have been sent. The server refuses a write with every `DbApiError` except one with the code `ErrorCode.storeFailed`, and, through the v2 API, with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`, or, through the v1 API, with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
+A write certainly was not stored, and throws the error itself, only if its request never went out, for example since the client SDK could not establish a connection, or since the write was aborted or stalled while connecting, or if the server refused the write before storing anything. A request counts as gone out once its headers have been sent. Through the v2 API, the server refuses a write with every error that it describes in its answer, except one with the code `ErrorCode.storeFailed`, and with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`. Through the v1 API, it refuses a write with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
 
 ### Writing Events
 
