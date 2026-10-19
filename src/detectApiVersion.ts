@@ -4,6 +4,7 @@ import { readResponseText } from './stall/readResponseText.js';
 import { runWithStallGuard } from './stall/runWithStallGuard.js';
 import { hasShapeOf } from './types/hasShapeOf.js';
 import { isString } from './types/isString.js';
+import { isV2NotOffered } from './v2/isV2NotOffered.js';
 
 type ApiVersion = 'v1' | 'v2';
 
@@ -23,9 +24,6 @@ const parseJson = (text: string): unknown => {
 	}
 };
 
-const statusNotFound = 404;
-const statusMethodNotAllowed = 405;
-
 // Finds out whether the server offers the v2 API, by pinging it there. A
 // server that offers only the v1 API, as EventSourcingDB 1.2.0 does, answers
 // a path of the v2 API with the status 404 or 405. Every other answer than
@@ -42,7 +40,7 @@ const detectApiVersion = async ({
 			method: 'GET',
 		});
 
-		if (response.status === statusNotFound || response.status === statusMethodNotAllowed) {
+		if (isV2NotOffered(response)) {
 			await readResponseText(response, stallGuard);
 			return 'v1';
 		}
