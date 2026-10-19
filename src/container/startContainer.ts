@@ -26,6 +26,10 @@ interface StartContainerOptions {
 	startupTimeout: number;
 	labels?: Record<string, string>;
 	settleTimeout?: number;
+
+	// Receives the removal that runs in the background once the wait for a
+	// pending start has run out, so that a test can wait for it.
+	onBackgroundRemoval?: (removal: Promise<void>) => void;
 }
 
 const maximumAttempts = 3;
@@ -151,7 +155,8 @@ const attemptToStart = async (
 		if (!hasSettled) {
 			// The caller does not wait for a start that Docker does not finish, and
 			// the removal collects its own errors.
-			Promise.allSettled([starting]).then(removeContainers);
+			const removal = Promise.allSettled([starting]).then(removeContainers);
+			options.onBackgroundRemoval?.(removal);
 		}
 
 		if ((deadline.signal.aborted && error === deadline.signal.reason) || isPortError(error)) {

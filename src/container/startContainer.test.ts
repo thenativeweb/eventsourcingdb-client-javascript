@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { suite, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { StartedTestContainer } from 'testcontainers';
-import { getContainerRuntimeClient } from 'testcontainers';
+import { getContainerRuntimeClient, ImageName } from 'testcontainers';
 import { getImageTag } from '../getImageTag.js';
 import { failPortLookups } from '../testing/failPortLookups.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
@@ -14,6 +14,7 @@ import { startContainer } from './startContainer.js';
 
 const startLabel = 'io.eventsourcingdb.container-start';
 const testLabel = 'io.eventsourcingdb.client-javascript-test';
+const markerLabel = 'io.eventsourcingdb.client-javascript-test-marker';
 const exitedPrefix =
 	'Failed to start the container, it exited before the database became reachable: ';
 
@@ -42,9 +43,16 @@ const listContainers = async (testId: string): Promise<ContainerInfo[]> => {
 // Watches Docker for the containers that it creates for a test, and returns a
 // function that stops watching and returns the start label of each of them.
 // Docker keeps only the latest events, so the test watches while it runs,
-// instead of asking for its events afterwards.
-const watchCreatedContainers = async (testId: string): Promise<() => string[]> => {
+// instead of asking for its events afterwards. Docker passes on its events in
+// order, so to stop, the test creates a container of its own and waits for its
+// event, after which the events of all containers created before have arrived.
+const watchCreatedContainers = async (
+	testId: string,
+	image: string,
+): Promise<() => Promise<string[]>> => {
 	const client = await getContainerRuntimeClient();
+	await client.image.pull(ImageName.fromString(image));
+
 	const events = await client.container.dockerode.getEvents({
 		filters: { type: ['container'], event: ['create'], label: [`${testLabel}=${testId}`] },
 	});
@@ -55,19 +63,37 @@ const watchCreatedContainers = async (testId: string): Promise<() => string[]> =
 	// Lets the test end even if it fails before it stops watching.
 	events.socket.unref();
 
-	const chunks: Buffer[] = [];
+	const startIds: string[] = [];
+	const markerArrived = Promise.withResolvers<void>();
+	let pending = '';
 	events.on('data', (chunk: Buffer): void => {
-		chunks.push(chunk);
+		const lines = `${pending}${chunk.toString('utf8')}`.split('\n');
+		pending = lines.pop() ?? '';
+
+		for (const line of lines.filter(candidate => candidate !== '')) {
+			const { Attributes: attributes } = JSON.parse(line).Actor;
+			if (attributes[markerLabel] === testId) {
+				markerArrived.resolve();
+			} else {
+				startIds.push(attributes[startLabel]);
+			}
+		}
 	});
 
-	return (): string[] => {
-		events.destroy();
+	return async (): Promise<string[]> => {
+		const marker = await client.container.create({
+			Image: ImageName.fromString(image).string,
+			Labels: { [testLabel]: testId, [markerLabel]: testId },
+		});
 
-		return Buffer.concat(chunks)
-			.toString('utf8')
-			.split('\n')
-			.filter(line => line !== '')
-			.map(line => JSON.parse(line).Actor.Attributes[startLabel]);
+		try {
+			await markerArrived.promise;
+		} finally {
+			events.destroy();
+			await client.container.remove(marker, { removeVolumes: true });
+		}
+
+		return startIds;
 	};
 };
 
@@ -79,7 +105,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			// The database listens on another port than the one that is mapped.
 			await assert.rejects(
@@ -97,7 +123,7 @@ suite('startContainer', () => {
 				},
 			);
 
-			const startIds = stopWatching();
+			const startIds = await stopWatching();
 			assert.equal(startIds.length, 3);
 			assert.equal(new Set(startIds).size, 3);
 			assert.deepEqual(await listContainers(testId), []);
@@ -109,7 +135,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			await assert.rejects(
 				startContainer({
@@ -126,7 +152,7 @@ suite('startContainer', () => {
 				},
 			);
 
-			assert.equal(stopWatching().length, 3);
+			assert.equal((await stopWatching()).length, 3);
 			assert.deepEqual(await listContainers(testId), []);
 		},
 	);
@@ -136,7 +162,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			await assert.rejects(
 				startContainer({
@@ -162,7 +188,7 @@ suite('startContainer', () => {
 				},
 			);
 
-			assert.equal(stopWatching().length, 1);
+			assert.equal((await stopWatching()).length, 1);
 			assert.deepEqual(await listContainers(testId), []);
 		},
 	);
@@ -172,7 +198,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			await assert.rejects(
 				startContainer({
@@ -191,7 +217,7 @@ suite('startContainer', () => {
 				},
 			);
 
-			assert.equal(stopWatching().length, 0);
+			assert.equal((await stopWatching()).length, 0);
 			assert.deepEqual(await listContainers(testId), []);
 		},
 	);
@@ -201,7 +227,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			// Docker cannot copy a file into another file.
 			await assert.rejects(
@@ -221,7 +247,7 @@ suite('startContainer', () => {
 				},
 			);
 
-			assert.equal(stopWatching().length, 1);
+			assert.equal((await stopWatching()).length, 1);
 			assert.deepEqual(await listContainers(testId), []);
 		},
 	);
@@ -232,7 +258,7 @@ suite('startContainer', () => {
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const endFailing = await failPortLookups(1);
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			let container: StartedTestContainer;
 			try {
@@ -249,7 +275,7 @@ suite('startContainer', () => {
 			}
 
 			try {
-				const startIds = stopWatching();
+				const startIds = await stopWatching();
 				assert.equal(startIds.length, 2);
 				assert.equal(new Set(startIds).size, 2);
 				assert.equal((await listContainers(testId)).length, 1);
@@ -271,7 +297,7 @@ suite('startContainer', () => {
 			// lookup of the port fails, so testcontainers gives up on the container
 			// without removing it.
 			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			try {
 				await assert.rejects(
@@ -292,7 +318,7 @@ suite('startContainer', () => {
 				endFailing();
 			}
 
-			assert.equal(stopWatching().length, 3);
+			assert.equal((await stopWatching()).length, 3);
 			assert.deepEqual(await listContainers(testId), []);
 		},
 	);
@@ -317,7 +343,7 @@ suite('startContainer', () => {
 				await pull.apply(imageClient, parameters);
 			};
 
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			let container: StartedTestContainer;
 			try {
@@ -338,7 +364,7 @@ suite('startContainer', () => {
 
 				// Had the pull counted, the first attempt would have created its
 				// container late, and another attempt one more.
-				assert.equal(stopWatching().length, 1);
+				assert.equal((await stopWatching()).length, 1);
 			} finally {
 				await container.stop();
 			}
@@ -356,14 +382,16 @@ suite('startContainer', () => {
 			const { container: containerClient } = client;
 			const { create } = containerClient;
 			const creations: Promise<unknown>[] = [];
+			const backgroundRemovals: Promise<void>[] = [];
 
-			// Docker takes longer to create a container than the attempt waits for
-			// it, and testcontainers gives up on it without removing it, since the
+			// Docker creates no container until the test lets it, and
+			// testcontainers gives up on a container without removing it, since the
 			// lookup of its port fails.
+			const letDockerCreate = Promise.withResolvers<void>();
 			containerClient.create = async (
 				...parameters: Parameters<typeof create>
 			): ReturnType<typeof create> => {
-				const creation = sleep(4000).then(
+				const creation = letDockerCreate.promise.then(
 					async (): ReturnType<typeof create> => await create.apply(containerClient, parameters),
 				);
 				creations.push(creation);
@@ -372,7 +400,8 @@ suite('startContainer', () => {
 			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
 
 			try {
-				const startedAt = Date.now();
+				// The attempts give up on the creations, which are still pending,
+				// once the settle timeout has run out.
 				await assert.rejects(
 					startContainer({
 						image,
@@ -382,27 +411,24 @@ suite('startContainer', () => {
 						startupTimeout: 100,
 						labels: { [testLabel]: testId },
 						settleTimeout: 300,
+						onBackgroundRemoval: (removal: Promise<void>): void => {
+							backgroundRemovals.push(removal);
+						},
 					}),
 					{
 						message:
 							'Failed to start the container, the database did not become reachable within 0.1s in any of 3 containers',
 					},
 				);
-
-				// The attempts do not wait for Docker beyond the settle timeout.
-				assert.ok(Date.now() - startedAt < 4000);
-
-				await Promise.allSettled(creations);
 				assert.equal(creations.length, 3);
+				assert.equal(backgroundRemovals.length, 3);
 
-				let containers = await listContainers(testId);
-				for (let poll = 0; containers.length > 0 && poll < 50; poll += 1) {
-					// biome-ignore lint/performance/noAwaitInLoops: Each poll waits for the one before.
-					await sleep(100);
-					containers = await listContainers(testId);
-				}
-				assert.deepEqual(containers, []);
+				letDockerCreate.resolve();
+				await Promise.all([...creations, ...backgroundRemovals]);
+
+				assert.deepEqual(await listContainers(testId), []);
 			} finally {
+				letDockerCreate.resolve();
 				endFailing();
 				containerClient.create = create;
 			}
@@ -428,7 +454,7 @@ suite('startContainer', () => {
 					},
 				});
 			const endFailing = await failPortLookups(Number.POSITIVE_INFINITY);
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			try {
 				await assert.rejects(
@@ -455,12 +481,14 @@ suite('startContainer', () => {
 						return true;
 					},
 				);
-
-				assert.equal(stopWatching().length, 3);
 			} finally {
 				endFailing();
 				dockerode.getContainer = getContainer;
+			}
 
+			try {
+				assert.equal((await stopWatching()).length, 3);
+			} finally {
 				for (const { Id: id } of await listContainers(testId)) {
 					// biome-ignore lint/performance/noAwaitInLoops: The test removes its containers one after another.
 					await dockerode.getContainer(id).remove({ force: true, v: true });
@@ -513,7 +541,7 @@ suite('startContainer', () => {
 		integrationTimeout,
 		async (): Promise<void> => {
 			const testId = randomUUID();
-			const stopWatching = await watchCreatedContainers(testId);
+			const stopWatching = await watchCreatedContainers(testId, image);
 
 			const container = await startContainer({
 				image,
@@ -531,7 +559,7 @@ suite('startContainer', () => {
 				assert.equal(response.status, 200);
 				await response.body?.cancel();
 
-				assert.equal(stopWatching().length, 1);
+				assert.equal((await stopWatching()).length, 1);
 			} finally {
 				await container.stop();
 			}
