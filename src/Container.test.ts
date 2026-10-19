@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 import { Container } from './Container.js';
 import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { failPortLookups } from './testing/failPortLookups.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 suite('Container', () => {
-	test('starts with a custom port.', integrationTimeout, async (): Promise<void> => {
+	test('starts with a custom port.', containerStartTimeout, async (): Promise<void> => {
 		const imageTag = getImageTag();
 		const container = new Container().withImageTag(imageTag).withPort(4000);
 
