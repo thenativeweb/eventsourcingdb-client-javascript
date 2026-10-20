@@ -3,22 +3,24 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('readEvents', { timeout: 30_000 }, () => {
+suite('readEvents', () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('reads no events if the database is empty.', async (): Promise<void> => {
+	test('reads no events if the database is empty.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		let didReadEvents = false;
@@ -31,7 +33,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(didReadEvents, false);
 	});
 
-	test('reads all events from the given subject.', async (): Promise<void> => {
+	test('reads all events from the given subject.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -64,7 +66,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventsRead.length, 2);
 	});
 
-	test('reads recursively.', async (): Promise<void> => {
+	test('reads recursively.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -97,7 +99,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventsRead.length, 2);
 	});
 
-	test('reads chronologically.', async (): Promise<void> => {
+	test('reads chronologically.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -136,7 +138,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(secondEventRead.data.value, 42);
 	});
 
-	test('reads anti-chronologically.', async (): Promise<void> => {
+	test('reads anti-chronologically.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -175,7 +177,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(secondEventRead.data.value, 23);
 	});
 
-	test('reads with lower bound.', async (): Promise<void> => {
+	test('reads with lower bound.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -212,7 +214,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventRead.data.value, 42);
 	});
 
-	test('reads with upper bound.', async (): Promise<void> => {
+	test('reads with upper bound.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -249,7 +251,7 @@ suite('readEvents', { timeout: 30_000 }, () => {
 		assert.equal(eventRead.data.value, 23);
 	});
 
-	test('reads from latest event.', async (): Promise<void> => {
+	test('reads from latest event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {

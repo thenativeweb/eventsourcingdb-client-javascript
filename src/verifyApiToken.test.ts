@@ -2,29 +2,36 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Client } from './Client.js';
 import { Container } from './Container.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { DbApiError } from './DbApiError.js';
+import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('verifyApiToken', { timeout: 30_000 }, () => {
+suite('verifyApiToken', () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('does not throw an error if the token is valid.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'does not throw an error if the token is valid.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		// Should not throw.
-		await client.verifyApiToken();
-	});
+			// Should not throw.
+			await client.verifyApiToken();
+		},
+	);
 
-	test('throws an error if the token is invalid.', async (): Promise<void> => {
+	test('throws an error if the token is invalid.', integrationTimeout, async (): Promise<void> => {
 		const url = container.getBaseUrl();
 		const invalidApiToken = `${container.getApiToken()}-invalid`;
 
@@ -34,12 +41,10 @@ suite('verifyApiToken', { timeout: 30_000 }, () => {
 			async () => {
 				await client.verifyApiToken();
 			},
-			error => {
-				assert.ok(error instanceof Error);
-				assert.equal(
-					error.message,
-					"Failed to verify API token, got HTTP status code '401', expected '200'.",
-				);
+			(error: unknown): boolean => {
+				assert.ok(error instanceof DbApiError);
+				assert.equal(error.status, 401);
+				assert.equal(error.code, undefined);
 				return true;
 			},
 		);

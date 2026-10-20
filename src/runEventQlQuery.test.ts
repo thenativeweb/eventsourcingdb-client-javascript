@@ -2,34 +2,40 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 import { isRecord } from './types/isRecord.js';
 
-suite('runEventQlQuery', { timeout: 30_000 }, () => {
+suite('runEventQlQuery', () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('reads no rows if the query does not return any rows.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'reads no rows if the query does not return any rows.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		let didReadRows = false;
-		for await (const _row of client.runEventQlQuery('FROM e IN events PROJECT INTO e')) {
-			didReadRows = true;
-		}
+			let didReadRows = false;
+			for await (const _row of client.runEventQlQuery('FROM e IN events PROJECT INTO e')) {
+				didReadRows = true;
+			}
 
-		assert.equal(didReadRows, false);
-	});
+			assert.equal(didReadRows, false);
+		},
+	);
 
-	test('reads all rows the query returns.', async (): Promise<void> => {
+	test('reads all rows the query returns.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -72,7 +78,7 @@ suite('runEventQlQuery', { timeout: 30_000 }, () => {
 		assert.equal(secondRow.data.value, 42);
 	});
 
-	test('reads rows with primitive number values.', async (): Promise<void> => {
+	test('reads rows with primitive number values.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const event: EventCandidate = {
@@ -93,7 +99,7 @@ suite('runEventQlQuery', { timeout: 30_000 }, () => {
 		assert.equal(rowsRead[0], 42);
 	});
 
-	test('reads rows with primitive boolean values.', async (): Promise<void> => {
+	test('reads rows with primitive boolean values.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const event: EventCandidate = {
@@ -116,7 +122,7 @@ suite('runEventQlQuery', { timeout: 30_000 }, () => {
 		assert.equal(rowsRead[0], true);
 	});
 
-	test('reads rows with primitive string values.', async (): Promise<void> => {
+	test('reads rows with primitive string values.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const event: EventCandidate = {

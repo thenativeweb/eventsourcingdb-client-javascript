@@ -3,33 +3,39 @@ import { afterEach, beforeEach, suite, test } from 'node:test';
 import { Container } from './Container.js';
 import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
-import { getImageVersionFromDockerfile } from './getImageVersionFromDockerfile.js';
+import { getImageTag } from './getImageTag.js';
+import { containerStartTimeout } from './testing/containerStartTimeout.js';
+import { integrationTimeout } from './testing/integrationTimeout.js';
 
-suite('readEventTypes', { timeout: 20_000 }, () => {
+suite('readEventTypes', () => {
 	let container: Container;
 
 	beforeEach(async () => {
-		const imageVersion = getImageVersionFromDockerfile();
-		container = new Container().withImageTag(imageVersion);
+		const imageTag = getImageTag();
+		container = new Container().withImageTag(imageTag);
 		await container.start();
-	});
+	}, containerStartTimeout);
 
 	afterEach(async () => {
 		await container.stop();
-	});
+	}, integrationTimeout);
 
-	test('reads no event types if the database is empty.', async (): Promise<void> => {
-		const client = container.getClient();
+	test(
+		'reads no event types if the database is empty.',
+		integrationTimeout,
+		async (): Promise<void> => {
+			const client = container.getClient();
 
-		let didReadEventTypes = false;
-		for await (const _event of client.readEventTypes()) {
-			didReadEventTypes = true;
-		}
+			let didReadEventTypes = false;
+			for await (const _event of client.readEventTypes()) {
+				didReadEventTypes = true;
+			}
 
-		assert.equal(didReadEventTypes, false);
-	});
+			assert.equal(didReadEventTypes, false);
+		},
+	);
 
-	test('reads all event types.', async (): Promise<void> => {
+	test('reads all event types.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const firstEvent: EventCandidate = {
@@ -59,17 +65,17 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		assert.deepEqual(eventTypesRead, [
 			{
-				eventType: 'io.eventsourcingdb.test.bar',
-				isPhantom: false,
+				type: 'io.eventsourcingdb.test.bar',
+				hasEvents: true,
 			},
 			{
-				eventType: 'io.eventsourcingdb.test.foo',
-				isPhantom: false,
+				type: 'io.eventsourcingdb.test.foo',
+				hasEvents: true,
 			},
 		]);
 	});
 
-	test('supports reading event schemas.', async (): Promise<void> => {
+	test('supports reading event schemas.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
 		const eventType = 'io.eventsourcingdb.test';
@@ -93,8 +99,8 @@ suite('readEventTypes', { timeout: 20_000 }, () => {
 
 		assert.deepEqual(eventTypesRead, [
 			{
-				eventType: 'io.eventsourcingdb.test',
-				isPhantom: true,
+				type: 'io.eventsourcingdb.test',
+				hasEvents: false,
 				schema,
 			},
 		]);

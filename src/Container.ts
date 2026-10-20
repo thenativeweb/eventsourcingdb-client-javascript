@@ -1,13 +1,9 @@
 import crypto from 'node:crypto';
-import type { Content, StartedTestContainer } from 'testcontainers';
-import { GenericContainer, Wait } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
 import { Client } from './Client.js';
-
-interface ContentToCopy {
-	content: Content;
-	target: string;
-	mode?: number;
-}
+import { defaultStartupTimeout, maximumStartupTimeout } from './container/defaultStartupTimeout.js';
+import type { ContentToCopy } from './container/startContainer.js';
+import { startContainer } from './container/startContainer.js';
 
 class Container {
 	readonly #imageName = 'thenativeweb/eventsourcingdb';
@@ -15,6 +11,7 @@ class Container {
 	#internalPort = 3000;
 	#apiToken = 'secret';
 	#signingKey: crypto.KeyObject | undefined;
+	#startupTimeout = defaultStartupTimeout;
 	#container: StartedTestContainer | undefined;
 
 	public withImageTag(tag: string): this {
@@ -35,6 +32,17 @@ class Container {
 
 	public withPort(port: number): this {
 		this.#internalPort = port;
+		return this;
+	}
+
+	public withStartupTimeout(timeout: number): this {
+		if (!(timeout >= 1 && timeout <= maximumStartupTimeout)) {
+			throw new Error(
+				`Startup timeout must be between 1 and ${maximumStartupTimeout} milliseconds, got '${timeout}'.`,
+			);
+		}
+
+		this.#startupTimeout = timeout;
 		return this;
 	}
 
@@ -63,12 +71,13 @@ class Container {
 			});
 		}
 
-		this.#container = await new GenericContainer(`${this.#imageName}:${this.#imageTag}`)
-			.withExposedPorts(this.#internalPort)
-			.withCommand(command)
-			.withCopyContentToContainer(contents)
-			.withWaitStrategy(Wait.forHttp('/api/v1/ping', this.#internalPort).withStartupTimeout(10_000))
-			.start();
+		this.#container = await startContainer({
+			image: `${this.#imageName}:${this.#imageTag}`,
+			port: this.#internalPort,
+			command,
+			contents,
+			startupTimeout: this.#startupTimeout,
+		});
 	}
 
 	public getHost(): string {
