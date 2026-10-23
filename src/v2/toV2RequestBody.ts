@@ -6,7 +6,11 @@ import type { ReadEventsOptions } from '../ReadEventsOptions.js';
 
 // The v2 API refuses unknown fields and null, so these build the bodies of its
 // requests from the fields it knows, and leave out the ones without a value.
-// JSON.stringify leaves out a field whose value is undefined.
+// JSON.stringify leaves out a field whose value is undefined. The payload of a
+// precondition is the exception: it goes out as the precondition holds it,
+// with its options as the caller passed them, on purpose. Taking only the
+// fields known here would drop a misspelled option silently and check less
+// than was asked, while the server refuses it.
 
 const toBound = (bound: Bound | undefined): Record<string, unknown> | undefined =>
 	bound ? { id: bound.id, type: bound.type } : undefined;

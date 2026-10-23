@@ -5,6 +5,7 @@ import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
 import { isAbortError } from './http/isAbortError.js';
 import { waitUnlessAborted } from './http/waitUnlessAborted.js';
+import { IncompatibleServerError } from './IncompatibleServerError.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
@@ -67,6 +68,14 @@ class Client {
 
 		signal?.throwIfAborted();
 
+		return await this.#findOut(signal);
+	}
+
+	// Finds out which API the server offers, and keeps the transport for it, as
+	// soon as the server answers. Everyone who asks meanwhile shares the same
+	// request and its answer. A request that fails leaves the transport that
+	// the client keeps as it is.
+	async #findOut(signal?: AbortSignal): Promise<Transport> {
 		if (this.#detection === undefined) {
 			const detection = detectApiVersion(this.#transportOptions).then(apiVersion => {
 				this.#transport =
@@ -122,13 +131,40 @@ class Client {
 	// A write that fails once it may have reached the server fails with an
 	// OutcomeUnknownError, since it may have been stored nonetheless. This
 	// includes aborting the signal once the write has been sent.
+	//
+	// The v1 API cannot carry a write with a recursive precondition, so its
+	// transport refuses such a write before sending it. The server may offer
+	// the v2 API by now, for example after an upgrade, so the client finds out
+	// again, as on its first request, and sends the write through the API it
+	// finds. If that is still the v1 API, the write fails with an
+	// IncompatibleServerError, again without being sent, and if the client
+	// fails to find out, the write fails with that error. Every other request
+	// meanwhile goes on with the transport that the client keeps, without
+	// waiting, and keeps it if finding out fails. If the client replaced the
+	// transport since the write started, the write uses the new one rather
+	// than find out once more. Since the first attempt never sends the write,
+	// it is sent at most once.
 	public async writeEvents(
 		events: EventCandidate[],
 		preconditions: Precondition[] = [],
 		signal?: AbortSignal,
 	): Promise<Event[]> {
 		const transport = await this.#getTransport(signal);
-		return await transport.writeEvents(events, preconditions, signal);
+
+		try {
+			return await transport.writeEvents(events, preconditions, signal);
+		} catch (error) {
+			if (!(error instanceof IncompatibleServerError)) {
+				throw error;
+			}
+		}
+
+		const currentTransport =
+			this.#transport === transport
+				? await this.#findOut(signal)
+				: await this.#getTransport(signal);
+
+		return await currentTransport.writeEvents(events, preconditions, signal);
 	}
 
 	public readEvents(

@@ -47,6 +47,8 @@ await client.verifyApiToken();
 
 EventSourcingDB offers its v2 API since version 1.3, while older versions offer only the v1 API. This client SDK works with both. Creating a client does not send a request. Instead, the first request of a client asks the server whether it offers the v2 API, by sending a `GET` request to `/api/v2/system/ping`, and the client uses the v2 API if it does, and the v1 API otherwise. The client keeps the answer, so every later request goes straight to the API it found. If the server answers a path of the v2 API with 404 or 405, for example after it was rolled back to a version without it, the client asks again on the next request. If the client cannot find out, for example because the server is not reachable, the first request fails with that error, and the next request asks again.
 
+A client that found only the v1 API asks again before a write with a recursive precondition, since the server may have been upgraded meanwhile, see [Using Preconditions Recursively](#using-preconditions-recursively). Every other request goes on through the v1 API meanwhile, without waiting. If the server offers the v2 API now, the client uses it from then on. If the client cannot find out, the write fails with that error, the client goes on with the v1 API, and only the next write with a recursive precondition asks again.
+
 Through the v2 API, all functions that read use the HTTP method `QUERY` ([RFC 10008](https://www.rfc-editor.org/rfc/rfc10008)), which, unlike `GET`, carries a request body. If there is a proxy or a load balancer in front of EventSourcingDB, it has to let `QUERY` requests through. There is no fallback to `POST`.
 
 ### Configuring the Stall Timeout
@@ -154,7 +156,7 @@ try {
 }
 ```
 
-A write certainly was not stored, and throws the error itself, only if its request never went out, for example since the client SDK could not establish a connection, or since the write was aborted or stalled while connecting, or if the server refused the write before storing anything. A request counts as gone out once its headers have been sent. Through the v2 API, the server refuses a write with every error that it describes in its answer, except one with the code `ErrorCode.storeFailed`, and with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`. Through the v1 API, it refuses a write with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
+A write certainly was not stored, and throws the error itself, only if its request never went out, for example since the client SDK refused to send it and threw an `IncompatibleServerError`, or could not establish a connection, or since the write was aborted or stalled while connecting, or if the server refused the write before storing anything. A request counts as gone out once its headers have been sent. Through the v2 API, the server refuses a write with every error that it describes in its answer, except one with the code `ErrorCode.storeFailed`, and with the HTTP status `400`, `401`, `408`, `413`, `429`, or `503`. Through the v1 API, it refuses a write with an HTTP status of `4xx`, `503`, or `507`. A write that the server refuses with the HTTP status `429` may be sent again after `retryAfter` seconds.
 
 ### Writing Events
 
@@ -222,6 +224,24 @@ const writtenEvents = await client.writeEvents([
 ```
 
 *Note that according to the CloudEvents standard, event IDs must be of type string.*
+
+#### Using Preconditions Recursively
+
+If you want the `isSubjectPristine`, `isSubjectPopulated`, or `isSubjectOnEventId` precondition to apply not only to a subject (such as `/books/42`), but also to all its nested subjects, pass an options object as the last argument and set the `recursive` option to `true`. Then `isSubjectPristine` holds if neither the subject nor any of its nested subjects has an event, `isSubjectPopulated` holds if any of them has one, and `isSubjectOnEventId` holds if the last event among all of them has the given ID:
+
+```typescript
+import { isSubjectPristine } from 'eventsourcingdb';
+
+const writtenEvents = await client.writeEvents([
+  // events
+], [
+  isSubjectPristine('/books/42', { recursive: true })
+]);
+```
+
+For `isSubjectOnEventId`, the options object is the third argument, as in `isSubjectOnEventId('/books/42', '0', { recursive: true })`. Without an options object, or with the `recursive` option set to `false`, a precondition applies to the subject alone.
+
+*Note that only the v2 API checks a precondition recursively. If the client found that the server does not offer the v2 API, it asks the server again before a write with a recursive precondition, since the server may have been upgraded meanwhile, and sends the write through the v2 API if the server offers it now. If it still does not, the write throws an `IncompatibleServerError` before it is sent, so nothing is written. If the client cannot find out, for example because the server is not reachable, the write throws that error, again without being sent. Without the v2 API, the client SDK takes any options other than `{ recursive: false }` as recursive, for example an empty object, since they may have been meant that way.*
 
 #### Using the `isEventQlQueryTrue` precondition
 

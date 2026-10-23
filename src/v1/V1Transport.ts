@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { convertCloudEventToEvent } from '../convertCloudEventToEvent.js';
 import { DbApiError } from '../DbApiError.js';
 import type { Event } from '../Event.js';
@@ -7,6 +8,7 @@ import { assertEventSourcingDb } from '../http/assertEventSourcingDb.js';
 import { createDbApiErrorFromResponse } from '../http/createDbApiErrorFromResponse.js';
 import { createStreamEndedError } from '../http/createStreamEndedError.js';
 import { runWrite } from '../http/runWrite.js';
+import { IncompatibleServerError } from '../IncompatibleServerError.js';
 import { isCloudEvent } from '../isCloudEvent.js';
 import { getRawJsonElements } from '../json/getRawJsonElements.js';
 import { getRawJsonMember } from '../json/getRawJsonMember.js';
@@ -86,6 +88,27 @@ const getStreamBody = async (
 
 const createStreamError = (error: string): DbApiError =>
 	new DbApiError({ status: 200, description: error });
+
+// The v1 API knows no options of a precondition, and checks a precondition on
+// a subject for the subject alone. So a precondition goes without its options
+// only if they are exactly the recursive option set to false. Any other
+// options, even an empty object or a misspelled key, may have been meant to
+// apply to the subjects below as well, so the write fails before it is sent,
+// rather than have the server check less than was asked. The client then
+// finds out again whether the server offers the v2 API by now.
+const toV1Preconditions = (preconditions: Precondition[]): Record<string, unknown>[] =>
+	preconditions.map(precondition => {
+		if (precondition.type === 'isEventQlQueryTrue' || precondition.payload.options === undefined) {
+			return precondition;
+		}
+
+		if (!isDeepStrictEqual(precondition.payload.options, { recursive: false })) {
+			throw new IncompatibleServerError();
+		}
+
+		const { options: _options, ...payload } = precondition.payload;
+		return { ...precondition, payload };
+	});
 
 // Sends the requests through the v1 API, which EventSourcingDB 1.2.0 offers.
 class V1Transport implements Transport {
@@ -169,7 +192,7 @@ class V1Transport implements Transport {
 		const stallTimeout = this.#stallTimeout;
 		const body = JSON.stringify({
 			events,
-			preconditions,
+			preconditions: toV1Preconditions(preconditions),
 		});
 
 		return await runWrite(
