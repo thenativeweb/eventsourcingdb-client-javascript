@@ -10,6 +10,7 @@ import { getImageTag } from '../getImageTag.js';
 import { failPortLookups } from '../testing/failPortLookups.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
 import type { ContainerInfo } from './containersOfAttempt.js';
+import { isReachable } from './isReachable.js';
 import { startContainer } from './startContainer.js';
 
 const startLabel = 'io.eventsourcingdb.container-start';
@@ -553,11 +554,10 @@ suite('startContainer', () => {
 			});
 
 			try {
-				const response = await fetch(
-					`http://${container.getHost()}:${container.getMappedPort(3000)}/api/v1/ping`,
-				);
-				assert.equal(response.status, 200);
-				await response.body?.cancel();
+				// The database counts as reachable by the same pings as during the
+				// wait, so that the test holds whichever API the database offers.
+				const url = new URL(`http://${container.getHost()}:${container.getMappedPort(3000)}`);
+				assert.equal(await isReachable(url, new AbortController().signal), true);
 
 				assert.equal((await stopWatching()).length, 1);
 			} finally {
