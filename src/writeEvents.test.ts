@@ -46,8 +46,9 @@ interface PreconditionOptionsCase {
 	// The subjects of the events that the case writes first.
 	subjects: string[];
 
-	// A precondition that does not hold after these events, and one that does,
-	// each of which tells the recursive option apart from the other value.
+	// A precondition that does not hold after these events, and one that does.
+	// At least one of the two would turn out the other way with the other value
+	// of the recursive option, so that the case tells the two values apart.
 	violated: Precondition;
 	holding: Precondition;
 }

@@ -115,6 +115,18 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 					const [request] = server.requests;
 					assert.deepEqual(getSentPreconditions(request), [{ type: name, payload }]);
 				});
+
+				test('sends the options as the caller passed them, so that the server refuses a misspelled key.', async (): Promise<void> => {
+					// A caller without types may pass options that the types do not
+					// allow.
+					const precondition: Precondition = Reflect.apply(create, undefined, [{ recursiv: true }]);
+					await client.writeEvents([event], [precondition]);
+
+					const [request] = server.requests;
+					assert.deepEqual(getSentPreconditions(request), [
+						{ type: name, payload: { ...payload, options: { recursiv: true } } },
+					]);
+				});
 			});
 		};
 
@@ -151,6 +163,29 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 						),
 						isIncompatibleServerError,
 					);
+
+					assert.deepEqual(server.requests, []);
+				});
+
+				test('fails without sending the write if the options are anything but recursive set to false, since they may have been meant as recursive.', async (): Promise<void> => {
+					for (const options of [
+						{},
+						{ recursiv: false },
+						{ recursive: 'false' },
+						{ recursive: 0 },
+						{ recursive: false, recursiv: true },
+						null,
+					]) {
+						// A caller without types may pass options that the types do not
+						// allow.
+						const precondition: Precondition = Reflect.apply(create, undefined, [options]);
+
+						await assert.rejects(
+							client.writeEvents([event], [precondition]),
+							isIncompatibleServerError,
+							`Options ${JSON.stringify(options)} must be refused.`,
+						);
+					}
 
 					assert.deepEqual(server.requests, []);
 				});

@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { convertCloudEventToEvent } from '../convertCloudEventToEvent.js';
 import { DbApiError } from '../DbApiError.js';
 import type { Event } from '../Event.js';
@@ -89,16 +90,18 @@ const createStreamError = (error: string): DbApiError =>
 	new DbApiError({ status: 200, description: error });
 
 // The v1 API knows no options of a precondition, and checks a precondition on
-// a subject for the subject alone. So a write with a recursive precondition
-// fails before it is sent, rather than have the server check less than was
-// asked, and a precondition that is not recursive goes without its options.
+// a subject for the subject alone. So a precondition goes without its options
+// only if they are exactly the recursive option set to false. Any other
+// options, even an empty object or a misspelled key, may have been meant to
+// apply to the subjects below as well, so the write fails before it is sent,
+// rather than have the server check less than was asked.
 const toV1Preconditions = (preconditions: Precondition[]): Record<string, unknown>[] =>
 	preconditions.map(precondition => {
 		if (precondition.type === 'isEventQlQueryTrue' || precondition.payload.options === undefined) {
 			return precondition;
 		}
 
-		if (precondition.payload.options.recursive) {
+		if (!isDeepStrictEqual(precondition.payload.options, { recursive: false })) {
 			throw new IncompatibleServerError();
 		}
 
