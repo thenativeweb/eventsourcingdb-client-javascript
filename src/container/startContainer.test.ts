@@ -6,11 +6,11 @@ import { suite, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { StartedTestContainer } from 'testcontainers';
 import { getContainerRuntimeClient, ImageName } from 'testcontainers';
+import { Client } from '../Client.js';
 import { getImageTag } from '../getImageTag.js';
 import { failPortLookups } from '../testing/failPortLookups.js';
 import { integrationTimeout } from '../testing/integrationTimeout.js';
 import type { ContainerInfo } from './containersOfAttempt.js';
-import { isReachable } from './isReachable.js';
 import { startContainer } from './startContainer.js';
 
 const startLabel = 'io.eventsourcingdb.container-start';
@@ -554,10 +554,10 @@ suite('startContainer', () => {
 			});
 
 			try {
-				// The database counts as reachable by the same pings as during the
-				// wait, so that the test holds whichever API the database offers.
+				// A client checks the database without the code of the wait, and through
+				// whichever API the database offers.
 				const url = new URL(`http://${container.getHost()}:${container.getMappedPort(3000)}`);
-				assert.equal(await isReachable(url, new AbortController().signal), true);
+				await new Client(url, 'secret').ping();
 
 				assert.equal((await stopWatching()).length, 1);
 			} finally {
