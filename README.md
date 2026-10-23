@@ -223,6 +223,24 @@ const writtenEvents = await client.writeEvents([
 
 *Note that according to the CloudEvents standard, event IDs must be of type string.*
 
+#### Using Preconditions Recursively
+
+If you want the `isSubjectPristine`, `isSubjectPopulated`, or `isSubjectOnEventId` precondition to apply not only to a subject (such as `/books/42`), but also to all its nested subjects, pass an options object as the last argument and set the `recursive` option to `true`. Then `isSubjectPristine` holds if neither the subject nor any of its nested subjects has an event, `isSubjectPopulated` holds if any of them has one, and `isSubjectOnEventId` holds if the last event among all of them has the given ID:
+
+```typescript
+import { isSubjectPristine } from 'eventsourcingdb';
+
+const writtenEvents = await client.writeEvents([
+  // events
+], [
+  isSubjectPristine('/books/42', { recursive: true })
+]);
+```
+
+For `isSubjectOnEventId`, the options object is the third argument, as in `isSubjectOnEventId('/books/42', '0', { recursive: true })`. Without an options object, or with the `recursive` option set to `false`, a precondition applies to the subject alone.
+
+*Note that only the v2 API checks a precondition recursively. If the server does not offer the v2 API, a write with a recursive precondition throws an `IncompatibleServerError` before it is sent, so nothing is written.*
+
 #### Using the `isEventQlQueryTrue` precondition
 
 If you want to write events depending on an EventQL query, import the `isEventQlQueryTrue` function and pass it as an array of preconditions in the second argument:

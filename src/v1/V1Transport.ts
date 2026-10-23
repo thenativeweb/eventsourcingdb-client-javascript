@@ -7,6 +7,7 @@ import { assertEventSourcingDb } from '../http/assertEventSourcingDb.js';
 import { createDbApiErrorFromResponse } from '../http/createDbApiErrorFromResponse.js';
 import { createStreamEndedError } from '../http/createStreamEndedError.js';
 import { runWrite } from '../http/runWrite.js';
+import { IncompatibleServerError } from '../IncompatibleServerError.js';
 import { isCloudEvent } from '../isCloudEvent.js';
 import { getRawJsonElements } from '../json/getRawJsonElements.js';
 import { getRawJsonMember } from '../json/getRawJsonMember.js';
@@ -86,6 +87,24 @@ const getStreamBody = async (
 
 const createStreamError = (error: string): DbApiError =>
 	new DbApiError({ status: 200, description: error });
+
+// The v1 API knows no options of a precondition, and checks a precondition on
+// a subject for the subject alone. So a write with a recursive precondition
+// fails before it is sent, rather than have the server check less than was
+// asked, and a precondition that is not recursive goes without its options.
+const toV1Preconditions = (preconditions: Precondition[]): Record<string, unknown>[] =>
+	preconditions.map(precondition => {
+		if (precondition.type === 'isEventQlQueryTrue' || precondition.payload.options === undefined) {
+			return precondition;
+		}
+
+		if (precondition.payload.options.recursive) {
+			throw new IncompatibleServerError();
+		}
+
+		const { options: _options, ...payload } = precondition.payload;
+		return { ...precondition, payload };
+	});
 
 // Sends the requests through the v1 API, which EventSourcingDB 1.2.0 offers.
 class V1Transport implements Transport {
@@ -169,7 +188,7 @@ class V1Transport implements Transport {
 		const stallTimeout = this.#stallTimeout;
 		const body = JSON.stringify({
 			events,
-			preconditions,
+			preconditions: toV1Preconditions(preconditions),
 		});
 
 		return await runWrite(

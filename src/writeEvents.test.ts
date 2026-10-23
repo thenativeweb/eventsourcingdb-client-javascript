@@ -1,21 +1,101 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, suite, test } from 'node:test';
+import type { Client } from './Client.js';
 import { Container } from './Container.js';
 import { DbApiError } from './DbApiError.js';
 import { ErrorCode } from './ErrorCode.js';
 import type { Event } from './Event.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { getImageTag } from './getImageTag.js';
+import { IncompatibleServerError } from './IncompatibleServerError.js';
 import { isEventQlQueryTrue } from './isEventQlQueryTrue.js';
 import { isSubjectOnEventId } from './isSubjectOnEventId.js';
 import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
+import type { Precondition } from './Precondition.js';
 import { containerStartTimeout } from './testing/containerStartTimeout.js';
+import { getApiVersionOf } from './testing/getApiVersionOf.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
 // Both APIs report a precondition that does not hold with the same code.
 const isPreconditionViolated = (error: unknown): boolean =>
 	error instanceof DbApiError && error.code === ErrorCode.preconditionViolated;
+
+const getEvent = (subject: string): EventCandidate => ({
+	source: 'https://www.eventsourcingdb.io',
+	subject,
+	type: 'io.eventsourcingdb.test',
+	data: {
+		value: 23,
+	},
+});
+
+const readAllEvents = async (client: Client): Promise<Event[]> => {
+	const events: Event[] = [];
+	for await (const event of client.readEvents('/', { recursive: true })) {
+		events.push(event);
+	}
+
+	return events;
+};
+
+interface PreconditionOptionsCase {
+	name: string;
+	recursive: boolean;
+
+	// The subjects of the events that the case writes first.
+	subjects: string[];
+
+	// A precondition that does not hold after these events, and one that does,
+	// each of which tells the recursive option apart from the other value.
+	violated: Precondition;
+	holding: Precondition;
+}
+
+const preconditionOptionsCases: PreconditionOptionsCase[] = [
+	{
+		name: 'isSubjectPristine',
+		recursive: true,
+		subjects: ['/test/1'],
+		violated: isSubjectPristine('/test', { recursive: true }),
+		holding: isSubjectPristine('/test/2', { recursive: true }),
+	},
+	{
+		name: 'isSubjectPristine',
+		recursive: false,
+		subjects: ['/test/1'],
+		violated: isSubjectPristine('/test/1', { recursive: false }),
+		holding: isSubjectPristine('/test', { recursive: false }),
+	},
+	{
+		name: 'isSubjectPopulated',
+		recursive: true,
+		subjects: ['/test/1'],
+		violated: isSubjectPopulated('/test/2', { recursive: true }),
+		holding: isSubjectPopulated('/test', { recursive: true }),
+	},
+	{
+		name: 'isSubjectPopulated',
+		recursive: false,
+		subjects: ['/test/1'],
+		violated: isSubjectPopulated('/test', { recursive: false }),
+		holding: isSubjectPopulated('/test/1', { recursive: false }),
+	},
+	{
+		name: 'isSubjectOnEventId',
+		recursive: true,
+		subjects: ['/test', '/test/1'],
+		violated: isSubjectOnEventId('/test', '0', { recursive: true }),
+		holding: isSubjectOnEventId('/test', '1', { recursive: true }),
+	},
+	{
+		name: 'isSubjectOnEventId',
+		recursive: false,
+		subjects: ['/test', '/test/1'],
+		violated: isSubjectOnEventId('/test', '1', { recursive: false }),
+		holding: isSubjectOnEventId('/test', '0', { recursive: false }),
+	},
+];
 
 suite('writeEvents', () => {
 	let container: Container;
@@ -262,4 +342,49 @@ suite('writeEvents', () => {
 			}, isPreconditionViolated);
 		},
 	);
+
+	const definePreconditionOptionsTest = ({
+		name,
+		recursive,
+		subjects,
+		violated,
+		holding,
+	}: PreconditionOptionsCase): void => {
+		test(
+			`supports the ${name} precondition with the recursive option set to ${recursive}.`,
+			integrationTimeout,
+			async (): Promise<void> => {
+				const client = container.getClient();
+				const apiVersion = await getApiVersionOf(container);
+
+				for (const subject of subjects) {
+					await client.writeEvents([getEvent(subject)]);
+				}
+
+				// The v1 API cannot check a recursive precondition, so the write fails
+				// before it is sent, whether the precondition would hold or not.
+				if (recursive && apiVersion === 'v1') {
+					for (const precondition of [violated, holding]) {
+						await assert.rejects(async () => {
+							await client.writeEvents([getEvent('/test')], [precondition]);
+						}, IncompatibleServerError);
+					}
+
+					assert.equal((await readAllEvents(client)).length, subjects.length);
+					return;
+				}
+
+				await assert.rejects(async () => {
+					await client.writeEvents([getEvent('/test')], [violated]);
+				}, isPreconditionViolated);
+
+				const writtenEvents = await client.writeEvents([getEvent('/test')], [holding]);
+				assert.equal(writtenEvents.length, 1);
+			},
+		);
+	};
+
+	for (const preconditionOptionsCase of preconditionOptionsCases) {
+		definePreconditionOptionsTest(preconditionOptionsCase);
+	}
 });
