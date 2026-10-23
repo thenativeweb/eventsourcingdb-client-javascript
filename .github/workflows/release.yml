@@ -25,7 +25,7 @@ jobs:
     - name: Clone repository
       uses: actions/checkout@v7.0.1
     - name: Use Node.js
-      uses: actions/setup-node@v7.0.0
+      uses: actions/setup-node@v7.1.0
       with:
         node-version-file: '.nvmrc'
     - name: Install dependencies
@@ -58,7 +58,7 @@ jobs:
         npm ci
     - name: Get next version
       id: get_next_version
-      uses: thenativeweb/get-next-version@2.8.2
+      uses: thenativeweb/get-next-version@2.8.3
     - name: Create new version
       if: ${{ steps.get_next_version.outputs.hasNextVersion == 'true' }}
       run: |
