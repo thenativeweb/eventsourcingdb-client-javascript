@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, suite, test } from 'node:test';
+import { setTimeout } from 'node:timers/promises';
 import { Client } from './Client.js';
+import { DbApiError } from './DbApiError.js';
 import type { ApiVersion } from './detectApiVersion.js';
 import type { EventCandidate } from './EventCandidate.js';
 import { IncompatibleServerError } from './IncompatibleServerError.js';
@@ -11,7 +13,7 @@ import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 import type { Precondition } from './Precondition.js';
 import type { PreconditionOptions } from './PreconditionOptions.js';
-import { type Answer, answers } from './testing/answers.js';
+import { type Answer, answers, lines } from './testing/answers.js';
 import { answerWithText, type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
 import { isRecord } from './types/isRecord.js';
 
@@ -61,9 +63,36 @@ const isProbe = (request: FakeRequest): boolean =>
 const answersByPath: Record<string, Answer> = {
 	'/api/v1/verify-api-token': answers.v1.verifyApiToken,
 	'/api/v1/write-events': answers.v1.writeEvents,
+	'/api/v1/read-events': { contentType: 'application/x-ndjson', body: lines.v1.event('0') },
 	'/api/v2/system/ping': answers.v2.ping,
 	'/api/v2/system/verify-token': answers.v2.verifyApiToken,
 	'/api/v2/data/write-events': answers.v2.writeEvents,
+};
+
+const consume = async (iterator: AsyncGenerator<unknown, void, void>): Promise<unknown[]> => {
+	const items: unknown[] = [];
+	for await (const item of iterator) {
+		items.push(item);
+	}
+	return items;
+};
+
+// Fails with the defect unless the call ends within a generous bound, since a
+// call that waits for a probe that the test holds would never end.
+const endsWithoutWaiting = async <TResult>(
+	call: Promise<TResult>,
+	defect: string,
+): Promise<TResult> => {
+	const watchdog = new AbortController();
+	const timeout = setTimeout(5000, undefined, { signal: watchdog.signal }).then((): never => {
+		throw new Error(defect);
+	});
+
+	try {
+		return await Promise.race([call, timeout]);
+	} finally {
+		watchdog.abort();
+	}
 };
 
 const isIncompatibleServerError = (error: unknown): boolean =>
@@ -75,11 +104,19 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 	let server: FakeServer;
 	let client: Client;
 	let offersV2: boolean;
+	let heldProbe: PromiseWithResolvers<ServerResponse> | undefined;
 
 	// The server answers the first probe itself. It answers every later probe,
 	// and every other path of the v2 API, as a server with or without the v2 API
-	// does, as the test tells it to.
+	// does, as the test tells it to. A test may hold the next probe instead, to
+	// answer it itself.
 	const respond = (request: FakeRequest, response: ServerResponse): void => {
+		if (isProbe(request) && heldProbe !== undefined) {
+			heldProbe.resolve(response);
+			heldProbe = undefined;
+			return;
+		}
+
 		const answer = answersByPath[request.path];
 		if (answer === undefined || (request.path.startsWith('/api/v2/') && !offersV2)) {
 			answerWithText(response, 404, '404 page not found');
@@ -93,6 +130,7 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 	const startServer = async (apiVersion: ApiVersion): Promise<void> => {
 		server = new FakeServer(apiVersion);
 		offersV2 = apiVersion === 'v2';
+		heldProbe = undefined;
 		server.respond = respond;
 		await server.start();
 
@@ -284,6 +322,52 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 				client.writeEvents([event], [recursivePrecondition]),
 				isIncompatibleServerError,
 			);
+			await client.verifyApiToken();
+
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), ['/api/v1/verify-api-token', '/api/v1/verify-api-token']);
+		});
+
+		test('goes on with the v1 API for every other request while it finds out again, and uses the v2 API once it finds it.', async (): Promise<void> => {
+			const probe = Promise.withResolvers<ServerResponse>();
+			heldProbe = probe;
+			offersV2 = true;
+
+			const write = client.writeEvents([event], [recursivePrecondition]);
+			const probeResponse = await probe.promise;
+
+			const defect = 'The request waited for finding out again.';
+			await endsWithoutWaiting(consume(client.readEvents('/test', { recursive: false })), defect);
+			await endsWithoutWaiting(client.writeEvents([event]), defect);
+			await endsWithoutWaiting(client.verifyApiToken(), defect);
+
+			writeHead(probeResponse, 200, answers.v2.ping.contentType);
+			probeResponse.end(answers.v2.ping.body);
+			await write;
+			await client.verifyApiToken();
+
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), [
+				'/api/v1/verify-api-token',
+				'/api/v1/read-events',
+				'/api/v1/write-events',
+				'/api/v1/verify-api-token',
+				'/api/v2/data/write-events',
+				'/api/v2/system/verify-token',
+			]);
+		});
+
+		test('goes on with the v1 API without finding out again, if finding out again fails.', async (): Promise<void> => {
+			const probe = Promise.withResolvers<ServerResponse>();
+			heldProbe = probe;
+
+			const write = client.writeEvents([event], [recursivePrecondition]);
+			answerWithText(await probe.promise, 500, 'failed');
+			await assert.rejects(
+				write,
+				(error: unknown): boolean => error instanceof DbApiError && error.status === 500,
+			);
+
 			await client.verifyApiToken();
 
 			assert.equal(server.probeCount, 2);

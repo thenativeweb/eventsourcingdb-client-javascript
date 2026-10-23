@@ -60,7 +60,7 @@ class Client {
 	// answer. Requests that start meanwhile wait for the same answer. If the
 	// client fails to find out, the request fails, and the next one tries again.
 	// The same holds once the client forgets the answer, as #createV2Transport
-	// and writeEvents describe.
+	// describes.
 	async #getTransport(signal?: AbortSignal): Promise<Transport> {
 		if (this.#transport !== undefined) {
 			return this.#transport;
@@ -68,6 +68,14 @@ class Client {
 
 		signal?.throwIfAborted();
 
+		return await this.#findOut(signal);
+	}
+
+	// Finds out which API the server offers, and keeps the transport for it, as
+	// soon as the server answers. Everyone who asks meanwhile shares the same
+	// request and its answer. A request that fails leaves the transport that
+	// the client keeps as it is.
+	async #findOut(signal?: AbortSignal): Promise<Transport> {
 		if (this.#detection === undefined) {
 			const detection = detectApiVersion(this.#transportOptions).then(apiVersion => {
 				this.#transport =
@@ -89,25 +97,21 @@ class Client {
 		return await waitUnlessAborted(this.#detection, signal);
 	}
 
-	// Only the transport that the client still keeps makes it forget which API
-	// the server offers. So a late answer to a request through a transport that
-	// the client has forgotten already neither disturbs finding out anew, which
-	// may run meanwhile, nor discards what that finds.
-	#forget(transport: Transport): void {
-		if (this.#transport === transport) {
-			this.#transport = undefined;
-		}
-	}
-
 	// A server that answers a path of the v2 API with 404 or 405 no longer
 	// offers it, for example because it was rolled back to a version without
 	// it, so the client forgets the answer, and the next request finds out
-	// again, while the request itself fails as before.
+	// again, while the request itself fails as before. Only the transport that
+	// the client still keeps makes it forget. So a late answer to a request
+	// through a transport that the client has forgotten already neither
+	// disturbs finding out anew, which may run meanwhile, nor discards what
+	// that finds.
 	#createV2Transport(): V2Transport {
 		const transport = new V2Transport({
 			...this.#transportOptions,
 			forgetApiVersion: (): void => {
-				this.#forget(transport);
+				if (this.#transport === transport) {
+					this.#transport = undefined;
+				}
 			},
 		});
 
@@ -130,11 +134,16 @@ class Client {
 	//
 	// The v1 API cannot carry a write with a recursive precondition, so its
 	// transport refuses such a write before sending it. The server may offer
-	// the v2 API by now, for example after an upgrade, so the client forgets
-	// the answer and finds out again, as on its first request, and sends the
-	// write through the API it finds. If that is still the v1 API, the write
-	// fails with an IncompatibleServerError, again without being sent. Since
-	// the first attempt never sends the write, it is sent at most once.
+	// the v2 API by now, for example after an upgrade, so the client finds out
+	// again, as on its first request, and sends the write through the API it
+	// finds. If that is still the v1 API, the write fails with an
+	// IncompatibleServerError, again without being sent, and if the client
+	// fails to find out, the write fails with that error. Every other request
+	// meanwhile goes on with the transport that the client keeps, without
+	// waiting, and keeps it if finding out fails. If the client replaced the
+	// transport since the write started, the write uses the new one rather
+	// than find out once more. Since the first attempt never sends the write,
+	// it is sent at most once.
 	public async writeEvents(
 		events: EventCandidate[],
 		preconditions: Precondition[] = [],
@@ -150,8 +159,10 @@ class Client {
 			}
 		}
 
-		this.#forget(transport);
-		const currentTransport = await this.#getTransport(signal);
+		const currentTransport =
+			this.#transport === transport
+				? await this.#findOut(signal)
+				: await this.#getTransport(signal);
 
 		return await currentTransport.writeEvents(events, preconditions, signal);
 	}
