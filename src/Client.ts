@@ -5,6 +5,7 @@ import type { EventCandidate } from './EventCandidate.js';
 import type { EventType } from './EventType.js';
 import { isAbortError } from './http/isAbortError.js';
 import { waitUnlessAborted } from './http/waitUnlessAborted.js';
+import { IncompatibleServerError } from './IncompatibleServerError.js';
 import type { ObserveEventsOptions } from './ObserveEventsOptions.js';
 import type { Precondition } from './Precondition.js';
 import type { ReadEventsOptions } from './ReadEventsOptions.js';
@@ -59,7 +60,7 @@ class Client {
 	// answer. Requests that start meanwhile wait for the same answer. If the
 	// client fails to find out, the request fails, and the next one tries again.
 	// The same holds once the client forgets the answer, as #createV2Transport
-	// describes.
+	// and writeEvents describe.
 	async #getTransport(signal?: AbortSignal): Promise<Transport> {
 		if (this.#transport !== undefined) {
 			return this.#transport;
@@ -88,21 +89,25 @@ class Client {
 		return await waitUnlessAborted(this.#detection, signal);
 	}
 
+	// Only the transport that the client still keeps makes it forget which API
+	// the server offers. So a late answer to a request through a transport that
+	// the client has forgotten already neither disturbs finding out anew, which
+	// may run meanwhile, nor discards what that finds.
+	#forget(transport: Transport): void {
+		if (this.#transport === transport) {
+			this.#transport = undefined;
+		}
+	}
+
 	// A server that answers a path of the v2 API with 404 or 405 no longer
 	// offers it, for example because it was rolled back to a version without
 	// it, so the client forgets the answer, and the next request finds out
-	// again, while the request itself fails as before. Only the transport that
-	// the client still keeps makes it forget. So a late answer to a request
-	// through a transport that the client has forgotten already neither
-	// disturbs finding out anew, which may run meanwhile, nor discards what
-	// that finds.
+	// again, while the request itself fails as before.
 	#createV2Transport(): V2Transport {
 		const transport = new V2Transport({
 			...this.#transportOptions,
 			forgetApiVersion: (): void => {
-				if (this.#transport === transport) {
-					this.#transport = undefined;
-				}
+				this.#forget(transport);
 			},
 		});
 
@@ -122,13 +127,33 @@ class Client {
 	// A write that fails once it may have reached the server fails with an
 	// OutcomeUnknownError, since it may have been stored nonetheless. This
 	// includes aborting the signal once the write has been sent.
+	//
+	// The v1 API cannot carry a write with a recursive precondition, so its
+	// transport refuses such a write before sending it. The server may offer
+	// the v2 API by now, for example after an upgrade, so the client forgets
+	// the answer and finds out again, as on its first request, and sends the
+	// write through the API it finds. If that is still the v1 API, the write
+	// fails with an IncompatibleServerError, again without being sent. Since
+	// the first attempt never sends the write, it is sent at most once.
 	public async writeEvents(
 		events: EventCandidate[],
 		preconditions: Precondition[] = [],
 		signal?: AbortSignal,
 	): Promise<Event[]> {
 		const transport = await this.#getTransport(signal);
-		return await transport.writeEvents(events, preconditions, signal);
+
+		try {
+			return await transport.writeEvents(events, preconditions, signal);
+		} catch (error) {
+			if (!(error instanceof IncompatibleServerError)) {
+				throw error;
+			}
+		}
+
+		this.#forget(transport);
+		const currentTransport = await this.#getTransport(signal);
+
+		return await currentTransport.writeEvents(events, preconditions, signal);
 	}
 
 	public readEvents(

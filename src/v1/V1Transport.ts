@@ -94,7 +94,8 @@ const createStreamError = (error: string): DbApiError =>
 // only if they are exactly the recursive option set to false. Any other
 // options, even an empty object or a misspelled key, may have been meant to
 // apply to the subjects below as well, so the write fails before it is sent,
-// rather than have the server check less than was asked.
+// rather than have the server check less than was asked. The client then
+// finds out again whether the server offers the v2 API by now.
 const toV1Preconditions = (preconditions: Precondition[]): Record<string, unknown>[] =>
 	preconditions.map(precondition => {
 		if (precondition.type === 'isEventQlQueryTrue' || precondition.payload.options === undefined) {

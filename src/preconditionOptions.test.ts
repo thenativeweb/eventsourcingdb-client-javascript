@@ -11,8 +11,8 @@ import { isSubjectPopulated } from './isSubjectPopulated.js';
 import { isSubjectPristine } from './isSubjectPristine.js';
 import type { Precondition } from './Precondition.js';
 import type { PreconditionOptions } from './PreconditionOptions.js';
-import { answers } from './testing/answers.js';
-import { type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
+import { type Answer, answers } from './testing/answers.js';
+import { answerWithText, type FakeRequest, FakeServer, writeHead } from './testing/FakeServer.js';
 import { isRecord } from './types/isRecord.js';
 
 const event: EventCandidate = {
@@ -55,6 +55,17 @@ const getSentPreconditions = (request: FakeRequest | undefined): unknown => {
 	return isRecord(body) ? body.preconditions : undefined;
 };
 
+const isProbe = (request: FakeRequest): boolean =>
+	request.method === 'GET' && request.path === '/api/v2/system/ping';
+
+const answersByPath: Record<string, Answer> = {
+	'/api/v1/verify-api-token': answers.v1.verifyApiToken,
+	'/api/v1/write-events': answers.v1.writeEvents,
+	'/api/v2/system/ping': answers.v2.ping,
+	'/api/v2/system/verify-token': answers.v2.verifyApiToken,
+	'/api/v2/data/write-events': answers.v2.writeEvents,
+};
+
 const isIncompatibleServerError = (error: unknown): boolean =>
 	error instanceof IncompatibleServerError &&
 	error.name === 'IncompatibleServerError' &&
@@ -63,19 +74,33 @@ const isIncompatibleServerError = (error: unknown): boolean =>
 suite('preconditionOptions', { timeout: 30_000 }, () => {
 	let server: FakeServer;
 	let client: Client;
+	let offersV2: boolean;
+
+	// The server answers the first probe itself. It answers every later probe,
+	// and every other path of the v2 API, as a server with or without the v2 API
+	// does, as the test tells it to.
+	const respond = (request: FakeRequest, response: ServerResponse): void => {
+		const answer = answersByPath[request.path];
+		if (answer === undefined || (request.path.startsWith('/api/v2/') && !offersV2)) {
+			answerWithText(response, 404, '404 page not found');
+			return;
+		}
+
+		writeHead(response, 200, answer.contentType);
+		response.end(answer.body);
+	};
 
 	const startServer = async (apiVersion: ApiVersion): Promise<void> => {
 		server = new FakeServer(apiVersion);
-		server.respond = (_request: FakeRequest, response: ServerResponse): void => {
-			const { contentType, body } = answers[apiVersion].writeEvents;
-
-			writeHead(response, 200, contentType);
-			response.end(body);
-		};
+		offersV2 = apiVersion === 'v2';
+		server.respond = respond;
 		await server.start();
 
 		client = new Client(server.url, 'secret');
 	};
+
+	const getPaths = (): string[] =>
+		server.requests.filter(request => !isProbe(request)).map(request => request.path);
 
 	afterEach(async () => {
 		await server.stop();
@@ -148,7 +173,7 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 						isIncompatibleServerError,
 					);
 
-					assert.deepEqual(server.requests, []);
+					assert.deepEqual(getPaths(), []);
 				});
 
 				test('fails without sending the write if any of its preconditions is recursive.', async (): Promise<void> => {
@@ -164,7 +189,7 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 						isIncompatibleServerError,
 					);
 
-					assert.deepEqual(server.requests, []);
+					assert.deepEqual(getPaths(), []);
 				});
 
 				test('fails without sending the write if the options are anything but recursive set to false, since they may have been meant as recursive.', async (): Promise<void> => {
@@ -187,7 +212,7 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 						);
 					}
 
-					assert.deepEqual(server.requests, []);
+					assert.deepEqual(getPaths(), []);
 				});
 
 				test('sends a precondition that is not recursive as one without options.', async (): Promise<void> => {
@@ -210,5 +235,75 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 		for (const preconditionOnSubject of preconditionsOnSubject) {
 			defineTestsFor(preconditionOnSubject);
 		}
+	});
+
+	suite('a client that found the server without the v2 API', () => {
+		const recursivePrecondition = isSubjectPristine('/test', { recursive: true });
+
+		beforeEach(async () => {
+			await startServer('v1');
+			await client.verifyApiToken();
+		});
+
+		test('finds out again before a recursive write, and sends it once through the v2 API, which it keeps using, once the server offers it.', async (): Promise<void> => {
+			offersV2 = true;
+
+			const writtenEvents = await client.writeEvents([event], [recursivePrecondition]);
+			assert.equal(writtenEvents.length, 1);
+			await client.verifyApiToken();
+
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), [
+				'/api/v1/verify-api-token',
+				'/api/v2/data/write-events',
+				'/api/v2/system/verify-token',
+			]);
+
+			const write = server.requests.find(request => request.path === '/api/v2/data/write-events');
+			assert.deepEqual(getSentPreconditions(write), [recursivePrecondition]);
+		});
+
+		test('finds out again only once for recursive writes that start together, and sends each of them once.', async (): Promise<void> => {
+			offersV2 = true;
+
+			await Promise.all([
+				client.writeEvents([event], [recursivePrecondition]),
+				client.writeEvents([event], [recursivePrecondition]),
+			]);
+
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), [
+				'/api/v1/verify-api-token',
+				'/api/v2/data/write-events',
+				'/api/v2/data/write-events',
+			]);
+		});
+
+		test('finds out again before a recursive write, and fails without sending it, if the server still does not offer the v2 API.', async (): Promise<void> => {
+			await assert.rejects(
+				client.writeEvents([event], [recursivePrecondition]),
+				isIncompatibleServerError,
+			);
+			await client.verifyApiToken();
+
+			assert.equal(server.probeCount, 2);
+			assert.deepEqual(getPaths(), ['/api/v1/verify-api-token', '/api/v1/verify-api-token']);
+		});
+
+		test('keeps the v1 API for every other request, although the server offers the v2 API meanwhile.', async (): Promise<void> => {
+			offersV2 = true;
+
+			await client.writeEvents([event], [isSubjectPristine('/test', { recursive: false })]);
+			await client.writeEvents([event]);
+			await client.verifyApiToken();
+
+			assert.equal(server.probeCount, 1);
+			assert.deepEqual(getPaths(), [
+				'/api/v1/verify-api-token',
+				'/api/v1/write-events',
+				'/api/v1/write-events',
+				'/api/v1/verify-api-token',
+			]);
+		});
 	});
 });
