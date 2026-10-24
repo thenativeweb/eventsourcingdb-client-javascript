@@ -88,6 +88,7 @@ const refusals: Record<ApiVersion, Case[]> = {
 			ErrorCode.preconditionViolated,
 			ErrorCode.eventSchemaAlreadyRegistered,
 			ErrorCode.storeReadOnly,
+			ErrorCode.storeFailed,
 		].map(
 			(code): Case => ({
 				name: `an error item with the code '${code}'`,
@@ -132,15 +133,6 @@ const unknownOutcomes: Record<ApiVersion, Case[]> = {
 				isCause: isDbApiErrorWithStatus(status),
 			}),
 		),
-		{
-			name: `an error item with the code '${ErrorCode.storeFailed}'`,
-			answer: (response: ServerResponse): void => {
-				writeHead(response, 200, ndJson);
-				response.end(`${getErrorItem(ErrorCode.storeFailed)}${lines.v2.end}`);
-			},
-			isCause: (error: unknown): boolean =>
-				error instanceof DbApiError && error.code === ErrorCode.storeFailed,
-		},
 		{
 			name: 'a stream that ends without its end item',
 			answer: (response: ServerResponse): void => {
