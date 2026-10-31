@@ -26,8 +26,9 @@ suite('verifyApiToken', () => {
 		async (): Promise<void> => {
 			const client = container.getClient();
 
-			// Should not throw.
-			await client.verifyApiToken();
+			await assert.doesNotReject(async () => {
+				await client.verifyApiToken();
+			});
 		},
 	);
 

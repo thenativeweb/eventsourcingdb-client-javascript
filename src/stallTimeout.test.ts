@@ -353,8 +353,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 							trickle(response, answer.body);
 						};
 
-						// Should not throw.
-						await run(client);
+						await assert.doesNotReject(async () => await run(client));
 					});
 				});
 			};
