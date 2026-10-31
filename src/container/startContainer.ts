@@ -58,7 +58,7 @@ class ReadinessWait implements WaitStrategy {
 		return this;
 	}
 
-	// biome-ignore lint/nursery/useThisInClassMethods: The interface of testcontainers asks for this method.
+	// biome-ignore lint/style/useThisInClassMethods: The interface of testcontainers asks for this method.
 	public isStartupTimeoutSet(): boolean {
 		return true;
 	}
