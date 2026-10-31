@@ -9,32 +9,17 @@ type Shape<T> = {
 const isGuard = (value: unknown): value is Guard<unknown> => typeof value === 'function';
 const isShape = (value: unknown): value is Shape<object> => isRecord(value);
 
-const hasShapeOf = <T extends object>(value: unknown, shape: Shape<T>): value is T => {
-	if (!isRecord(value)) {
-		return false;
+// A value matches a guard if the guard accepts it, and a nested shape if it is
+// a record of that shape.
+const matchesSpec = (value: unknown, spec: unknown): boolean => {
+	if (isGuard(spec)) {
+		return spec(value);
 	}
 
-	for (const [key, spec] of Object.entries(shape)) {
-		const val = value[key];
-
-		if (isGuard(spec)) {
-			if (!spec(val)) {
-				return false;
-			}
-
-			continue;
-		}
-
-		if (!(isRecord(val) && isShape(spec))) {
-			return false;
-		}
-
-		if (!hasShapeOf(val, spec)) {
-			return false;
-		}
-	}
-
-	return true;
+	return isRecord(value) && isShape(spec) && hasShapeOf(value, spec);
 };
+
+const hasShapeOf = <T extends object>(value: unknown, shape: Shape<T>): value is T =>
+	isRecord(value) && Object.entries(shape).every(([key, spec]) => matchesSpec(value[key], spec));
 
 export { hasShapeOf };
