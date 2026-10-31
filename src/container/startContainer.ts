@@ -32,6 +32,15 @@ interface StartContainerOptions {
 	onBackgroundRemoval?: (removal: Promise<void>) => void;
 }
 
+// A failed attempt leaves behind the containers that carry its start label,
+// and possibly a start and a wait for readiness that are still pending.
+interface FailedAttempt {
+	client: ContainerRuntimeClient;
+	startId: string;
+	starting: Promise<StartedTestContainer>;
+	readiness: Promise<unknown>;
+}
+
 const maximumAttempts = 3;
 const millisecondsPerSecond = 1000;
 const defaultSettleTimeout = 10_000;
@@ -89,16 +98,49 @@ const waitForSettling = async (promises: Promise<unknown>[], timeout: number): P
 	return hasSettled;
 };
 
+// Removes what a failed attempt has left behind. It removes the container at
+// once. If the time ran out while Docker was still creating or starting the
+// container, it then waits for that to end, for a while at most, and removes
+// what was created meanwhile. If that takes longer, it removes the container
+// once Docker has created it, without waiting for that. A failed removal is
+// collected.
+const removeLeftoversOfAttempt = async (
+	{ client, startId, starting, readiness }: FailedAttempt,
+	options: StartContainerOptions,
+	removalErrors: unknown[],
+): Promise<void> => {
+	const removeContainers = async (): Promise<void> => {
+		try {
+			await removeContainersOfAttempt(client, startId);
+		} catch (removalError) {
+			removalErrors.push(removalError);
+		}
+	};
+
+	await removeContainers();
+
+	// The attempt has failed already, so how the start ends no longer
+	// matters, only that nothing of it is left.
+	const hasSettled = await waitForSettling(
+		[starting, readiness],
+		options.settleTimeout ?? defaultSettleTimeout,
+	);
+	await removeContainers();
+
+	if (!hasSettled) {
+		// The caller does not wait for a start that Docker does not finish, and
+		// the removal collects its own errors.
+		const removal = Promise.allSettled([starting]).then(removeContainers);
+		options.onBackgroundRemoval?.(removal);
+	}
+};
+
 // Starts a container and waits until its database is reachable, for the
 // startup timeout at most, from creating the container on. If that fails, it
-// removes the container at once. If the time ran out while Docker was still
-// creating or starting the container, it then waits for that to end, for a
-// while at most, and removes what was created meanwhile. If that takes longer,
-// it removes the container once Docker has created it, without waiting for
-// that. A failed removal does not change the outcome of the attempt, but is
-// collected. It returns
-// undefined if the database did not become reachable, so that another
-// container can take its place.
+// removes what the attempt has left behind. A failed removal does not change
+// the outcome of the attempt, but is collected. It returns undefined if the
+// database did not become reachable, so that another container can take its
+// place.
 const attemptToStart = async (
 	client: ContainerRuntimeClient,
 	options: StartContainerOptions,
@@ -134,30 +176,11 @@ const attemptToStart = async (
 		return container;
 	} catch (error) {
 		attemptEnded.abort();
-		const removeContainers = async (): Promise<void> => {
-			try {
-				await removeContainersOfAttempt(client, startId);
-			} catch (removalError) {
-				removalErrors.push(removalError);
-			}
-		};
-
-		await removeContainers();
-
-		// The attempt has failed already, so how the start ends no longer
-		// matters, only that nothing of it is left.
-		const hasSettled = await waitForSettling(
-			[starting, readiness],
-			options.settleTimeout ?? defaultSettleTimeout,
+		await removeLeftoversOfAttempt(
+			{ client, startId, starting, readiness },
+			options,
+			removalErrors,
 		);
-		await removeContainers();
-
-		if (!hasSettled) {
-			// The caller does not wait for a start that Docker does not finish, and
-			// the removal collects its own errors.
-			const removal = Promise.allSettled([starting]).then(removeContainers);
-			options.onBackgroundRemoval?.(removal);
-		}
 
 		if ((deadline.signal.aborted && error === deadline.signal.reason) || isPortError(error)) {
 			return undefined;
