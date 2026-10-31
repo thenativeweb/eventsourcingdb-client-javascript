@@ -312,17 +312,12 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 			let isProbeHeld = false;
 			const respond = respondTo(readEventType);
 			server.respond = (request: FakeRequest, response: ServerResponse): void => {
-				if (isProbe(request)) {
-					if (isProbeHeld) {
-						respond(request, response);
-						return;
-					}
-
+				if (isProbe(request) && !isProbeHeld) {
 					isProbeHeld = true;
 					heldProbe.resolve(response);
 					return;
 				}
-				if (getApiVersion(request) === 'v2' && !offersV2) {
+				if (!isProbe(request) && getApiVersion(request) === 'v2' && !offersV2) {
 					heldRequests.shift()?.resolve(response);
 					return;
 				}
