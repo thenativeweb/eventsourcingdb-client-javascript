@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { afterEach, beforeEach, suite, test } from 'node:test';
+import { afterEach, beforeEach, suite, type TestContext, test } from 'node:test';
 import type { Client } from './Client.js';
 import { Container } from './Container.js';
 import { DbApiError } from './DbApiError.js';
@@ -29,6 +29,13 @@ const getEvent = (subject: string): EventCandidate => ({
 		value: 23,
 	},
 });
+
+// Writes one event on each of the subjects, one write after another.
+const writeEventsOn = async (client: Client, subjects: string[]): Promise<void> => {
+	for (const subject of subjects) {
+		await client.writeEvents([getEvent(subject)]);
+	}
+};
 
 const readAllEvents = async (client: Client): Promise<Event[]> => {
 	const events: Event[] = [];
@@ -98,6 +105,7 @@ const preconditionOptionsCases: PreconditionOptionsCase[] = [
 	},
 ];
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('writeEvents', () => {
 	let container: Container;
 
@@ -131,6 +139,7 @@ suite('writeEvents', () => {
 		assert.equal(writtenEvent.id, '0');
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('writes multiple events.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -166,6 +175,7 @@ suite('writeEvents', () => {
 		assert.equal(secondWrittenEvent.data.value, 42);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('writes the trace context of an event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -240,6 +250,7 @@ suite('writeEvents', () => {
 	test(
 		'supports the isSubjectPopulated precondition.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const client = container.getClient();
 
@@ -344,27 +355,28 @@ suite('writeEvents', () => {
 		},
 	);
 
-	const definePreconditionOptionsTest = ({
+	const definePreconditionOptionsTests = ({
 		name,
 		recursive,
 		subjects,
 		violated,
 		holding,
 	}: PreconditionOptionsCase): void => {
-		test(
-			`supports the ${name} precondition with the recursive option set to ${recursive}.`,
-			integrationTimeout,
-			async (): Promise<void> => {
-				const client = container.getClient();
-				const apiVersion = await getApiVersionOf(container);
+		// The v1 API cannot check a recursive precondition, so the write fails
+		// before it is sent, whether the precondition would hold or not.
+		if (recursive) {
+			test(
+				`rejects the ${name} precondition with the recursive option set to true through the v1 API.`,
+				integrationTimeout,
+				async (context: TestContext): Promise<void> => {
+					if ((await getApiVersionOf(container)) !== 'v1') {
+						context.skip('The server offers the v2 API, which checks recursive preconditions.');
+						return;
+					}
 
-				for (const subject of subjects) {
-					await client.writeEvents([getEvent(subject)]);
-				}
+					const client = container.getClient();
+					await writeEventsOn(client, subjects);
 
-				// The v1 API cannot check a recursive precondition, so the write fails
-				// before it is sent, whether the precondition would hold or not.
-				if (recursive && apiVersion === 'v1') {
 					for (const precondition of [violated, holding]) {
 						await assert.rejects(async () => {
 							await client.writeEvents([getEvent('/test')], [precondition]);
@@ -372,8 +384,23 @@ suite('writeEvents', () => {
 					}
 
 					assert.equal((await readAllEvents(client)).length, subjects.length);
+				},
+			);
+		}
+
+		test(
+			`supports the ${name} precondition with the recursive option set to ${recursive}.`,
+			integrationTimeout,
+			async (context: TestContext): Promise<void> => {
+				if (recursive && (await getApiVersionOf(container)) === 'v1') {
+					context.skip(
+						'The server offers only the v1 API, which cannot check recursive preconditions.',
+					);
 					return;
 				}
+
+				const client = container.getClient();
+				await writeEventsOn(client, subjects);
 
 				await assert.rejects(async () => {
 					await client.writeEvents([getEvent('/test')], [violated]);
@@ -386,6 +413,6 @@ suite('writeEvents', () => {
 	};
 
 	for (const preconditionOptionsCase of preconditionOptionsCases) {
-		definePreconditionOptionsTest(preconditionOptionsCase);
+		definePreconditionOptionsTests(preconditionOptionsCase);
 	}
 });

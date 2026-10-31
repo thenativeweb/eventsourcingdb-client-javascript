@@ -14,6 +14,7 @@ import type { V2Item } from './V2Item.js';
 // broke off and fails, unless the caller aborted it. A server that answers
 // with 404 or 405 no longer offers the v2 API, so the client forgets which API
 // the server offers, and the stream fails as with any other status.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator checks the response, yields its items, and then tells whether the stream broke off, which depends on how the loop over the items ended.
 const readV2Stream = async function* (
 	response: Response,
 	stallGuard: StallGuard,

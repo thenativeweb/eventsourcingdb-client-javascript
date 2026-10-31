@@ -7,6 +7,7 @@ interface NdJsonLine {
 	value: Record<string, unknown>;
 }
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator holds the reader, the buffer, and the abort listener, which its finally block has to release however the stream ends.
 const readNdJsonStream = async function* (
 	stream: ReadableStream<Uint8Array>,
 	signal: AbortSignal,

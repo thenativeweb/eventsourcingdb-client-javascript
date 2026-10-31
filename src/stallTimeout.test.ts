@@ -208,6 +208,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 	for (const apiVersion of apiVersions) {
 		const { event, row, heartbeat, end } = lines[apiVersion];
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 		suite(apiVersion, () => {
 			let server: FakeServer;
 			let client: Client;
@@ -256,6 +257,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 
 				test('ends a stream with heartbeats once nothing arrives for 30 seconds by default.', {
 					timeout: 5000,
+					// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 				}, async (context): Promise<void> => {
 					server.respond = (_request: FakeRequest, response: ServerResponse): void => {
 						writeHead(response, 200, ndJson);
@@ -353,8 +355,7 @@ suite('stallTimeout', { timeout: 30_000 }, () => {
 							trickle(response, answer.body);
 						};
 
-						// Should not throw.
-						await run(client);
+						await assert.doesNotReject(async () => await run(client));
 					});
 				});
 			};

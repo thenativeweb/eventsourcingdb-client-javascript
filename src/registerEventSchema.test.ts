@@ -35,8 +35,9 @@ suite('registerEventSchema', () => {
 			additionalProperties: false,
 		};
 
-		// Should not throw.
-		await client.registerEventSchema(eventType, schema);
+		await assert.doesNotReject(async () => {
+			await client.registerEventSchema(eventType, schema);
+		});
 	});
 
 	test(

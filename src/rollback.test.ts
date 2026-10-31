@@ -170,6 +170,7 @@ const keptAnswers: KeptAnswer[] = [
 	),
 ];
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('a server that is rolled back to a version without the v2 API', { timeout: 30_000 }, () => {
 	let server: FakeServer;
 	let client: Client;
@@ -227,6 +228,7 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 	};
 
 	const defineKeepTest = (call: Call, { name, status, answer }: KeptAnswer): void => {
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		test(`keeps the API after ${name}.`, async (): Promise<void> => {
 			server.respond = respondTo(call);
 			await call.run(client);
@@ -267,6 +269,7 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 		});
 	}
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('keeps the API after the status 404 of the v1 API, which it uses once the server is rolled back.', async (): Promise<void> => {
 		server.respond = respondTo(readEventType);
 		await readEventType.run(client);
@@ -312,17 +315,12 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 			let isProbeHeld = false;
 			const respond = respondTo(readEventType);
 			server.respond = (request: FakeRequest, response: ServerResponse): void => {
-				if (isProbe(request)) {
-					if (isProbeHeld) {
-						respond(request, response);
-						return;
-					}
-
+				if (isProbe(request) && !isProbeHeld) {
 					isProbeHeld = true;
 					heldProbe.resolve(response);
 					return;
 				}
-				if (getApiVersion(request) === 'v2' && !offersV2) {
+				if (!isProbe(request) && getApiVersion(request) === 'v2' && !offersV2) {
 					heldRequests.shift()?.resolve(response);
 					return;
 				}
@@ -344,6 +342,7 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 			return [result, await held.promise];
 		};
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		test('shares the probe, and keeps its answer, if requests of the v2 API that started before fail with 404 meanwhile.', async (): Promise<void> => {
 			const [failsFirst, firstResponse] = await sendHeld();
 			const [failsDuringProbe, duringProbeResponse] = await sendHeld();
@@ -378,6 +377,7 @@ suite('a server that is rolled back to a version without the v2 API', { timeout:
 			]);
 		});
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		test('keeps the answer of the probe if it finds the v2 API again, and a request of the v2 API that started before fails with 404 afterwards.', async (): Promise<void> => {
 			const [failsFirst, firstResponse] = await sendHeld();
 			const [failsLate, lateResponse] = await sendHeld();

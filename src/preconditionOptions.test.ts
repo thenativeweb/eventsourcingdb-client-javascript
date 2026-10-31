@@ -100,6 +100,7 @@ const isIncompatibleServerError = (error: unknown): boolean =>
 	error.name === 'IncompatibleServerError' &&
 	error.message === 'The server does not offer the v2 API, which a recursive precondition needs.';
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('preconditionOptions', { timeout: 30_000 }, () => {
 	let server: FakeServer;
 	let client: Client;
@@ -328,6 +329,7 @@ suite('preconditionOptions', { timeout: 30_000 }, () => {
 			assert.deepEqual(getPaths(), ['/api/v1/verify-api-token', '/api/v1/verify-api-token']);
 		});
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		test('goes on with the v1 API for every other request while it finds out again, and uses the v2 API once it finds it.', async (): Promise<void> => {
 			const probe = Promise.withResolvers<ServerResponse>();
 			heldProbe = probe;

@@ -25,8 +25,9 @@ suite('ping', () => {
 		async (): Promise<void> => {
 			const client = container.getClient();
 
-			// Should not throw.
-			await client.ping();
+			await assert.doesNotReject(async () => {
+				await client.ping();
+			});
 		},
 	);
 

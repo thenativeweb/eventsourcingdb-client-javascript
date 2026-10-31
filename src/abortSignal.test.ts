@@ -137,6 +137,7 @@ suite('abortSignal', { timeout: 30_000 }, () => {
 				defineTestsFor(request);
 			}
 
+			// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 			test('throws an abort error if the caller aborts while the response body arrives.', async (): Promise<void> => {
 				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
 					writeHead(response, 200, 'application/json');
@@ -173,6 +174,7 @@ suite('abortSignal', { timeout: 30_000 }, () => {
 				await server.connectionsClosed();
 			});
 
+			// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 			test('throws an unknown outcome if the caller aborts a write while the response body arrives.', async (): Promise<void> => {
 				server.respond = (_request: FakeRequest, response: ServerResponse): void => {
 					writeHead(response, 200, 'application/json');

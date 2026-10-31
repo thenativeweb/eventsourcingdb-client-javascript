@@ -12,6 +12,7 @@ import { integrationTimeout } from './testing/integrationTimeout.js';
 // arrived, and fails if they have not arrived within this many milliseconds.
 const observeTimeout = 10_000;
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The helper has to clear its timer however observing ends, and only then checks whether enough events arrived.
 const observeUntil = async (
 	observe: (signal: AbortSignal) => AsyncGenerator<Event, void, void>,
 	expectedCount: number,

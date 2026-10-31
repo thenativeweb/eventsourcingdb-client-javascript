@@ -58,6 +58,7 @@ const isAbortError = (error: unknown): boolean =>
 // however it fails, so it fails with the error itself. The server accepts the
 // connection, but never answers the TLS handshake, so the request never gets
 // beyond establishing the connection.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('a write that fails before its request went out', { timeout: 30_000 }, () => {
 	let server: net.Server;
 	let sockets: net.Socket[];
