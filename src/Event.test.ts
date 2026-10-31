@@ -164,6 +164,7 @@ suite('Event', () => {
 		test(
 			'throws an error if the hash verification fails.',
 			containerStartTimeout,
+			// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();
@@ -203,6 +204,7 @@ suite('Event', () => {
 		test(
 			'throws an error if the signature verification fails.',
 			containerStartTimeout,
+			// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();
@@ -238,6 +240,7 @@ suite('Event', () => {
 			},
 		);
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		test('verifies the signature.', containerStartTimeout, async (): Promise<void> => {
 			await container.stop();
 			const imageTag = getImageTag();
@@ -273,6 +276,7 @@ suite('Event', () => {
 		test(
 			'verifies the signature of an event as written, read, and observed, whatever its data and trace context.',
 			containerStartTimeout,
+			// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 			async (): Promise<void> => {
 				await container.stop();
 				const imageTag = getImageTag();

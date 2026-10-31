@@ -47,6 +47,7 @@ const listContainers = async (testId: string): Promise<ContainerInfo[]> => {
 // instead of asking for its events afterwards. Docker passes on its events in
 // order, so to stop, the test creates a container of its own and waits for its
 // event, after which the events of all containers created before have arrived.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: Watching opens the event stream of Docker, collects the start labels from it, and returns the function that ends it, all of which share the stream.
 const watchCreatedContainers = async (
 	testId: string,
 	image: string,
@@ -98,6 +99,7 @@ const watchCreatedContainers = async (
 	};
 };
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('startContainer', () => {
 	const image = `thenativeweb/eventsourcingdb:${getImageTag()}`;
 
@@ -256,6 +258,7 @@ suite('startContainer', () => {
 	test(
 		'replaces a running container whose port testcontainers cannot find, and removes it.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const endFailing = await failPortLookups(1);
@@ -327,6 +330,7 @@ suite('startContainer', () => {
 	test(
 		'does not count pulling the image towards the startup timeout.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const client = await getContainerRuntimeClient();
@@ -377,6 +381,7 @@ suite('startContainer', () => {
 	test(
 		'removes a container that Docker creates only after the wait for it has ended, without waiting for it.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const client = await getContainerRuntimeClient();
@@ -439,6 +444,7 @@ suite('startContainer', () => {
 	test(
 		'reports a failed removal after the error of the start, and goes on with the next attempt.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const testId = randomUUID();
 			const client = await getContainerRuntimeClient();

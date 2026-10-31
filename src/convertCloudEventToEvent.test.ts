@@ -4,6 +4,7 @@ import type { CloudEvent } from './CloudEvent.js';
 import { convertCloudEventToEvent } from './convertCloudEventToEvent.js';
 
 suite('convertCloudEventToEvent', () => {
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('converts a cloud event to an event.', () => {
 		const now = Date.now();
 

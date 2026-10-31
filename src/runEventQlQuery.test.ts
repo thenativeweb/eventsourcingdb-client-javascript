@@ -35,6 +35,7 @@ suite('runEventQlQuery', () => {
 		},
 	);
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads all rows the query returns.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 

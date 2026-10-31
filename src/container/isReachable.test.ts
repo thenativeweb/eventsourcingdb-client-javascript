@@ -13,6 +13,7 @@ interface Answer {
 	delay?: number;
 }
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('isReachable', () => {
 	let server: FakeServer;
 

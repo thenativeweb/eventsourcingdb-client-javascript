@@ -30,6 +30,7 @@ suite('readSubjects', { timeout: 30_000 }, () => {
 		}
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 	suite('v1', () => {
 		let server: FakeServer;
 		let client: Client;

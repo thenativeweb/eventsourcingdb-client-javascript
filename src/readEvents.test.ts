@@ -7,6 +7,7 @@ import { getImageTag } from './getImageTag.js';
 import { containerStartTimeout } from './testing/containerStartTimeout.js';
 import { integrationTimeout } from './testing/integrationTimeout.js';
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('readEvents', () => {
 	let container: Container;
 
@@ -99,6 +100,7 @@ suite('readEvents', () => {
 		assert.equal(eventsRead.length, 2);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads chronologically.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -138,6 +140,7 @@ suite('readEvents', () => {
 		assert.equal(secondEventRead.data.value, 42);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads anti-chronologically.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -177,6 +180,7 @@ suite('readEvents', () => {
 		assert.equal(secondEventRead.data.value, 23);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads with lower bound.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -214,6 +218,7 @@ suite('readEvents', () => {
 		assert.equal(eventRead.data.value, 42);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads with upper bound.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -251,6 +256,7 @@ suite('readEvents', () => {
 		assert.equal(eventRead.data.value, 23);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads from latest event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 

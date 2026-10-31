@@ -33,6 +33,7 @@ interface FailedProbe {
 
 const expectedEventType: EventType = { type: 'io.eventsourcingdb.test', hasEvents: true };
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('detectApiVersion', { timeout: 30_000 }, () => {
 	let server: FakeServer;
 	let client: Client;

@@ -34,6 +34,7 @@ suite('readSubjects', () => {
 		},
 	);
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads all subjects.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -69,6 +70,7 @@ suite('readSubjects', () => {
 		assert.equal(subjectsRead[3], '/test/2');
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('reads all subjects from the subject.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 

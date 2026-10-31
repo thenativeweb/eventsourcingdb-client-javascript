@@ -105,6 +105,7 @@ const preconditionOptionsCases: PreconditionOptionsCase[] = [
 	},
 ];
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
 suite('writeEvents', () => {
 	let container: Container;
 
@@ -138,6 +139,7 @@ suite('writeEvents', () => {
 		assert.equal(writtenEvent.id, '0');
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('writes multiple events.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -173,6 +175,7 @@ suite('writeEvents', () => {
 		assert.equal(secondWrittenEvent.data.value, 42);
 	});
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 	test('writes the trace context of an event.', integrationTimeout, async (): Promise<void> => {
 		const client = container.getClient();
 
@@ -247,6 +250,7 @@ suite('writeEvents', () => {
 	test(
 		'supports the isSubjectPopulated precondition.',
 		integrationTimeout,
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The test is one linear sequence of steps, and splitting it would make it harder to follow.
 		async (): Promise<void> => {
 			const client = container.getClient();
 
