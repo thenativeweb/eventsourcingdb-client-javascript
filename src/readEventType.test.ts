@@ -44,21 +44,20 @@ suite('readEventType', () => {
 		const client = container.getClient();
 		const apiVersion = await getApiVersionOf(container);
 
+		// The v1 API has no code for a malformed event type.
+		const expected =
+			apiVersion === 'v1'
+				? { code: undefined, status: 400 }
+				: { code: ErrorCode.eventTypeMalformed, status: 200 };
+
 		await assert.rejects(
 			async () => {
 				await client.readEventType('malformed.eventType.');
 			},
 			(error: unknown): boolean => {
 				assert.ok(error instanceof DbApiError);
-
-				// The v1 API has no code for a malformed event type.
-				if (apiVersion === 'v1') {
-					assert.equal(error.code, undefined);
-					assert.equal(error.status, 400);
-				} else {
-					assert.equal(error.code, ErrorCode.eventTypeMalformed);
-					assert.equal(error.status, 200);
-				}
+				assert.equal(error.code, expected.code);
+				assert.equal(error.status, expected.status);
 				return true;
 			},
 		);
