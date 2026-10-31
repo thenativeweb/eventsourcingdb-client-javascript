@@ -13,8 +13,19 @@ const hashVersionRegex = /^esdb:hash:(?<version>[^:]*):/u;
 // have like this.
 const missingField = '-';
 
+// A signature starts with this prefix, followed by its bytes in hex.
+const signaturePrefix = 'esdb:signature:v1:';
+
 const getSha256 = (input: string): string =>
 	crypto.createHash('sha256').update(input).digest('hex');
+
+const getSignatureBytes = (signature: string): Buffer => {
+	if (!signature.startsWith(signaturePrefix)) {
+		throw new Error(`Signature must start with '${signaturePrefix}'`);
+	}
+
+	return Buffer.from(signature.slice(signaturePrefix.length), 'hex');
+};
 
 class Event {
 	public specversion: string;
@@ -145,14 +156,7 @@ class Event {
 
 		this.verifyHash();
 
-		const signaturePrefix = 'esdb:signature:v1:';
-
-		if (!this.signature.startsWith(signaturePrefix)) {
-			throw new Error(`Signature must start with '${signaturePrefix}'`);
-		}
-
-		const signature = this.signature.slice(signaturePrefix.length);
-		const signatureBytes = Buffer.from(signature, 'hex');
+		const signatureBytes = getSignatureBytes(this.signature);
 		const hashBytes = Buffer.from(this.hash, 'utf8');
 
 		const isSignatureValid = crypto.verify(null, hashBytes, verificationKey, signatureBytes);
