@@ -277,6 +277,7 @@ class V1Transport implements Transport {
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator sends the query and handles every kind of line that its stream can contain, failing on any other.
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {
 				method: 'POST',
@@ -320,6 +321,7 @@ class V1Transport implements Transport {
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator sends the request, handles every kind of line that its stream can contain, and fails if the stream ends, since observing never ends on its own.
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {
 				method: 'POST',
@@ -411,6 +413,7 @@ class V1Transport implements Transport {
 		// only a string, and only to read the subject alone.
 		const normalizedSubject = !recursive && isString(subject) ? normalizeSubject(subject) : subject;
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator sends the request and handles every kind of line that its stream can contain, ending once it has read the subject alone.
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {
 				method: 'POST',
@@ -483,6 +486,7 @@ class V1Transport implements Transport {
 		const apiToken = this.#apiToken;
 		const stallTimeout = this.#stallTimeout;
 
+		// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The generator sends the request and handles every kind of line that its stream can contain, failing on any other.
 		return streamWithStallGuard({ stallTimeout, signal }, async function* (stallGuard) {
 			const response = await stallGuard.send(url, {
 				method: 'POST',

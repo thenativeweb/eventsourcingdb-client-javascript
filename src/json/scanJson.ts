@@ -38,6 +38,7 @@ const scanJsonString = (text: string, start: number): number => {
 	throw new Error('Failed to scan JSON string.');
 };
 
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The scan follows strings and the nesting depth in one loop, character by character.
 const scanJsonContainer = (text: string, start: number): number => {
 	let depth = 0;
 	let position = start;

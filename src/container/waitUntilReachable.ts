@@ -35,6 +35,7 @@ const readMappedPort = (container: ContainerInfo, port: number): number | undefi
 
 // Returns the mapped port once the database answers on it, and undefined
 // until then.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A poll checks the container, its port, and its database in turn, and each check can end the poll early.
 const poll = async ({ client, startId, port, signal }: Readiness): Promise<number | undefined> => {
 	const [container] = await listContainersOfAttempt(client, startId);
 	if (container === undefined) {

@@ -35,6 +35,7 @@ const detectApiVersion = async ({
 	url: URL;
 	stallTimeout: number;
 }): Promise<ApiVersion> =>
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The callback tells apart every answer that the ping can get, in the order in which they have to be checked.
 	await runWithStallGuard({ stallTimeout }, async stallGuard => {
 		const response = await stallGuard.send(new URL('/api/v2/system/ping', url).toString(), {
 			method: 'GET',

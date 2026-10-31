@@ -2,6 +2,7 @@ import type { StallGuard } from './StallGuard.js';
 
 // Reads the body of a response as text, like response.text(), but restarts
 // the clock of the stall guard with every chunk that arrives.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: Reading restarts the stall guard before every chunk, and has to release the reader however reading ends.
 const readResponseText = async (response: Response, stallGuard: StallGuard): Promise<string> => {
 	if (!response.body) {
 		return '';

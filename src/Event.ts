@@ -44,6 +44,7 @@ class Event {
 	public tracestate?: string;
 	public signature: string | null;
 
+	// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The constructor assigns each field of the event, one statement per field.
 	public constructor({
 		specversion,
 		id,

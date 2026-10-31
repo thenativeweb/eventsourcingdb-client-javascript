@@ -141,6 +141,7 @@ const removeLeftoversOfAttempt = async (
 // the outcome of the attempt, but is collected. It returns undefined if the
 // database did not become reachable, so that another container can take its
 // place.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: The attempt owns its deadline and its controllers, which starting, waiting, and telling a timeout from a failure all share, and releases them in one place.
 const attemptToStart = async (
 	client: ContainerRuntimeClient,
 	options: StartContainerOptions,
@@ -198,6 +199,7 @@ const attemptToStart = async (
 // reachable within the startup timeout, gives way to another one, up to 3
 // containers in total. If Docker fails, or if the container exits, starting
 // fails at once.
+// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: Starting prepares Docker, runs the attempts one after another, and turns every failure into one error that names the failed removals as well.
 const startContainer = async (options: StartContainerOptions): Promise<StartedTestContainer> => {
 	const removalErrors: unknown[] = [];
 	const createError = (message: string, errorOptions?: ErrorOptions): Error =>
