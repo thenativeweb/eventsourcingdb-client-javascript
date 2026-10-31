@@ -85,4 +85,25 @@ const scanJsonValue = (text: string, start: number): number => {
 	return position;
 };
 
-export { scanJsonString, scanJsonValue, skipJsonWhitespace };
+// Scans the items of the JSON array or object whose opening bracket is at the
+// given position, the elements of an array or the members of an object, one
+// after another. It passes the start of each item to the given function,
+// which returns the position right after the item.
+const scanJsonItems = (
+	text: string,
+	start: number,
+	scanItem: (itemStart: number) => number,
+): void => {
+	let position = skipJsonWhitespace(text, start + 1);
+
+	while (position < text.length && text[position] !== ']' && text[position] !== '}') {
+		position = skipJsonWhitespace(text, scanItem(position));
+		if (text[position] !== ',') {
+			return;
+		}
+
+		position = skipJsonWhitespace(text, position + 1);
+	}
+};
+
+export { scanJsonItems, scanJsonString, scanJsonValue, skipJsonWhitespace };
