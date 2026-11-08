@@ -72,7 +72,11 @@ const watchCreatedContainers = async (
 		const lines = `${pending}${chunk.toString('utf8')}`.split('\n');
 		pending = lines.pop() ?? '';
 
-		for (const line of lines.filter(candidate => candidate !== '')) {
+		for (const line of lines) {
+			if (line === '') {
+				continue;
+			}
+
 			const { Attributes: attributes } = JSON.parse(line).Actor;
 			if (attributes[markerLabel] === testId) {
 				markerArrived.resolve();
