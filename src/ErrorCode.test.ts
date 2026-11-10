@@ -3,11 +3,13 @@ import { suite, test } from 'node:test';
 import { ErrorCode } from './ErrorCode.js';
 
 // The slugs of the errors that the server reports, as cmd/server/api/error.go
-// of EventSourcingDB lists them, at commit 36fa8821. When the server adds a
+// of EventSourcingDB lists them, at commit 63877b24. When the server adds a
 // slug, add it here and to ErrorCode.
 const slugsOfServer = [
 	'subject-missing',
 	'subject-malformed',
+	'subject-too-long',
+	'subject-too-deep',
 	'order-unknown',
 	'event-id-missing',
 	'event-id-malformed',
@@ -37,6 +39,7 @@ const slugsOfServer = [
 	'event-schema-missing',
 	'event-schema-malformed',
 	'event-schema-not-object',
+	'event-schema-too-complex',
 	'event-schema-already-registered',
 	'last-audited-event-missing',
 	'last-audited-event-mismatched',
@@ -56,10 +59,16 @@ const slugsOfServer = [
 	'backup-increment-disconnected',
 	'backup-failed',
 	'backup-unreadable',
+	'backup-ahead-of-clock',
+	'import-ahead-of-clock',
+	'import-malformed',
+	'import-unreadable',
 	'event-too-large',
 	'data-malformed',
 	'query-missing',
 	'query-malformed',
+	'query-too-deep',
+	'query-too-long',
 	'query-unevaluable',
 	'query-not-boolean',
 	'precondition-violated',
@@ -70,6 +79,7 @@ const slugsOfServer = [
 	'store-failed',
 	'indexes-rebuilding',
 	'server-shutting-down',
+	'file-unreadable',
 ];
 
 const baseUrl = 'https://docs.eventsourcingdb.io/errors/';
