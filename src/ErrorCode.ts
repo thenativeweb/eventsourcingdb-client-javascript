@@ -4,6 +4,8 @@
 const ErrorCode = {
 	subjectMissing: 'https://docs.eventsourcingdb.io/errors/subject-missing',
 	subjectMalformed: 'https://docs.eventsourcingdb.io/errors/subject-malformed',
+	subjectTooLong: 'https://docs.eventsourcingdb.io/errors/subject-too-long',
+	subjectTooDeep: 'https://docs.eventsourcingdb.io/errors/subject-too-deep',
 	orderUnknown: 'https://docs.eventsourcingdb.io/errors/order-unknown',
 	eventIdMissing: 'https://docs.eventsourcingdb.io/errors/event-id-missing',
 	eventIdMalformed: 'https://docs.eventsourcingdb.io/errors/event-id-malformed',
@@ -34,6 +36,7 @@ const ErrorCode = {
 	eventSchemaMissing: 'https://docs.eventsourcingdb.io/errors/event-schema-missing',
 	eventSchemaMalformed: 'https://docs.eventsourcingdb.io/errors/event-schema-malformed',
 	eventSchemaNotObject: 'https://docs.eventsourcingdb.io/errors/event-schema-not-object',
+	eventSchemaTooComplex: 'https://docs.eventsourcingdb.io/errors/event-schema-too-complex',
 	eventSchemaAlreadyRegistered:
 		'https://docs.eventsourcingdb.io/errors/event-schema-already-registered',
 	lastAuditedEventMissing: 'https://docs.eventsourcingdb.io/errors/last-audited-event-missing',
@@ -57,10 +60,16 @@ const ErrorCode = {
 		'https://docs.eventsourcingdb.io/errors/backup-increment-disconnected',
 	backupFailed: 'https://docs.eventsourcingdb.io/errors/backup-failed',
 	backupUnreadable: 'https://docs.eventsourcingdb.io/errors/backup-unreadable',
+	backupAheadOfClock: 'https://docs.eventsourcingdb.io/errors/backup-ahead-of-clock',
+	importAheadOfClock: 'https://docs.eventsourcingdb.io/errors/import-ahead-of-clock',
+	importMalformed: 'https://docs.eventsourcingdb.io/errors/import-malformed',
+	importUnreadable: 'https://docs.eventsourcingdb.io/errors/import-unreadable',
 	eventTooLarge: 'https://docs.eventsourcingdb.io/errors/event-too-large',
 	dataMalformed: 'https://docs.eventsourcingdb.io/errors/data-malformed',
 	queryMissing: 'https://docs.eventsourcingdb.io/errors/query-missing',
 	queryMalformed: 'https://docs.eventsourcingdb.io/errors/query-malformed',
+	queryTooDeep: 'https://docs.eventsourcingdb.io/errors/query-too-deep',
+	queryTooLong: 'https://docs.eventsourcingdb.io/errors/query-too-long',
 	queryUnevaluable: 'https://docs.eventsourcingdb.io/errors/query-unevaluable',
 	queryNotBoolean: 'https://docs.eventsourcingdb.io/errors/query-not-boolean',
 	preconditionViolated: 'https://docs.eventsourcingdb.io/errors/precondition-violated',
@@ -72,6 +81,7 @@ const ErrorCode = {
 	storeFailed: 'https://docs.eventsourcingdb.io/errors/store-failed',
 	indexesRebuilding: 'https://docs.eventsourcingdb.io/errors/indexes-rebuilding',
 	serverShuttingDown: 'https://docs.eventsourcingdb.io/errors/server-shutting-down',
+	fileUnreadable: 'https://docs.eventsourcingdb.io/errors/file-unreadable',
 } as const;
 
 type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
