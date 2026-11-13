@@ -34,7 +34,7 @@ const trickle = (response: ServerResponse, text: string): void => {
 	const third = Math.ceil(text.length / 3);
 	const parts = [text.slice(0, third), text.slice(third, third * 2), text.slice(third * 2)];
 
-	parts.forEach((part, index) => {
+	for (const [index, part] of parts.entries()) {
 		setTimeout(
 			() => {
 				if (index === parts.length - 1) {
@@ -45,7 +45,7 @@ const trickle = (response: ServerResponse, text: string): void => {
 			},
 			(stallTimeout / 2) * (index + 1),
 		);
-	});
+	}
 };
 
 // A stall carries the code that the timeout error of fetch has for the same
