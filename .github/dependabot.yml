@@ -54,6 +54,24 @@ updates:
           - minor
           - patch
 
+  - package-ecosystem: docker
+    directory: "/.github/node"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    assignees:
+      - goloroden
+    labels:
+      - Dependencies
+    commit-message:
+      prefix: chore
+    ignore:
+      # A new Node.js line comes in only once it is LTS; raise this bound then.
+      - dependency-name: "node"
+        versions: [">=27"]
+
   - package-ecosystem: github-actions
     directory: "/"
     cooldown:
