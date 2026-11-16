@@ -27,7 +27,7 @@ jobs:
         node-version-file: '.nvmrc'
     - name: Install dependencies
       run: |
-        npm ci
+        npm ci --engine-strict
     - name: Run QA
       env:
         EVENTSOURCINGDB_IMAGE_TAG: ${{ matrix.image-tag }}
