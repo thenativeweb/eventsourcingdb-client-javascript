@@ -17,6 +17,10 @@ updates:
     commit-message:
       prefix: fix
       prefix-development: chore
+    ignore:
+      # The types follow the Node.js line; raise this bound together with the image's.
+      - dependency-name: "@types/node"
+        versions: [">=27"]
     groups:
       npm-production:
         dependency-type: production
