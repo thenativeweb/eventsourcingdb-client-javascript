@@ -58,8 +58,9 @@ const isAbortError = (error: unknown): boolean =>
 // however it fails, so it fails with the error itself. The server accepts the
 // connection, but never answers the TLS handshake, so the request never gets
 // beyond establishing the connection.
-// biome-ignore lint/nursery/noExcessiveStatementsPerFunction: A suite counts each of its tests as a statement.
-suite('a write that fails before its request went out', { timeout: 30_000 }, () => {
+// Four of its tests wait ten seconds each for fetch to give up connecting, so
+// the timeout of the suite has to leave room for all of them.
+suite('a write that fails before its request went out', { timeout: 60_000 }, () => {
 	let server: net.Server;
 	let sockets: net.Socket[];
 	let url: URL;
@@ -129,6 +130,30 @@ suite('a write that fails before its request went out', { timeout: 30_000 }, () 
 						error.cause.code === 'UND_ERR_HEADERS_TIMEOUT',
 				);
 			});
+
+			// The fetch built into Node.js gives up connecting after 10 seconds. Its
+			// pool opens one connection per origin at a time and lets further
+			// requests wait for it, so writes that share a server would give up one
+			// after another; each test has a server of its own.
+			test('throws the error of fetch itself if fetch gives up connecting.', {
+				timeout: 20_000,
+			}, async (): Promise<void> => {
+				const transport = createTransport(apiVersion, {
+					url,
+					apiToken: 'secret',
+					stallTimeout: 30_000,
+				});
+
+				await assert.rejects(
+					run(transport),
+					(error: unknown): boolean =>
+						error instanceof TypeError &&
+						!(error instanceof ConnectionStalledError) &&
+						error.cause instanceof Error &&
+						'code' in error.cause &&
+						error.cause.code === 'UND_ERR_CONNECT_TIMEOUT',
+				);
+			});
 		});
 	};
 
@@ -137,34 +162,6 @@ suite('a write that fails before its request went out', { timeout: 30_000 }, () 
 			defineTestsFor(apiVersion, write);
 		}
 	}
-
-	// The fetch built into Node.js gives up connecting after 10 seconds, so
-	// this runs every write at once.
-	test('throws the error of fetch itself if fetch gives up connecting.', {
-		timeout: 20_000,
-	}, async (): Promise<void> => {
-		await Promise.all(
-			apiVersions.flatMap(apiVersion =>
-				writes.map(async ({ run }): Promise<void> => {
-					const transport = createTransport(apiVersion, {
-						url,
-						apiToken: 'secret',
-						stallTimeout: 30_000,
-					});
-
-					await assert.rejects(
-						run(transport),
-						(error: unknown): boolean =>
-							error instanceof TypeError &&
-							!(error instanceof ConnectionStalledError) &&
-							error.cause instanceof Error &&
-							'code' in error.cause &&
-							error.cause.code === 'UND_ERR_CONNECT_TIMEOUT',
-					);
-				}),
-			),
-		);
-	});
 
 	test('throws an unknown outcome if it cannot tell whether the request went out.', async (): Promise<void> => {
 		// A fetch that is not the one built into Node.js does not tell when the
