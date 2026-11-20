@@ -66,6 +66,7 @@ const poll = async ({ client, startId, port, signal }: Readiness): Promise<numbe
 // with the last 20 lines of its log. Once the signal aborts, it fails with the
 // reason of the signal.
 const waitUntilReachable = async (readiness: Readiness): Promise<number> => {
+	// biome-ignore lint/complexity/useWhile: An endless loop that ends by return or throw; while (true) trips noUnnecessaryConditions.
 	for (;;) {
 		readiness.signal.throwIfAborted();
 
