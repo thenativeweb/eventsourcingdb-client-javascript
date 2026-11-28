@@ -21,7 +21,7 @@
     "testcontainers": "12.2.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.7",
+    "@biomejs/biome": "2.6.8",
     "@types/node": "26.6.6",
     "get-port": "7.2.0",
     "tsx": "4.23.15",
